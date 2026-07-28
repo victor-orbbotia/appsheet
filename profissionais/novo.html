@@ -17,19 +17,22 @@
 </head>
 <body class="p-4 md:p-6 space-y-6">
 
-    <!-- Alerta de Conexão -->
-    <div id="alerta-chatwoot" class="max-w-3xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
+    <div id="alerta-chatwoot" class="max-w-4xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
         ⏳ Aguardando conexão com o Chatwoot para identificar a conta...
     </div>
 
-    <!-- Container Principal (Oculto até conectar) -->
-    <div id="app-container" class="max-w-3xl mx-auto space-y-6 hidden">
+    <div id="app-container" class="max-w-4xl mx-auto space-y-6 hidden">
 
         <!-- BLOCO 1: FORMULÁRIO -->
         <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
-            <div class="flex justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50">
+            <div class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
                 <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Profissional</h1>
                 <div class="flex gap-2 md:gap-3">
+                    <!-- NOVO BOTÃO: Ativar/Desativar (Oculto por padrão) -->
+                    <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white rounded transition-colors shadow-sm">
+                        Desativar
+                    </button>
+                    
                     <button type="button" onclick="limparFormulario()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-blue-700 bg-white border border-blue-700 rounded hover:bg-blue-50 transition-colors">
                         Cancelar
                     </button>
@@ -40,7 +43,6 @@
             </div>
 
             <form id="formProfissional" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Campo Oculto para ID (Usado para saber se é Edição) -->
                 <input type="hidden" id="profissional_id" value="">
 
                 <div class="md:col-span-2">
@@ -78,6 +80,7 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
                         <tr>
+                            <th class="px-4 py-3 border-b">Status</th>
                             <th class="px-4 py-3 border-b">Nome</th>
                             <th class="px-4 py-3 border-b">Especialidade</th>
                             <th class="px-4 py-3 border-b">Telefone</th>
@@ -85,9 +88,7 @@
                         </tr>
                     </thead>
                     <tbody id="lista-profissionais" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="4" class="px-4 py-6 text-center text-slate-400">Carregando profissionais...</td>
-                        </tr>
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-400">Carregando profissionais...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -95,15 +96,14 @@
     </div>
 
     <script>
-        // URLs do n8n (Substitua pelos IDs reais dos seus webhooks)
         const urlDados = 'https://n8n.orbbotia.com/webhook/profissionais-dados';
         const urlAcao  = 'https://n8n.orbbotia.com/webhook/profissionais-acao';
         
         let globalAccountId = null;
         let handshakeInterval;
         let listaAtual = [];
+        let statusAtualEdicao = true; // Guarda se o profissional aberto está ativo ou não
 
-        // 1. Handshake com Chatwoot
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -112,11 +112,9 @@
                 clearInterval(handshakeInterval);
                 const payload = eventData.data;
                 globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
-                
                 document.getElementById('alerta-chatwoot').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
-                
-                carregarLista(); // Carrega os dados assim que conecta
+                carregarLista();
             }
         });
 
@@ -124,7 +122,6 @@
             if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Modo teste fora do iframe
         setTimeout(() => {
             if(!globalAccountId) {
                 document.getElementById('alerta-chatwoot').innerText = "Modo de teste: Fora do Chatwoot (Account = 2)";
@@ -134,23 +131,19 @@
             }
         }, 2000);
 
-
-        // 2. Puxar Dados (Listar)
         async function carregarLista() {
             const tbody = document.getElementById('lista-profissionais');
-            tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-blue-500">⏳ Sincronizando...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-blue-500">⏳ Sincronizando...</td></tr>`;
 
             try {
                 const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error("Erro ao buscar dados");
-                
                 const dados = await res.json();
                 listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
-                
                 renderizarTabela();
             } catch (error) {
                 console.error(error);
-                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-red-500">Erro ao carregar lista.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-red-500">Erro ao carregar lista.</td></tr>`;
             }
         }
 
@@ -159,17 +152,22 @@
             tbody.innerHTML = '';
 
             if (listaAtual.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-400 font-medium">Nenhum profissional cadastrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-400 font-medium">Nenhum profissional cadastrado.</td></tr>`;
                 return;
             }
 
             listaAtual.forEach(prof => {
-                // Se vier do seu workflow n8n, os dados podem estar dentro de .json
                 const p = prof.json ? prof.json : prof; 
+                const isAtivo = p.ativo !== false; // Considera true se for nulo ou true
                 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50' : 'bg-slate-50/70 opacity-70'}`;
                 tr.innerHTML = `
+                    <td class="px-4 py-3">
+                        ${isAtivo 
+                            ? '<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Ativo</span>' 
+                            : '<span class="bg-slate-200 text-slate-600 border border-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Inativo</span>'}
+                    </td>
                     <td class="px-4 py-3 font-medium text-slate-800">${p.nome || '-'}</td>
                     <td class="px-4 py-3"><span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded font-medium">${p.especialidade || '-'}</span></td>
                     <td class="px-4 py-3">${p.telefone || '-'}</td>
@@ -183,10 +181,7 @@
             });
         }
 
-
-        // 3. Ações de Editar e Salvar
         function editarProfissional(id) {
-            // Busca o profissional na memória
             const profObj = listaAtual.find(item => {
                 const p = item.json ? item.json : item;
                 return p.id == id;
@@ -195,13 +190,24 @@
             if (!profObj) return;
             const p = profObj.json ? profObj.json : profObj;
 
-            // Preenche o form
             document.getElementById('profissional_id').value = p.id;
             document.getElementById('nome').value = p.nome || '';
             document.getElementById('especialidade').value = p.especialidade || '';
             document.getElementById('telefone').value = p.telefone || '';
 
-            // Muda o visual
+            // Lógica do botão de Ativar/Desativar
+            statusAtualEdicao = p.ativo !== false;
+            const btnStatus = document.getElementById('btnStatus');
+            btnStatus.classList.remove('hidden', 'bg-rose-600', 'hover:bg-rose-700', 'bg-emerald-600', 'hover:bg-emerald-700');
+            
+            if (statusAtualEdicao) {
+                btnStatus.innerText = "Desativar 🔴";
+                btnStatus.classList.add('bg-rose-600', 'hover:bg-rose-700');
+            } else {
+                btnStatus.innerText = "Reativar 🟢";
+                btnStatus.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            }
+
             document.getElementById('titulo-form').innerText = "Editando: " + p.nome;
             document.getElementById('btnSalvar').innerText = "Atualizar Cadastro";
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -212,10 +218,49 @@
             document.getElementById('profissional_id').value = '';
             document.getElementById('titulo-form').innerText = "Novo Profissional";
             document.getElementById('btnSalvar').innerText = "Salvar";
+            document.getElementById('btnStatus').classList.add('hidden'); // Esconde botão de status
+        }
+
+        // Função para disparar a mudança de Status no n8n
+        async function alternarStatus() {
+            const id = document.getElementById('profissional_id').value;
+            if (!id) return;
+
+            const novoStatus = !statusAtualEdicao;
+            const btnStatus = document.getElementById('btnStatus');
+            btnStatus.innerText = 'Processando...';
+            btnStatus.disabled = true;
+
+            const payload = {
+                action: 'status', 
+                account_id: globalAccountId.toString(),
+                id: id,
+                ativo: novoStatus
+            };
+
+            try {
+                const response = await fetch(urlAcao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    limparFormulario();
+                    carregarLista();
+                } else {
+                    throw new Error("Erro na resposta");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao alterar status.");
+            } finally {
+                btnStatus.disabled = false;
+            }
         }
 
         async function salvarProfissional() {
-            const id = document.getElementById('profissional_id').value; // Se vazio, é NOVO. Se tem ID, é EDIÇÃO.
+            const id = document.getElementById('profissional_id').value; 
             const nome = document.getElementById('nome').value.trim();
             const especialidade = document.getElementById('especialidade').value;
             const telefone = document.getElementById('telefone').value.trim();
@@ -227,7 +272,7 @@
             btnSalvar.disabled = true;
 
             const payload = {
-                action: id ? 'editar' : 'criar', // Avisa o n8n do que fazer
+                action: id ? 'editar' : 'criar',
                 account_id: globalAccountId.toString(),
                 id: id,
                 nome: nome,
@@ -245,19 +290,16 @@
                 if (response.ok) {
                     btnSalvar.innerText = 'Sucesso! ✓';
                     btnSalvar.classList.replace('bg-blue-700', 'bg-emerald-600');
-                    
                     setTimeout(() => {
                         btnSalvar.classList.replace('bg-emerald-600', 'bg-blue-700');
                         limparFormulario();
-                        carregarLista(); // Recarrega a tabela para mostrar as mudanças
+                        carregarLista();
                         btnSalvar.disabled = false;
                     }, 1500);
-                } else {
-                    throw new Error("Erro na resposta do webhook");
                 }
             } catch (error) {
                 console.error(error);
-                alert("Erro ao salvar. Verifique o n8n.");
+                alert("Erro ao salvar.");
                 btnSalvar.innerText = id ? 'Atualizar Cadastro' : 'Salvar';
                 btnSalvar.disabled = false;
             }

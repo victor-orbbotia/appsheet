@@ -3,79 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Profissional</title>
+    <title>Gestão de Profissionais</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f8fafc; font-family: system-ui, sans-serif; }
         .input-field {
             width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; 
             border-radius: 0.375rem; outline: none; transition: border-color 0.2s;
+            font-size: 0.875rem;
         }
-        .input-field:focus { border-color: #2563eb; ring: 1px solid #2563eb; }
+        .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
     </style>
 </head>
-<body class="h-screen flex flex-col p-6">
+<body class="p-4 md:p-6 space-y-6">
 
-    <!-- Container Principal -->
-    <div class="max-w-2xl w-full mx-auto bg-white shadow-sm border border-slate-200 rounded-lg flex flex-col">
-        
-        <!-- Header igual ao da imagem -->
-        <div class="flex justify-between items-center p-6 border-b border-slate-100">
-            <h1 class="text-xl font-semibold text-slate-800">Novo Profissional</h1>
-            <div class="flex gap-3">
-                <button type="button" onclick="limparFormulario()" class="px-4 py-2 text-sm font-medium text-blue-700 bg-white border border-blue-700 rounded hover:bg-blue-50 transition-colors">
-                    Cancelar
-                </button>
-                <button type="button" id="btnSalvar" onclick="salvarProfissional()" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors">
-                    Salvar
-                </button>
+    <!-- Alerta de Conexão -->
+    <div id="alerta-chatwoot" class="max-w-3xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
+        ⏳ Aguardando conexão com o Chatwoot para identificar a conta...
+    </div>
+
+    <!-- Container Principal (Oculto até conectar) -->
+    <div id="app-container" class="max-w-3xl mx-auto space-y-6 hidden">
+
+        <!-- BLOCO 1: FORMULÁRIO -->
+        <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+            <div class="flex justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50">
+                <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Profissional</h1>
+                <div class="flex gap-2 md:gap-3">
+                    <button type="button" onclick="limparFormulario()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-blue-700 bg-white border border-blue-700 rounded hover:bg-blue-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnSalvar" onclick="salvarProfissional()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
+                        Salvar
+                    </button>
+                </div>
             </div>
+
+            <form id="formProfissional" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Campo Oculto para ID (Usado para saber se é Edição) -->
+                <input type="hidden" id="profissional_id" value="">
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nome <span class="text-blue-600">*</span></label>
+                    <input type="text" id="nome" required class="input-field" placeholder="Ex: Dr. João Silva">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Especialidade</label>
+                    <select id="especialidade" class="input-field bg-white">
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="Clínico Geral">Clínico Geral</option>
+                        <option value="Cardiologista">Cardiologista</option>
+                        <option value="Ginecologista">Ginecologista</option>
+                        <option value="Pediatra">Pediatra</option>
+                        <option value="Ortopedista">Ortopedista</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Telefone</label>
+                    <input type="tel" id="telefone" class="input-field" placeholder="(11) 99999-9999">
+                </div>
+            </form>
         </div>
 
-        <!-- Formulário -->
-        <form id="formProfissional" class="p-6 space-y-6">
+        <!-- BLOCO 2: LISTA DE CADASTRADOS -->
+        <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-md font-semibold text-slate-800">Profissionais Cadastrados</h2>
+                <button onclick="carregarLista()" class="text-xs text-slate-500 hover:text-blue-600 font-medium">🔄 Atualizar</button>
+            </div>
             
-            <!-- Alerta de Conexão com Chatwoot -->
-            <div id="alerta-chatwoot" class="hidden bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200">
-                Aguardando conexão com o Chatwoot para identificar a conta...
+            <div class="p-0 overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="px-4 py-3 border-b">Nome</th>
+                            <th class="px-4 py-3 border-b">Especialidade</th>
+                            <th class="px-4 py-3 border-b">Telefone</th>
+                            <th class="px-4 py-3 border-b text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-profissionais" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="4" class="px-4 py-6 text-center text-slate-400">Carregando profissionais...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-
-            <div>
-                <label class="block text-sm text-slate-600 mb-1">Nome <span class="text-blue-600">*</span></label>
-                <input type="text" id="nome" required class="input-field" placeholder="Ex: Dr. João Silva">
-            </div>
-
-            <div>
-                <label class="block text-sm text-slate-600 mb-1">Especialidade</label>
-                <select id="especialidade" class="input-field bg-white">
-                    <option value="" disabled selected>Selecione uma especialidade...</option>
-                    <option value="Clínico Geral">Clínico Geral</option>
-                    <option value="Cardiologista">Cardiologista</option>
-                    <option value="Ginecologista">Ginecologista</option>
-                    <option value="Pediatra">Pediatra</option>
-                    <option value="Ortopedista">Ortopedista</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm text-slate-600 mb-1">Telefone</label>
-                <input type="tel" id="telefone" class="input-field" placeholder="(11) 99999-9999">
-            </div>
-        </form>
-
-        <!-- Feedback de Sucesso (Oculto por padrão) -->
-        <div id="msgSucesso" class="hidden p-4 mb-6 mx-6 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-center font-medium">
-            Profissional cadastrado com sucesso!
         </div>
     </div>
 
     <script>
-        const urlWebhookN8N = 'https://n8n.orbbotia.com/webhook/novo-profissional';
+        // URLs do n8n (Substitua pelos IDs reais dos seus webhooks)
+        const urlDados = 'https://n8n.orbbotia.com/webhook/profissionais-dados';
+        const urlAcao  = 'https://n8n.orbbotia.com/webhook/profissionais-acao';
         
-        let globalAccountId = null; // Será preenchido pelo Chatwoot
+        let globalAccountId = null;
         let handshakeInterval;
+        let listaAtual = [];
 
-        // 1. Escuta o Chatwoot para pegar o Account ID (Igual ao seu Kanban)
+        // 1. Handshake com Chatwoot
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -84,94 +112,155 @@
                 clearInterval(handshakeInterval);
                 const payload = eventData.data;
                 globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
+                
                 document.getElementById('alerta-chatwoot').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                
+                carregarLista(); // Carrega os dados assim que conecta
             }
         });
 
-        // Fica pedindo o contexto até o Chatwoot responder
-        handshakeInterval = setInterval(function() {
-            if (!globalAccountId) {
-                window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
-            }
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Apenas para testes fora do iframe:
+        // Modo teste fora do iframe
         setTimeout(() => {
             if(!globalAccountId) {
-                document.getElementById('alerta-chatwoot').classList.remove('hidden');
-                document.getElementById('alerta-chatwoot').innerText = "Modo de teste: Rodando fora do Chatwoot (Account ID = 'teste')";
-                globalAccountId = 'teste';
+                document.getElementById('alerta-chatwoot').innerText = "Modo de teste: Fora do Chatwoot (Account = 2)";
+                globalAccountId = '2';
+                document.getElementById('app-container').classList.remove('hidden');
+                carregarLista();
             }
-        }, 3000);
+        }, 2000);
 
 
-        // 2. Função para salvar os dados
+        // 2. Puxar Dados (Listar)
+        async function carregarLista() {
+            const tbody = document.getElementById('lista-profissionais');
+            tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-blue-500">⏳ Sincronizando...</td></tr>`;
+
+            try {
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error("Erro ao buscar dados");
+                
+                const dados = await res.json();
+                listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
+                
+                renderizarTabela();
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-4 text-center text-red-500">Erro ao carregar lista.</td></tr>`;
+            }
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('lista-profissionais');
+            tbody.innerHTML = '';
+
+            if (listaAtual.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-slate-400 font-medium">Nenhum profissional cadastrado.</td></tr>`;
+                return;
+            }
+
+            listaAtual.forEach(prof => {
+                // Se vier do seu workflow n8n, os dados podem estar dentro de .json
+                const p = prof.json ? prof.json : prof; 
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-medium text-slate-800">${p.nome || '-'}</td>
+                    <td class="px-4 py-3"><span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded font-medium">${p.especialidade || '-'}</span></td>
+                    <td class="px-4 py-3">${p.telefone || '-'}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="editarProfissional('${p.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors">
+                            Editar ✏️
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+
+        // 3. Ações de Editar e Salvar
+        function editarProfissional(id) {
+            // Busca o profissional na memória
+            const profObj = listaAtual.find(item => {
+                const p = item.json ? item.json : item;
+                return p.id == id;
+            });
+            
+            if (!profObj) return;
+            const p = profObj.json ? profObj.json : profObj;
+
+            // Preenche o form
+            document.getElementById('profissional_id').value = p.id;
+            document.getElementById('nome').value = p.nome || '';
+            document.getElementById('especialidade').value = p.especialidade || '';
+            document.getElementById('telefone').value = p.telefone || '';
+
+            // Muda o visual
+            document.getElementById('titulo-form').innerText = "Editando: " + p.nome;
+            document.getElementById('btnSalvar').innerText = "Atualizar Cadastro";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function limparFormulario() {
+            document.getElementById('formProfissional').reset();
+            document.getElementById('profissional_id').value = '';
+            document.getElementById('titulo-form').innerText = "Novo Profissional";
+            document.getElementById('btnSalvar').innerText = "Salvar";
+        }
+
         async function salvarProfissional() {
+            const id = document.getElementById('profissional_id').value; // Se vazio, é NOVO. Se tem ID, é EDIÇÃO.
             const nome = document.getElementById('nome').value.trim();
             const especialidade = document.getElementById('especialidade').value;
             const telefone = document.getElementById('telefone').value.trim();
             const btnSalvar = document.getElementById('btnSalvar');
 
-            if (!nome) {
-                alert("O campo Nome é obrigatório!");
-                document.getElementById('nome').focus();
-                return;
-            }
+            if (!nome) return alert("O campo Nome é obrigatório!");
 
-            if (!globalAccountId) {
-                alert("Erro: ID da conta não identificado.");
-                return;
-            }
-
-            // Alterar visual do botão enquanto carrega
-            btnSalvar.innerText = 'Salvando...';
+            btnSalvar.innerText = 'Processando...';
             btnSalvar.disabled = true;
-            btnSalvar.classList.add('opacity-70');
 
             const payload = {
+                action: id ? 'editar' : 'criar', // Avisa o n8n do que fazer
                 account_id: globalAccountId.toString(),
+                id: id,
                 nome: nome,
                 especialidade: especialidade,
                 telefone: telefone
             };
 
             try {
-                const response = await fetch(urlWebhookN8N, {
+                const response = await fetch(urlAcao, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    mostrarSucesso();
-                    limparFormulario();
+                    btnSalvar.innerText = 'Sucesso! ✓';
+                    btnSalvar.classList.replace('bg-blue-700', 'bg-emerald-600');
+                    
+                    setTimeout(() => {
+                        btnSalvar.classList.replace('bg-emerald-600', 'bg-blue-700');
+                        limparFormulario();
+                        carregarLista(); // Recarrega a tabela para mostrar as mudanças
+                        btnSalvar.disabled = false;
+                    }, 1500);
                 } else {
-                    throw new Error("Erro ao salvar no n8n");
+                    throw new Error("Erro na resposta do webhook");
                 }
             } catch (error) {
                 console.error(error);
-                alert("Ocorreu um erro ao tentar cadastrar o profissional.");
-            } finally {
-                btnSalvar.innerText = 'Salvar';
+                alert("Erro ao salvar. Verifique o n8n.");
+                btnSalvar.innerText = id ? 'Atualizar Cadastro' : 'Salvar';
                 btnSalvar.disabled = false;
-                btnSalvar.classList.remove('opacity-70');
             }
-        }
-
-        function limparFormulario() {
-            document.getElementById('formProfissional').reset();
-        }
-
-        function mostrarSucesso() {
-            const msg = document.getElementById('msgSucesso');
-            const form = document.getElementById('formProfissional');
-            msg.classList.remove('hidden');
-            form.classList.add('hidden');
-            
-            setTimeout(() => {
-                msg.classList.add('hidden');
-                form.classList.remove('hidden');
-            }, 3000);
         }
     </script>
 </body>

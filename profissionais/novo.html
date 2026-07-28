@@ -23,25 +23,20 @@
 
     <div id="app-container" class="max-w-4xl mx-auto space-y-6 hidden">
 
-        <!-- BLOCO 1: FORMULÁRIO -->
         <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
             <div class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
                 <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Profissional</h1>
                 
                 <div class="flex gap-2 md:gap-3">
-                    <!-- Botões de Ação Dinâmicos -->
                     <button type="button" id="btnExcluir" onclick="excluirProfissional()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded transition-colors">
                         🗑️ Excluir
                     </button>
-                    
                     <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white rounded transition-colors shadow-sm">
                         Desativar
                     </button>
-                    
                     <button type="button" onclick="limparFormulario()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors">
                         Cancelar
                     </button>
-                    
                     <button type="button" id="btnSalvar" onclick="salvarProfissional()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
                         Salvar
                     </button>
@@ -51,13 +46,11 @@
             <form id="formProfissional" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="hidden" id="profissional_id" value="">
 
-                <!-- NOME: Bloqueia números e auto-capitaliza -->
                 <div class="md:col-span-2">
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nome Completo <span class="text-blue-600">*</span></label>
                     <input type="text" id="nome" required class="input-field" placeholder="Ex: Joao Silva">
                 </div>
 
-                <!-- ESPECIALIDADE: Datalist (Aceita escolha da lista ou digitação livre) -->
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Especialidade</label>
                     <input list="lista-especialidades" id="especialidade" class="input-field" placeholder="Selecione ou digite nova...">
@@ -70,16 +63,14 @@
                     </datalist>
                 </div>
 
-                <!-- TELEFONE: Força formato 55859XXXXXXXX -->
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">WhatsApp <span class="text-blue-600">*</span></label>
                     <input type="text" id="telefone" required class="input-field" placeholder="5585900000000" maxlength="13">
-                    <span class="text-[10px] text-slate-400 mt-1 block">Apenas números. Formato obrigatório: 55859...</span>
+                    <span class="text-[10px] text-slate-400 mt-1 block">Apenas números. Comece com 55 + DDD. Ex: 55119...</span>
                 </div>
             </form>
         </div>
 
-        <!-- BLOCO 2: LISTA DE CADASTRADOS -->
         <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h2 class="text-md font-semibold text-slate-800">Profissionais Cadastrados</h2>
@@ -115,48 +106,32 @@
         let statusAtualEdicao = true;
 
         /* =========================================
-           NORMALIZAÇÃO E MÁSCARAS NO FORMULÁRIO
+           NORMALIZAÇÃO
            ========================================= */
         const inputNome = document.getElementById('nome');
         const inputTelefone = document.getElementById('telefone');
 
-        // Normalização do NOME
         inputNome.addEventListener('input', function() {
-            // Remove números e caracteres especiais (deixa letras, acentos e espaços)
             let val = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
-            
-            // Capitaliza a primeira letra de cada palavra
             val = val.replace(/\b\w/g, char => char.toUpperCase());
-            
             this.value = val;
         });
 
-        // Normalização do TELEFONE
+        // DDD Flexível
         inputTelefone.addEventListener('focus', function() {
-            // Se o campo estiver vazio ao clicar, já preenche a base
-            if (!this.value) {
-                this.value = '55859';
-            }
+            if (!this.value) this.value = '55';
         });
 
         inputTelefone.addEventListener('input', function() {
-            // Remove tudo que NÃO for número
             this.value = this.value.replace(/\D/g, '');
-            
-            // Força a começar com 55859 (caso o usuário tente apagar ou colar errado)
-            if (this.value.length >= 5 && !this.value.startsWith('55859')) {
-                this.value = '55859' + this.value.substring(5).replace(/\D/g, '');
+            if (this.value.length >= 2 && !this.value.startsWith('55')) {
+                this.value = '55' + this.value.substring(2).replace(/\D/g, '');
             }
-            
-            // Limita rigidamente a 13 dígitos
-            if (this.value.length > 13) {
-                this.value = this.value.substring(0, 13);
-            }
+            if (this.value.length > 13) this.value = this.value.substring(0, 13);
         });
 
-
         /* =========================================
-           COMUNICAÇÃO COM CHATWOOT
+           COMUNICAÇÃO
            ========================================= */
         window.addEventListener('message', function (event) {
             let eventData = {};
@@ -185,9 +160,8 @@
             }
         }, 2000);
 
-
         /* =========================================
-           LÓGICA DE DADOS (LISTAR, SALVAR, EXCLUIR)
+           LÓGICA DE DADOS
            ========================================= */
         async function carregarLista() {
             const tbody = document.getElementById('lista-profissionais');
@@ -209,10 +183,9 @@
             const tbody = document.getElementById('lista-profissionais');
             tbody.innerHTML = '';
 
-            // FILTRA no Frontend os que foram deletados logicamente (Soft Delete)
             const listaFiltrada = listaAtual.filter(item => {
                 const p = item.json ? item.json : item;
-                return p.deletado !== true; // Esconde da lista se deletado for true
+                return p.deletado !== true;
             });
 
             if (listaFiltrada.length === 0) {
@@ -250,7 +223,6 @@
                 const p = item.json ? item.json : item;
                 return p.id == id;
             });
-            
             if (!profObj) return;
             const p = profObj.json ? profObj.json : profObj;
 
@@ -259,11 +231,9 @@
             document.getElementById('especialidade').value = p.especialidade || '';
             document.getElementById('telefone').value = p.telefone || '';
 
-            // Botão de Status (Ativo/Inativo)
             statusAtualEdicao = p.ativo !== false;
             const btnStatus = document.getElementById('btnStatus');
             btnStatus.classList.remove('hidden', 'bg-slate-600', 'hover:bg-slate-700', 'bg-emerald-600', 'hover:bg-emerald-700');
-            
             if (statusAtualEdicao) {
                 btnStatus.innerText = "Desativar";
                 btnStatus.classList.add('bg-slate-600', 'hover:bg-slate-700');
@@ -272,9 +242,7 @@
                 btnStatus.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
             }
 
-            // Exibe botão Excluir
             document.getElementById('btnExcluir').classList.remove('hidden');
-
             document.getElementById('titulo-form').innerText = "Editando: " + p.nome;
             document.getElementById('btnSalvar').innerText = "Atualizar Cadastro";
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -303,10 +271,20 @@
 
                 if (response.ok) {
                     btnElement.innerText = txtSucesso;
+                    
+                    // CORREÇÃO: Removemos da memória local instantaneamente antes de recarregar a tela
+                    if (payload.action === 'deletar') {
+                        listaAtual = listaAtual.filter(item => {
+                            const p = item.json ? item.json : item;
+                            return p.id != payload.id;
+                        });
+                    }
+
                     setTimeout(() => {
                         btnElement.innerText = txtOriginal;
                         limparFormulario();
-                        carregarLista();
+                        renderizarTabela(); // Atualiza a tela imediatamente
+                        carregarLista();    // Atualiza em background
                         btnElement.disabled = false;
                     }, 1000);
                 } else {
@@ -331,7 +309,6 @@
         function excluirProfissional() {
             const id = document.getElementById('profissional_id').value;
             if (!id) return;
-            
             if (confirm("ATENÇÃO: Tem certeza que deseja apagar este profissional? Ele sumirá desta lista.")) {
                 const btnExcluir = document.getElementById('btnExcluir');
                 const payload = { action: 'deletar', account_id: globalAccountId.toString(), id: id };
@@ -348,9 +325,8 @@
 
             if (!nome) return alert("O campo Nome é obrigatório!");
             
-            // Validação estrita do telefone no envio
-            if (telefone.length !== 13 || !telefone.startsWith('55859')) {
-                alert("Telefone inválido! Formato obrigatório: 55859 seguido de 8 dígitos numéricos.");
+            if (telefone.length !== 13 || !telefone.startsWith('55')) {
+                alert("Telefone inválido! Deve começar com 55 e ter exatamente 13 números.");
                 document.getElementById('telefone').focus();
                 return;
             }

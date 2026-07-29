@@ -127,7 +127,11 @@
         }
 
         // SALVAR PRODUTO: Aqui montamos o JSONB poderoso!
+        // SALVAR PRODUTO NO BANCO DE DADOS
         async function salvarProduto() {
+            // (Opcional no futuro) Se tiver um campo de ID oculto para edição
+            const id = document.getElementById('produto_id') ? document.getElementById('produto_id').value : ''; 
+            
             const nome = document.getElementById('nome').value.trim();
             const descricao = document.getElementById('descricao').value.trim();
             const categoria = document.getElementById('categoria').value.trim();
@@ -136,14 +140,14 @@
             if (!nome) return alert("Preencha o nome do produto!");
 
             let precoBase = 0.00;
-            let metadata = {}; // <-- AQUI É O NOSSO JSONB
+            let metadata = {}; // O nosso JSONB
 
             if (tipo === 'simples') {
                 precoBase = parseFloat(document.getElementById('preco_base').value) || 0.00;
                 metadata = { tipo: 'simples' };
             } 
             else if (tipo === 'tamanhos') {
-                precoBase = 0.00; // Preço base é zero, quem manda é o tamanho
+                precoBase = 0.00; 
                 
                 const nomes = document.querySelectorAll('.input-tamanho-nome');
                 const precos = document.querySelectorAll('.input-tamanho-preco');
@@ -167,27 +171,54 @@
             }
 
             const btnSalvar = document.getElementById('btnSalvar');
+            const txtOriginal = btnSalvar.innerText;
             btnSalvar.innerText = 'Salvando...';
+            btnSalvar.disabled = true;
 
+            // Monta o pacote de dados
             const payload = {
-                action: 'criar',
-                account_id: globalAccountId,
+                action: id ? 'editar' : 'criar',
+                id: id,
+                account_id: globalAccountId.toString(),
                 nome: nome,
                 descricao: descricao,
                 categoria: categoria,
                 preco_base: precoBase,
-                metadata: metadata // O JSON inteiro vai para o Supabase!
+                metadata: metadata 
             };
 
-            console.log("Enviando para o n8n:", payload);
-
+            // Envia para o n8n
             try {
-                // Aqui você faz o fetch() para o seu webhook do n8n igual ao de profissionais
-                alert("Verifique o console do navegador! O JSON está pronto para ser gravado na coluna JSONB do Supabase.");
-                btnSalvar.innerText = 'Salvo ✓';
-                setTimeout(() => { btnSalvar.innerText = 'Salvar Produto'; }, 2000);
-            } catch (e) {
-                console.error(e);
+                const response = await fetch(urlAcao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    btnSalvar.innerText = 'Salvo! ✓';
+                    btnSalvar.classList.replace('bg-blue-700', 'bg-emerald-600');
+                    
+                    setTimeout(() => { 
+                        btnSalvar.classList.replace('bg-emerald-600', 'bg-blue-700');
+                        btnSalvar.innerText = txtOriginal; 
+                        btnSalvar.disabled = false;
+                        
+                        // Limpa o formulário após salvar
+                        document.getElementById('formProduto').reset();
+                        alternarCamposPreco(); // Reseta os campos que aparecem/somem
+                        
+                        // Se você já tiver criado a função carregarLista() para Produtos, descomente abaixo:
+                        // carregarLista(); 
+                    }, 1500);
+                } else {
+                    throw new Error("Erro na requisição n8n");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao salvar o produto no banco de dados.");
+                btnSalvar.innerText = txtOriginal;
+                btnSalvar.disabled = false;
             }
         }
     </script>

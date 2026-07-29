@@ -62,6 +62,13 @@
             <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas estruturadas.</p>
         </a>
 
+        <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
+        <a href="conhecimento/novo.html" id="mod-conhecimento" class="card-modulo hidden block bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
+            <div class="text-3xl mb-4">🧠</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras e informações gerais do seu negócio.</p>
+        </a>
+
     </main>
 
     <script>
@@ -141,6 +148,9 @@
                 document.getElementById('mod-produtos').classList.remove('hidden');
             }
 
+            if (config.modulos.conhecimento !== false) {
+                document.getElementById('mod-conhecimento').classList.remove('hidden');
+            }
             // Esconde o ícone de Loading e mostra a Grade
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');

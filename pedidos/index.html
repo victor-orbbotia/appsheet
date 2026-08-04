@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos — Kanban de Pagamento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: system-ui, sans-serif;
+        }
+
+        .kanban-col {
+            min-width: 272px;
+            max-width: 300px;
+            flex-shrink: 0;
+        }
+
+        .card-pedido {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .card-pedido:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        #toast {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #toast.hidden {
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+        }
+
+        ::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-5 min-h-screen flex flex-col gap-4">
+
+    <!-- Alerta Chatwoot -->
+    <div id="alerta-chatwoot"
+        class="bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm">
+        ⏳ Conectando ao painel Chatwoot...
+    </div>
+
+    <!-- Toast de feedback -->
+    <div id="toast"
+        class="hidden fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white">
+    </div>
+
+    <!-- App principal -->
+    <div id="app-container" class="hidden flex flex-col flex-1 gap-4">
+
+        <!-- Cabeçalho -->
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3">
+                <a href="../index.html"
+                    class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Voltar ao Menu
+                </a>
+                <span class="text-slate-300">|</span>
+                <h1 class="text-base font-bold text-slate-800">📦 Pedidos — Validação PIX</h1>
+            </div>
+            <button id="btnAtualizar" onclick="carregarPedidos()"
+                class="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+                Atualizar
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div id="area-loading" class="flex flex-col items-center justify-center py-20 gap-3">
+            <svg class="animate-spin h-7 w-7 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            <p class="text-sm text-slate-400 font-medium">Carregando pedidos...</p>
+        </div>
+
+        <!-- Kanban Board -->
+        <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
+
+            <!-- Coluna: Aguardando PIX -->
+            <div class="kanban-col flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🕐 Aguardando PIX</h2>
+                    </div>
+                    <span id="count-aguardando_pix"
+                        class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
+                </div>
+                <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
+            <!-- Coluna: Comprovante Enviado -->
+            <div class="kanban-col flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Comprovante Enviado</h2>
+                    </div>
+                    <span id="count-comprovante_enviado"
+                        class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
+                </div>
+                <div id="col-comprovante_enviado" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
+            <!-- Coluna: Confirmado -->
+            <div class="kanban-col flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">✅ Confirmado</h2>
+                    </div>
+                    <span id="count-confirmado"
+                        class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
+                </div>
+                <div id="col-confirmado" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
+            <!-- Coluna: Cancelado -->
+            <div class="kanban-col flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado</h2>
+                    </div>
+                    <span id="count-cancelado"
+                        class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
+                </div>
+                <div id="col-cancelado" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const urlDados = 'https://n8n.orbbotia.com/webhook/pedidos-dados';
+        const urlAcao = 'https://n8n.orbbotia.com/webhook/pedidos-acao';
+
+        let globalAccountId = null;
+        let handshakeInterval;
+        let listaPedidos = [];
+
+        // Configuração do fluxo de status do Kanban
+        const STATUS_CONFIG = {
+            aguardando_pix: {
+                label: 'Aguardando PIX',
+                proximo: 'comprovante_enviado',
+                btnProximoLabel: 'Comprovante Recebido ✓',
+                btnProximoCor: 'bg-blue-600 hover:bg-blue-700',
+                podeCancel: true
+            },
+            comprovante_enviado: {
+                label: 'Comprovante Enviado',
+                anterior: 'aguardando_pix',
+                btnAnteriorLabel: '← Reenviar PIX',
+                btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600',
+                proximo: 'confirmado',
+                btnProximoLabel: 'Aprovar Pagamento ✅',
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
+                podeCancel: true
+            },
+            confirmado: {
+                label: 'Confirmado',
+                podeCancel: false
+            },
+            cancelado: {
+                label: 'Cancelado',
+                podeCancel: false
+            }
+        };
+
+        /* =============================================
+           COMUNICAÇÃO COM CHATWOOT
+        ============================================= */
+        window.addEventListener('message', function (event) {
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                const payload = eventData.data;
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
+                iniciarApp();
+            }
+        });
+
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+        }, 500);
+
+        // Fallback local
+        setTimeout(() => {
+            if (!globalAccountId) {
+                document.getElementById('alerta-chatwoot').innerText = 'Modo de teste (account_id = 2)';
+                globalAccountId = '2';
+                iniciarApp();
+            }
+        }, 2000);
+
+        function iniciarApp() {
+            document.getElementById('alerta-chatwoot').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            carregarPedidos();
+        }
+
+        /* =============================================
+           CARREGAR DADOS
+        ============================================= */
+        async function carregarPedidos() {
+            document.getElementById('area-loading').classList.remove('hidden');
+            document.getElementById('kanban-board').classList.add('hidden');
+
+            try {
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error('Erro ao buscar pedidos');
+                const dados = await res.json();
+                listaPedidos = Array.isArray(dados) ? dados : (dados.data || []);
+                renderizarKanban();
+            } catch (error) {
+                console.error(error);
+                document.getElementById('area-loading').innerHTML = `
+                    <div class="text-center space-y-2">
+                        <p class="text-sm text-rose-500 font-medium">⚠️ Não foi possível carregar os pedidos.</p>
+                        <button onclick="carregarPedidos()" class="text-xs text-indigo-600 underline">Tentar novamente</button>
+                    </div>
+                `;
+            }
+        }
+
+        /* =============================================
+           RENDERIZAR KANBAN
+        ============================================= */
+        function renderizarKanban() {
+            const colunas = ['aguardando_pix', 'comprovante_enviado', 'confirmado', 'cancelado'];
+
+            // Limpa todas as colunas e zera contadores
+            colunas.forEach(s => {
+                document.getElementById(`col-${s}`).innerHTML = '';
+                document.getElementById(`count-${s}`).textContent = '0';
+            });
+
+            const pedidosAtivos = listaPedidos.filter(item => {
+                const p = item.json ? item.json : item;
+                return p.deletado !== true;
+            });
+
+            const contagens = Object.fromEntries(colunas.map(s => [s, 0]));
+
+            pedidosAtivos.forEach(pedidoRaw => {
+                const p = pedidoRaw.json ? pedidoRaw.json : pedidoRaw;
+                const status = p.status || 'aguardando_pix';
+                const coluna = document.getElementById(`col-${status}`);
+                if (!coluna) return;
+
+                contagens[status] = (contagens[status] || 0) + 1;
+                coluna.appendChild(criarCard(p));
+            });
+
+            // Atualiza contadores
+            Object.entries(contagens).forEach(([status, total]) => {
+                document.getElementById(`count-${status}`).textContent = total;
+            });
+
+            // Exibe estado vazio nas colunas sem cards
+            colunas.forEach(status => {
+                if (contagens[status] === 0) {
+                    document.getElementById(`col-${status}`).innerHTML = `
+                        <div class="flex items-center justify-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-300 text-xs font-medium">
+                            Nenhum pedido
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('area-loading').classList.add('hidden');
+            document.getElementById('kanban-board').classList.remove('hidden');
+        }
+
+        function criarCard(p) {
+            const config = STATUS_CONFIG[p.status] || {};
+            const valor = parseFloat(p.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const dataStr = p.created_at
+                ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+                : '';
+
+            // Itens resumidos como chips
+            let itensHtml = '';
+            if (Array.isArray(p.itens) && p.itens.length > 0) {
+                itensHtml = `<div class="flex flex-wrap gap-1">
+                    ${p.itens.map(i =>
+                    `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
+                            ${i.quantidade || 1}× ${i.nome}
+                        </span>`
+                ).join('')}
+                </div>`;
+            }
+
+            // Botões de ação
+            let botoesHtml = '';
+            if (config.anterior) {
+                botoesHtml += `<button
+                    onclick="moverStatus('${p.id}', '${config.anterior}', this)"
+                    class="text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnAnteriorCor} transition-colors disabled:opacity-50">
+                    ${config.btnAnteriorLabel}
+                </button>`;
+            }
+            if (config.proximo) {
+                botoesHtml += `<button
+                    onclick="moverStatus('${p.id}', '${config.proximo}', this)"
+                    class="text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">
+                    ${config.btnProximoLabel}
+                </button>`;
+            }
+            if (config.podeCancel) {
+                botoesHtml += `<button
+                    onclick="cancelarPedido('${p.id}', this)"
+                    class="text-[10px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-2.5 py-1.5 rounded-md transition-colors disabled:opacity-50">
+                    Cancelar ✕
+                </button>`;
+            }
+
+            const card = document.createElement('div');
+            card.id = `card-${p.id}`;
+            card.className = 'card-pedido bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm space-y-2.5';
+            card.innerHTML = `
+                <!-- Cliente + Valor -->
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800 leading-snug">${p.cliente_nome || 'Cliente'}</p>
+                        <a href="https://wa.me/${p.cliente_telefone}" target="_blank"
+                            class="text-[10px] text-indigo-500 hover:underline font-mono">${p.cliente_telefone || ''}</a>
+                    </div>
+                    <span class="text-sm font-extrabold text-emerald-700 whitespace-nowrap shrink-0">${valor}</span>
+                </div>
+
+                <!-- Itens -->
+                ${itensHtml}
+
+                <!-- Endereço -->
+                ${p.endereco_entrega ? `<p class="text-[10px] text-slate-500 flex items-start gap-1"><span>📍</span><span>${p.endereco_entrega}</span></p>` : ''}
+
+                <!-- Observações -->
+                ${p.observacoes ? `<p class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">⚠️ ${p.observacoes}</p>` : ''}
+
+                <!-- Ações -->
+                ${botoesHtml ? `<div class="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">${botoesHtml}</div>` : ''}
+
+                <!-- Data -->
+                ${dataStr ? `<p class="text-[9px] text-slate-300 text-right">${dataStr}</p>` : ''}
+            `;
+
+            return card;
+        }
+
+        /* =============================================
+           AÇÕES
+        ============================================= */
+        async function moverStatus(id, novoStatus, btn) {
+            const payload = {
+                action: 'status',
+                account_id: globalAccountId.toString(),
+                id: id,
+                status: novoStatus
+            };
+
+            await enviarAcao(payload, btn, () => {
+                // Atualização otimista em memória
+                atualizarStatusLocal(id, novoStatus);
+                renderizarKanban();
+                mostrarToast(`Movido: ${STATUS_CONFIG[novoStatus]?.label || novoStatus}`, 'success');
+            });
+        }
+
+        async function cancelarPedido(id, btn) {
+            if (!confirm('Confirmar cancelamento do pedido?')) return;
+            const payload = {
+                action: 'status',
+                account_id: globalAccountId.toString(),
+                id: id,
+                status: 'cancelado'
+            };
+
+            await enviarAcao(payload, btn, () => {
+                atualizarStatusLocal(id, 'cancelado');
+                renderizarKanban();
+                mostrarToast('Pedido cancelado', 'error');
+            });
+        }
+
+        function atualizarStatusLocal(id, novoStatus) {
+            const item = listaPedidos.find(i => (i.json ? i.json : i).id === id);
+            if (item) {
+                const p = item.json ? item.json : item;
+                p.status = novoStatus;
+            }
+        }
+
+        async function enviarAcao(payload, btn, onSuccess) {
+            const htmlOriginal = btn.innerHTML;
+            btn.innerHTML = '⏳';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(urlAcao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    onSuccess();
+                } else {
+                    throw new Error('Falha no servidor');
+                }
+            } catch (error) {
+                console.error(error);
+                mostrarToast('Erro ao comunicar com o servidor', 'error');
+                btn.innerHTML = htmlOriginal;
+                btn.disabled = false;
+            }
+        }
+
+        /* =============================================
+           TOAST
+        ============================================= */
+        function mostrarToast(msg, tipo) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${tipo === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+    </script>
+
+</body>
+
+</html>

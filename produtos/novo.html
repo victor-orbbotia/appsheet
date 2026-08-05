@@ -54,7 +54,10 @@
         <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
             <div
                 class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
-                <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Produto</h1>
+                                <div class="flex items-center gap-2">
+                    <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Produto</h1>
+                    <button id="btnToggleFormProduto" onclick="toggleSection('form-produto-wrapper', this)" class="text-xs text-slate-500 hover:text-blue-600 font-medium mr-2">▾</button>
+                </div>
 
                 <div class="flex gap-2 md:gap-3">
                     <button type="button" id="btnExcluir" onclick="excluirProduto()"
@@ -76,7 +79,7 @@
                 </div>
             </div>
 
-            <form id="formProduto" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="form-produto-wrapper"><form id="formProduto" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="hidden" id="produto_id" value="">
 
                 <div class="md:col-span-2">
@@ -129,6 +132,7 @@
                     </button>
                 </div>
             </form>
+            </div>
         </div>
 
         <!-- BLOCO 2: LISTA DE PRODUTOS -->

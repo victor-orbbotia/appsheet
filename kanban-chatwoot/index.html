@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kanban Orbbotia Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.css">
@@ -20,7 +20,7 @@
             flex-direction: column; 
             height: 100% !important; 
             margin-right: 0; 
-            border: 1px solid transparent; /* Será colorida dinamicamente pelo JS */
+            border: 1px solid transparent;
             transition: all 0.3s ease;
         }
         .kanban-board-header { 
@@ -32,19 +32,54 @@
         }
         .kanban-drag { flex-grow: 1; overflow-y: auto; padding: 12px; min-height: 100px; }
         
-        .kanban-item { background: #ffffff; border-radius: 10px; padding: 0; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; transition: all 0.2s ease; }
+        /* Melhorias de Toque (Touch/Mobile) para Drag & Drop */
+        .kanban-item { 
+            background: #ffffff; 
+            border-radius: 10px; 
+            padding: 0; 
+            margin-bottom: 12px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); 
+            border: 1px solid #e2e8f0; 
+            transition: all 0.2s ease;
+            cursor: grab;
+            /* Regras cruciais para o mobile não confundir rolagem com arraste */
+            touch-action: pan-y;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .kanban-item:active { cursor: grabbing; }
         .kanban-item:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); border-color: #cbd5e1; }
         
         .card-bloqueado { pointer-events: none !important; opacity: 0.6; }
         #loading-overlay { display: none; position: absolute; inset: 0; background: rgba(241, 245, 249, 0.7); backdrop-filter: blur(2px); z-index: 50; justify-content: center; align-items: center; border-radius: 12px; }
+
+        /* Responsividade para Celulares */
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            .kanban-board { 
+                min-width: 85vw; /* Ocupa 85% da tela no mobile */
+                max-width: 85vw; 
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div id="barra-filtros" class="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-4 shadow-sm" style="display: none;">
+    <div id="barra-filtros" class="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-col md:flex-row md:items-center gap-4 shadow-sm" style="display: none;">
+        
+        <!-- Grupo de Ações: Voltar e Limpar (Mobile) -->
+        <div class="flex items-center justify-between md:justify-start w-full md:w-auto border-b md:border-b-0 md:border-r border-slate-100 pb-3 md:pb-0 md:pr-4">
+            <button onclick="fecharKanban()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Voltar
+            </button>
+            <button onclick="limparFiltros()" class="md:hidden text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">Limpar Filtros</button>
+        </div>
+
         <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Prioridade:</label>
-            <select id="filtro-prioridade" onchange="aplicarFiltros()" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Prioridade:</label>
+            <select id="filtro-prioridade" onchange="aplicarFiltros()" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500 w-full md:w-auto">
                 <option value="todos">Todas</option>
                 <option value="urgent">🔴 Urgente</option>
                 <option value="high">🟠 Alta</option>
@@ -55,13 +90,13 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Etiqueta:</label>
-            <select id="filtro-etiqueta" onchange="aplicarFiltros()" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500 max-w-[200px]">
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Etiqueta:</label>
+            <select id="filtro-etiqueta" onchange="aplicarFiltros()" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500 w-full md:w-[200px]">
                 <option value="todos">Todas</option>
             </select>
         </div>
         
-        <button onclick="limparFiltros()" class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-auto">Limpar Filtros</button>
+        <button onclick="limparFiltros()" class="hidden md:block text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-auto">Limpar Filtros</button>
     </div>
 
     <div id='loading' class="text-slate-500 font-medium p-4 flex items-center gap-2">
@@ -83,13 +118,13 @@
     <script>
         const urlDados = 'https://n8n.orbbotia.com/webhook/kanban-dados';
         const urlAcao = 'https://n8n.orbbotia.com/webhook/kanban-acao';
-        const urlColunas = 'https://n8n.orbbotia.com/webhook/kanban-colunas'; // Novo endpoint n8n
+        const urlColunas = 'https://n8n.orbbotia.com/webhook/kanban-colunas'; 
 
         let handshakeInterval, realtimeInterval, conectado = false;
         let globalAccountId, globalConversationId, globalAgentId, globalAgentRole;
         
         let dadosLocaisOriginais = []; 
-        let colunasConfiguradas = []; // Substitui a constante hardcoded
+        let colunasConfiguradas = []; 
         let cartoesExpandidos = new Set(); 
 
         window.addEventListener('message', function (event) {
@@ -147,7 +182,6 @@
             if (globalAgentRole === 'agent' && globalAgentId) urlDadosFinal += `&agent_id=${globalAgentId}`;
 
             try {
-                // Buscando colunas dinâmicas e dados ao mesmo tempo
                 const [resColunas, resDados] = await Promise.all([
                     fetch(`${urlColunas}?account_id=${globalAccountId}`),
                     fetch(urlDadosFinal)
@@ -156,8 +190,6 @@
                 if (!resColunas.ok || !resDados.ok) throw new Error("Erro HTTP");
 
                 const resColunasJSON = await resColunas.json();
-                
-                // Tratamento para garantir a leitura independente de vir Objeto ou Array puro do n8n
                 colunasConfiguradas = resColunasJSON.colunas ? resColunasJSON.colunas : (Array.isArray(resColunasJSON) ? resColunasJSON : []);
 
                 const dadosBrutos = await resDados.json();
@@ -170,6 +202,18 @@
 
             } catch (erro) {
                 console.error("Falha ao sincronizar com n8n/Chatwoot:", erro);
+            }
+        }
+
+        function fecharKanban() {
+            // Tenta navegar de volta no histórico do iframe
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                // Fallback: Redireciona a janela pai para a dashboard principal
+                if (globalAccountId) {
+                    window.top.location.href = `https://chat.orbbotia.com/app/accounts/${globalAccountId}/dashboard`;
+                }
             }
         }
 
@@ -230,17 +274,15 @@
                 scrollY[col.parentElement.dataset.id] = col.scrollTop;
             });
 
-            // Cores pastel rotativas para as colunas dinâmicas
             const paletaCores = [
-                { bg: '#eff6ff', border: '#bfdbfe' }, // Azul (Triagem original)
-                { bg: '#fffbeb', border: '#fde68a' }, // Amarelo (Agendamento original)
-                { bg: '#fdf2f8', border: '#fbcfe8' }, // Rosa (Faturamento original)
-                { bg: '#f0fdf4', border: '#bbf7d0' }, // Verde (Concluído original)
-                { bg: '#faf5ff', border: '#e9d5ff' }, // Roxo 
-                { bg: '#f0fdfa', border: '#99f6e4' }  // Teal
+                { bg: '#eff6ff', border: '#bfdbfe' }, 
+                { bg: '#fffbeb', border: '#fde68a' }, 
+                { bg: '#fdf2f8', border: '#fbcfe8' }, 
+                { bg: '#f0fdf4', border: '#bbf7d0' }, 
+                { bg: '#faf5ff', border: '#e9d5ff' }, 
+                { bg: '#f0fdfa', border: '#99f6e4' }  
             ];
 
-            // Cria o formato aceito pelo jKanban usando as colunas dinâmicas
             let painelBoards = colunasConfiguradas.map(colName => ({
                 id: colName,
                 title: colName,
@@ -283,7 +325,7 @@
                             
                             <div class="flex items-start gap-3 mb-2">
                                 <div class="w-10 h-10 min-w-[40px] rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold uppercase overflow-hidden shadow-sm mt-1">
-                                    ${temFoto ? `<img src="${cartao.avatar_url}" class="w-full h-full object-cover">` : primeiraLetra}
+                                    ${temFoto ? `<img src="${cartao.avatar_url}" class="w-full h-full object-cover pointer-events-none">` : primeiraLetra}
                                 </div>
                                 <div class="overflow-hidden flex-grow">
                                     <h4 class="font-bold text-sm truncate text-slate-800 leading-tight">${cartao.cliente_nome || 'Sem Nome'}</h4>
@@ -348,7 +390,6 @@
                 }
             });
 
-            // Atualiza os títulos das colunas com as contagens
             painelBoards.forEach(c => {
                 const qtd = contadores[c.id] || 0;
                 c.title = `${c.id} <span class="bg-indigo-100/80 text-indigo-700 text-[10px] ml-1 px-2 py-0.5 rounded-full font-extrabold">${qtd}</span>`;
@@ -356,7 +397,6 @@
 
             document.getElementById('meuKanban').innerHTML = '';
 
-            // Inicializa o jKanban
             new jKanban({
                 element: '#meuKanban',
                 boards: painelBoards,
@@ -379,14 +419,12 @@
                 }
             });
 
-            // Aplica as cores da paleta rotativa em cada coluna renderizada
             document.querySelectorAll('.kanban-board').forEach((board, index) => {
                 const cor = paletaCores[index % paletaCores.length]; 
                 board.style.backgroundColor = cor.bg;
                 board.style.borderColor = cor.border;
             });
 
-            // Aplica a Memória de Scroll
             const novoContainer = document.querySelector('.kanban-container');
             if (novoContainer) novoContainer.scrollLeft = scrollX;
             document.querySelectorAll('.kanban-drag').forEach(col => {
@@ -402,7 +440,20 @@
                 link.addEventListener('click', function(e) {
                     e.preventDefault(); e.stopPropagation();
                     const idConversa = this.getAttribute('data-convid');
-                    if (idConversa) window.parent.location.href = `https://chat.orbbotia.com/app/accounts/${globalAccountId}/conversations/${idConversa}`;
+                    if (idConversa) {
+                        const urlDestino = `/app/accounts/${globalAccountId}/conversations/${idConversa}`;
+                        
+                        // 1. Tenta acionar a comunicação nativa do app mobile via postMessage
+                        window.parent.postMessage({
+                            event: "appContext",
+                            data: { url: urlDestino }
+                        }, "*");
+
+                        // 2. Fallback: Força o navegador a sair do Iframe e ir para o link
+                        setTimeout(() => {
+                            window.top.location.href = `https://chat.orbbotia.com${urlDestino}`;
+                        }, 250);
+                    }
                 });
             });
 
@@ -426,6 +477,7 @@
             document.querySelectorAll('.input-nota, .input-edit').forEach(txt => {
                 txt.addEventListener('focus', (e) => e.stopPropagation());
                 txt.addEventListener('mousedown', (e) => e.stopPropagation());
+                txt.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: true}); // Evita arrastar ao tocar no campo
             });
 
             document.querySelectorAll('.btn-salvar-nota').forEach(btn => {

@@ -1,85 +1,175 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kanban Orbbotia Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funil Kanban — Orbbotia Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.css">
     <style>
-        body { background-color: #f1f5f9; margin: 0; padding: 16px; font-family: system-ui, sans-serif; display: flex; flex-direction: column; height: 100vh; }
-        #meuKanban { display: flex; flex-grow: 1; align-items: stretch; overflow: hidden; position: relative; }
-        .kanban-container { display: flex; overflow-x: auto; width: 100%; gap: 16px; padding-bottom: 8px; height: 100%; }
-        
-        /* Colunas Genéricas para qualquer etapa */
-        .kanban-board { 
-            min-width: 290px; 
-            max-width: 290px; 
-            border-radius: 12px; 
-            display: flex; 
-            flex-direction: column; 
-            height: 100% !important; 
-            margin-right: 0; 
+        body {
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 16px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        #meuKanban {
+            display: flex;
+            flex-grow: 1;
+            align-items: stretch;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .kanban-container {
+            display: flex;
+            overflow-x: auto;
+            width: 100%;
+            gap: 16px;
+            padding-bottom: 12px;
+            height: 100%;
+            scroll-snap-type: x mandatory;
+        }
+
+        /* Colunas Genéricas Responsivas */
+        .kanban-board {
+            min-width: 280px;
+            max-width: 310px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            height: 100% !important;
+            margin-right: 0;
             border: 1px solid transparent;
             transition: all 0.3s ease;
+            scroll-snap-align: start;
+            flex-shrink: 0;
         }
-        .kanban-board-header { 
-            font-weight: 700; 
-            font-size: 0.95rem; 
-            color: #1e293b; 
-            padding: 14px; 
-            border-bottom: 1px solid rgba(0,0,0,0.03); 
-        }
-        .kanban-drag { flex-grow: 1; overflow-y: auto; padding: 12px; min-height: 100px; }
-        
-        /* Melhorias de Toque (Touch/Mobile) para Drag & Drop */
-        .kanban-item { 
-            background: #ffffff; 
-            border-radius: 10px; 
-            padding: 0; 
-            margin-bottom: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); 
-            border: 1px solid #e2e8f0; 
-            transition: all 0.2s ease;
-            cursor: grab;
-            /* Regras cruciais para o mobile não confundir rolagem com arraste */
-            touch-action: pan-y;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .kanban-item:active { cursor: grabbing; }
-        .kanban-item:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); border-color: #cbd5e1; }
-        
-        .card-bloqueado { pointer-events: none !important; opacity: 0.6; }
-        #loading-overlay { display: none; position: absolute; inset: 0; background: rgba(241, 245, 249, 0.7); backdrop-filter: blur(2px); z-index: 50; justify-content: center; align-items: center; border-radius: 12px; }
 
-        /* Responsividade para Celulares */
-        @media (max-width: 768px) {
-            body { padding: 8px; }
-            .kanban-board { 
-                min-width: 85vw; /* Ocupa 85% da tela no mobile */
-                max-width: 85vw; 
-            }
+        .kanban-board-header {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #1e293b;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .kanban-drag {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 12px;
+            min-height: 120px;
+        }
+
+        .kanban-item {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 0;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        .kanban-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.08);
+            border-color: #cbd5e1;
+        }
+
+        .card-bloqueado {
+            pointer-events: none !important;
+            opacity: 0.6;
+        }
+
+        #loading-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(248, 250, 252, 0.75);
+            backdrop-filter: blur(2px);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+        }
+
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
+
 <body>
 
-    <div id="barra-filtros" class="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-col md:flex-row md:items-center gap-4 shadow-sm" style="display: none;">
-        
-        <!-- Grupo de Ações: Voltar e Limpar (Mobile) -->
-        <div class="flex items-center justify-between md:justify-start w-full md:w-auto border-b md:border-b-0 md:border-r border-slate-100 pb-3 md:pb-0 md:pr-4">
-            <button onclick="fecharKanban()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                Voltar
-            </button>
-            <button onclick="limparFiltros()" class="md:hidden text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">Limpar Filtros</button>
+    <!-- CABEÇALHO & BOTÃO VOLTAR -->
+    <header
+        class="mb-3 flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" id="btn-voltar"
+                class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Voltar ao Menu
+            </a>
+            <span class="text-slate-300">|</span>
+            <div class="flex items-center gap-2">
+                <span class="text-lg">📊</span>
+                <h1 class="text-sm font-bold text-slate-800">Funil Kanban <span
+                        class="text-indigo-600 font-medium text-xs">Orbbotia Pro</span></h1>
+            </div>
         </div>
 
         <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Prioridade:</label>
-            <select id="filtro-prioridade" onchange="aplicarFiltros()" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500 w-full md:w-auto">
+            <button onclick="carregarTudo()"
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 rounded-lg px-2.5 py-1.5 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+                Sincronizar
+            </button>
+        </div>
+    </header>
+
+    <!-- ALERTA STATUS CONEXÃO CHATWOOT -->
+    <div id="alerta-chatwoot"
+        class="bg-amber-50 text-amber-700 text-xs p-2.5 rounded-lg border border-amber-200 mb-3 flex items-center justify-between shadow-sm">
+        <span id="msg-alerta">⏳ Conectando ao painel Chatwoot...</span>
+        <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded uppercase">PostMessage</span>
+    </div>
+
+    <!-- BARRA DE FILTROS -->
+    <div id="barra-filtros"
+        class="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-3 shadow-sm hidden">
+        <div class="flex items-center gap-2">
+            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Prioridade:</label>
+            <select id="filtro-prioridade" onchange="aplicarFiltros()"
+                class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500">
                 <option value="todos">Todas</option>
                 <option value="urgent">🔴 Urgente</option>
                 <option value="high">🟠 Alta</option>
@@ -90,43 +180,64 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Etiqueta:</label>
-            <select id="filtro-etiqueta" onchange="aplicarFiltros()" class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500 w-full md:w-[200px]">
+            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Etiqueta:</label>
+            <select id="filtro-etiqueta" onchange="aplicarFiltros()"
+                class="bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 py-1.5 px-2.5 outline-none focus:border-indigo-500 max-w-[180px]">
                 <option value="todos">Todas</option>
             </select>
         </div>
-        
-        <button onclick="limparFiltros()" class="hidden md:block text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-auto">Limpar Filtros</button>
+
+        <button onclick="limparFiltros()"
+            class="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors ml-auto">
+            Limpar Filtros ✕
+        </button>
     </div>
 
-    <div id='loading' class="text-slate-500 font-medium p-4 flex items-center gap-2">
-        <svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        <span>Sincronizando Funil com o Chatwoot...</span>
+    <!-- CARREGAMENTO INICIAL -->
+    <div id="loading" class="text-slate-500 font-medium p-6 flex flex-col items-center justify-center gap-3">
+        <svg class="animate-spin h-7 w-7 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+        </svg>
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Sincronizando Funil com o
+            Chatwoot...</span>
     </div>
-    
-    <div class="relative flex-grow">
+
+    <!-- CONTAINER KANBAN BOARD -->
+    <div class="relative flex-grow flex flex-col">
         <div id="loading-overlay">
-            <div class="bg-white p-3 rounded-lg shadow-lg flex items-center gap-3 text-sm font-bold text-slate-600">
-                <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <div
+                class="bg-white px-4 py-3 rounded-xl shadow-lg border border-slate-200 flex items-center gap-3 text-xs font-bold text-slate-700">
+                <svg class="animate-spin h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
                 Processando...
             </div>
         </div>
-        <div id='meuKanban' class="kanban-container" style='display: none;'></div>
+        <div id="meuKanban" class="kanban-container hidden"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jkanban@1.3.1/dist/jkanban.min.js"></script>
     <script>
         const urlDados = 'https://n8n.orbbotia.com/webhook/kanban-dados';
         const urlAcao = 'https://n8n.orbbotia.com/webhook/kanban-acao';
-        const urlColunas = 'https://n8n.orbbotia.com/webhook/kanban-colunas'; 
+        const urlColunas = 'https://n8n.orbbotia.com/webhook/kanban-colunas';
 
         let handshakeInterval, realtimeInterval, conectado = false;
-        let globalAccountId, globalConversationId, globalAgentId, globalAgentRole;
-        
-        let dadosLocaisOriginais = []; 
-        let colunasConfiguradas = []; 
-        let cartoesExpandidos = new Set(); 
+        let globalAccountId = null, globalConversationId = null, globalAgentId = null, globalAgentRole = 'agent';
 
+        let dadosLocaisOriginais = [];
+        let colunasConfiguradas = ["Triagem", "Agendamento", "Faturamento", "Concluído"];
+        let cartoesExpandidos = new Set();
+
+        // 1. CHATWOOT HANDSHAKE
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -142,29 +253,44 @@
                 globalAgentRole = payload.current_agent ? payload.current_agent.role : 'agent';
 
                 if (globalAccountId) {
-                    document.getElementById('barra-filtros').style.display = 'flex';
-                    document.getElementById('meuKanban').style.display = 'flex';
-                    
-                    carregarTudo();
-                    
-                    clearInterval(realtimeInterval);
-                    realtimeInterval = setInterval(carregarTudo, 12000);
-
-                    document.addEventListener('visibilitychange', function() {
-                        if (document.hidden) {
-                            clearInterval(realtimeInterval);
-                        } else {
-                            carregarTudo();
-                            realtimeInterval = setInterval(carregarTudo, 12000);
-                        }
-                    });
+                    document.getElementById('alerta-chatwoot').classList.add('hidden');
+                    iniciarKanban();
                 }
             }
         });
 
-        handshakeInterval = setInterval(function() {
+        handshakeInterval = setInterval(function () {
             if (!conectado) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
+
+        // FALLBACK LOCAL / FORA DO IFRAME CHATWOOT
+        setTimeout(() => {
+            if (!conectado && !globalAccountId) {
+                globalAccountId = '3';
+                const msgAlerta = document.getElementById('msg-alerta');
+                if (msgAlerta) msgAlerta.innerText = "Modo de Teste Local (Account ID = 3)";
+                iniciarKanban();
+            }
+        }, 2000);
+
+        function iniciarKanban() {
+            document.getElementById('barra-filtros').classList.remove('hidden');
+            document.getElementById('meuKanban').classList.remove('hidden');
+
+            carregarTudo();
+
+            clearInterval(realtimeInterval);
+            realtimeInterval = setInterval(carregarTudo, 12000);
+
+            document.addEventListener('visibilitychange', function () {
+                if (document.hidden) {
+                    clearInterval(realtimeInterval);
+                } else {
+                    carregarTudo();
+                    realtimeInterval = setInterval(carregarTudo, 12000);
+                }
+            });
+        }
 
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -174,6 +300,7 @@
             }, 300);
         });
 
+        // 2. BUSCA DE DADOS & COLUNAS
         async function carregarTudo() {
             if (document.querySelector('.card-bloqueado')) return;
             if (document.activeElement && (document.activeElement.classList.contains('input-nota') || document.activeElement.classList.contains('input-edit'))) return;
@@ -183,37 +310,29 @@
 
             try {
                 const [resColunas, resDados] = await Promise.all([
-                    fetch(`${urlColunas}?account_id=${globalAccountId}`),
+                    fetch(`${urlColunas}?account_id=${globalAccountId}`).catch(() => null),
                     fetch(urlDadosFinal)
                 ]);
 
-                if (!resColunas.ok || !resDados.ok) throw new Error("Erro HTTP");
+                if (resColunas && resColunas.ok) {
+                    const resColunasJSON = await resColunas.json();
+                    const listaExtraida = resColunasJSON.colunas ? resColunasJSON.colunas : (Array.isArray(resColunasJSON) ? resColunasJSON : []);
+                    if (listaExtraida.length > 0) colunasConfiguradas = listaExtraida;
+                }
 
-                const resColunasJSON = await resColunas.json();
-                colunasConfiguradas = resColunasJSON.colunas ? resColunasJSON.colunas : (Array.isArray(resColunasJSON) ? resColunasJSON : []);
+                if (!resDados.ok) throw new Error("Erro HTTP ao buscar cards");
 
                 const dadosBrutos = await resDados.json();
-
                 document.getElementById('loading').style.display = 'none';
+
                 dadosLocaisOriginais = Array.isArray(dadosBrutos) ? dadosBrutos : (dadosBrutos.data || []);
-                
+
                 atualizarListaDeEtiquetasNoSeletor();
                 aplicarFiltrosSilencioso();
 
             } catch (erro) {
                 console.error("Falha ao sincronizar com n8n/Chatwoot:", erro);
-            }
-        }
-
-        function fecharKanban() {
-            // Tenta navegar de volta no histórico do iframe
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                // Fallback: Redireciona a janela pai para a dashboard principal
-                if (globalAccountId) {
-                    window.top.location.href = `https://chat.orbbotia.com/app/accounts/${globalAccountId}/dashboard`;
-                }
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
@@ -221,7 +340,7 @@
             const seletor = document.getElementById('filtro-etiqueta');
             const valorSelecionadoAntes = seletor.value;
             let todasEtiquetas = new Set();
-            
+
             dadosLocaisOriginais.forEach(item => {
                 const c = item.json ? item.json : item;
                 if (Array.isArray(c.etiquetas)) c.etiquetas.forEach(tag => {
@@ -244,7 +363,7 @@
             setTimeout(() => {
                 aplicarFiltrosSilencioso();
                 document.getElementById('loading-overlay').style.display = 'none';
-            }, 300);
+            }, 250);
         }
 
         function aplicarFiltrosSilencioso() {
@@ -266,21 +385,24 @@
             aplicarFiltros();
         }
 
+        // 3. RENDERIZAÇÃO DO KANBAN (jKanban)
         function renderizarPainelKanban(listaDeCards) {
             const kanbanContainerDOM = document.querySelector('.kanban-container');
             const scrollX = kanbanContainerDOM ? kanbanContainerDOM.scrollLeft : 0;
             const scrollY = {};
             document.querySelectorAll('.kanban-drag').forEach(col => {
-                scrollY[col.parentElement.dataset.id] = col.scrollTop;
+                if (col.parentElement && col.parentElement.dataset.id) {
+                    scrollY[col.parentElement.dataset.id] = col.scrollTop;
+                }
             });
 
             const paletaCores = [
-                { bg: '#eff6ff', border: '#bfdbfe' }, 
-                { bg: '#fffbeb', border: '#fde68a' }, 
-                { bg: '#fdf2f8', border: '#fbcfe8' }, 
-                { bg: '#f0fdf4', border: '#bbf7d0' }, 
-                { bg: '#faf5ff', border: '#e9d5ff' }, 
-                { bg: '#f0fdfa', border: '#99f6e4' }  
+                { bg: '#eff6ff', border: '#bfdbfe' }, // Azul
+                { bg: '#fffbeb', border: '#fde68a' }, // Amarelo
+                { bg: '#fdf2f8', border: '#fbcfe8' }, // Rosa
+                { bg: '#f0fdf4', border: '#bbf7d0' }, // Verde
+                { bg: '#faf5ff', border: '#e9d5ff' }, // Roxo 
+                { bg: '#f0fdfa', border: '#99f6e4' }  // Teal
             ];
 
             let painelBoards = colunasConfiguradas.map(colName => ({
@@ -295,15 +417,15 @@
             listaDeCards.forEach(item => {
                 const cartao = item.json ? item.json : item;
                 const col = painelBoards.find(c => c.id === cartao.etapa_funil);
-                
-                if(col) {
+
+                if (col) {
                     contadores[cartao.etapa_funil]++;
                     const convIdStr = String(cartao.conversation_id);
                     const ehConversaAtual = cartao.conversation_id == globalConversationId;
                     const temFoto = cartao.avatar_url && cartao.avatar_url.trim() !== "" && cartao.avatar_url !== "null";
                     const primeiraLetra = cartao.cliente_nome ? cartao.cliente_nome.charAt(0) : '?';
                     const notaAtual = cartao.notas_contato || '';
-                    
+
                     const mapaPrioCores = { urgent: '🔴 Urgente', high: '🟠 Alta', medium: '🟡 Média', low: '🔵 Baixa' };
                     const textoPrio = mapaPrioCores[cartao.prioridade] || '';
 
@@ -325,11 +447,14 @@
                             
                             <div class="flex items-start gap-3 mb-2">
                                 <div class="w-10 h-10 min-w-[40px] rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold uppercase overflow-hidden shadow-sm mt-1">
-                                    ${temFoto ? `<img src="${cartao.avatar_url}" class="w-full h-full object-cover pointer-events-none">` : primeiraLetra}
+                                    ${temFoto ? `<img src="${cartao.avatar_url}" class="w-full h-full object-cover">` : primeiraLetra}
                                 </div>
                                 <div class="overflow-hidden flex-grow">
                                     <h4 class="font-bold text-sm truncate text-slate-800 leading-tight">${cartao.cliente_nome || 'Sem Nome'}</h4>
-                                    <p class="text-[11px] font-medium text-slate-400 mt-0.5 mb-1">${cartao.phone_number || 'Sem WhatsApp'}</p>
+                                    <p class="text-[11px] font-medium text-slate-400 mt-0.5 mb-1 flex items-center gap-1">
+                                        <span>💬</span>
+                                        ${cartao.phone_number ? `<a href="https://wa.me/${cartao.phone_number.replace(/\D/g, '')}" target="_blank" class="hover:underline text-indigo-500 font-mono">${cartao.phone_number}</a>` : 'Sem Whats'}
+                                    </p>
                                     
                                     <div class="flex flex-wrap items-center gap-1">
                                         ${textoPrio ? `<span class="text-[9px] font-extrabold whitespace-nowrap bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/60">${textoPrio}</span>` : ''}
@@ -405,22 +530,22 @@
                 dropEl: function (el, target) {
                     const conversationId = el.dataset.eid;
                     const novaEtapa = target.parentElement.dataset.id;
-                    
+
                     fetch(urlAcao, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
+                        body: JSON.stringify({
                             action: 'mover',
-                            conversation_id: conversationId, 
-                            etapa_funil: novaEtapa, 
-                            account_id: globalAccountId 
+                            conversation_id: conversationId,
+                            etapa_funil: novaEtapa,
+                            account_id: globalAccountId
                         })
                     }).catch(e => console.error("Erro ao mover:", e));
                 }
             });
 
             document.querySelectorAll('.kanban-board').forEach((board, index) => {
-                const cor = paletaCores[index % paletaCores.length]; 
+                const cor = paletaCores[index % paletaCores.length];
                 board.style.backgroundColor = cor.bg;
                 board.style.borderColor = cor.border;
             });
@@ -428,47 +553,52 @@
             const novoContainer = document.querySelector('.kanban-container');
             if (novoContainer) novoContainer.scrollLeft = scrollX;
             document.querySelectorAll('.kanban-drag').forEach(col => {
-                const boardId = col.parentElement.dataset.id;
-                if (scrollY[boardId]) col.scrollTop = scrollY[boardId];
+                const boardId = col.parentElement ? col.parentElement.dataset.id : null;
+                if (boardId && scrollY[boardId]) col.scrollTop = scrollY[boardId];
             });
 
             vincularEventosCards();
         }
 
+        // 4. EVENTOS DE INTERAÇÃO NOS CARDS
         function vincularEventosCards() {
+            // AQUI ESTÁ A ALTERAÇÃO: Lógica de direcionamento para o App com Fallback e validação de dispositivo.
             document.querySelectorAll('.btn-link-chat').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault(); e.stopPropagation();
+                link.addEventListener('click', function (e) {
+                    e.preventDefault(); 
+                    e.stopPropagation();
                     const idConversa = this.getAttribute('data-convid');
+                    
                     if (idConversa) {
-                        const urlDestino = `/app/accounts/${globalAccountId}/conversations/${idConversa}`;
-                        
-                        // 1. Tenta acionar a comunicação nativa do app mobile via postMessage
-                        window.parent.postMessage({
-                            event: "appContext",
-                            data: { url: urlDestino }
-                        }, "*");
+                        const urlWeb = `https://chat.orbbotia.com/app/accounts/${globalAccountId}/conversations/${idConversa}`;
+                        const urlMobile = `chatwootapp://app/accounts/${globalAccountId}/conversations/${idConversa}`;
 
-                        // 2. Fallback: Força o navegador a sair do Iframe e ir para o link
-                        setTimeout(() => {
-                            window.top.location.href = `https://chat.orbbotia.com${urlDestino}`;
-                        }, 250);
+                        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+                        if (isMobile) {
+                            window.parent.location.href = urlMobile;
+                            setTimeout(() => {
+                                window.parent.location.href = urlWeb;
+                            }, 500);
+                        } else {
+                            window.parent.location.href = urlWeb;
+                        }
                     }
                 });
             });
 
             document.querySelectorAll('.btn-expandir').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+                btn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     const id = this.getAttribute('data-convid');
                     const divExtra = document.getElementById(`extra-${id}`);
                     if (divExtra.classList.contains('hidden')) {
                         divExtra.classList.remove('hidden');
-                        cartoesExpandidos.add(id); 
+                        cartoesExpandidos.add(id);
                         this.innerText = 'Recolher Card ↙';
                     } else {
                         divExtra.classList.add('hidden');
-                        cartoesExpandidos.delete(id); 
+                        cartoesExpandidos.delete(id);
                         this.innerText = 'Expandir Card ↗';
                     }
                 });
@@ -477,11 +607,10 @@
             document.querySelectorAll('.input-nota, .input-edit').forEach(txt => {
                 txt.addEventListener('focus', (e) => e.stopPropagation());
                 txt.addEventListener('mousedown', (e) => e.stopPropagation());
-                txt.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: true}); // Evita arrastar ao tocar no campo
             });
 
             document.querySelectorAll('.btn-salvar-nota').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+                btn.addEventListener('click', function (e) {
                     e.stopPropagation();
                     const convId = this.dataset.convid;
                     const accId = this.dataset.account;
@@ -503,10 +632,10 @@
             fetch(urlAcao, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     action: 'salvar',
-                    conversation_id: convId, 
-                    account_id: accountId, 
+                    conversation_id: convId,
+                    account_id: accountId,
                     notas_contato: textoNota,
                     prioridade: prioridade
                 })
@@ -514,15 +643,15 @@
                 btnElement.innerText = 'SALVO ✓';
                 btnElement.classList.replace('bg-indigo-600', 'bg-emerald-600');
                 btnElement.classList.replace('hover:bg-indigo-700', 'hover:bg-emerald-700');
-                
+
                 setTimeout(() => {
                     btnElement.innerText = '💾 SALVAR ALTERAÇÕES';
                     btnElement.disabled = false;
                     btnElement.classList.replace('bg-emerald-600', 'bg-indigo-600');
                     btnElement.classList.replace('hover:bg-emerald-700', 'hover:bg-indigo-700');
                     if (cardItemElement) cardItemElement.classList.remove('card-bloqueado');
-                    
-                    carregarTudo(); 
+
+                    carregarTudo();
                 }, 1500);
             }).catch(() => {
                 btnElement.innerText = 'ERRO!';
@@ -533,4 +662,5 @@
         }
     </script>
 </body>
+
 </html>

@@ -560,7 +560,7 @@
             vincularEventosCards();
         }
 
-// 4. EVENTOS DE INTERAÇÃO NOS CARDS
+        // 4. EVENTOS DE INTERAÇÃO NOS CARDS
         function vincularEventosCards() {
             document.querySelectorAll('.btn-link-chat').forEach(link => {
                 link.addEventListener('click', function (e) {
@@ -602,40 +602,6 @@
                     }
                 });
             });
-
-            document.querySelectorAll('.btn-expandir').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const id = this.getAttribute('data-convid');
-                    const divExtra = document.getElementById(`extra-${id}`);
-                    if (divExtra.classList.contains('hidden')) {
-                        divExtra.classList.remove('hidden');
-                        cartoesExpandidos.add(id);
-                        this.innerText = 'Recolher Card ↙';
-                    } else {
-                        divExtra.classList.add('hidden');
-                        cartoesExpandidos.delete(id);
-                        this.innerText = 'Expandir Card ↗';
-                    }
-                });
-            });
-
-            document.querySelectorAll('.input-nota, .input-edit').forEach(txt => {
-                txt.addEventListener('focus', (e) => e.stopPropagation());
-                txt.addEventListener('mousedown', (e) => e.stopPropagation());
-            });
-
-            document.querySelectorAll('.btn-salvar-nota').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const convId = this.dataset.convid;
-                    const accId = this.dataset.account;
-                    processarSalvamentoTotal(convId, accId, this);
-                });
-            });
-        }
-
-        
 
             document.querySelectorAll('.btn-expandir').forEach(btn => {
                 btn.addEventListener('click', function (e) {

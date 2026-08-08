@@ -31,8 +31,7 @@
 
 <body class="p-4 md:p-6 space-y-6">
 
-    <div id="alerta-chatwoot"
-        class="max-w-4xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
+    <div id="alerta-chatwoot" class="max-w-4xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
         ⏳ Conectando ao painel...
     </div>
 
@@ -40,11 +39,9 @@
 
         <!-- BOTÃO VOLTAR -->
         <div class="mb-2">
-            <a href="../index.html"
-                class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+            <a href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
                 Voltar ao Menu Principal
             </a>
@@ -52,9 +49,8 @@
 
         <!-- BLOCO 1: FORMULÁRIO -->
         <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
-            <div
-                class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
-                                <div class="flex items-center gap-2">
+            <div class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
+                <div class="flex items-center gap-2">
                     <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Produto</h1>
                     <button id="btnToggleFormProduto" onclick="toggleSection('form-produto-wrapper', this)" class="text-xs text-slate-500 hover:text-blue-600 font-medium mr-2">▾</button>
                 </div>
@@ -83,26 +79,20 @@
                 <input type="hidden" id="produto_id" value="">
 
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome do Produto <span
-                            class="text-blue-600">*</span></label>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome do Produto <span class="text-blue-600">*</span></label>
                     <input type="text" id="nome" required class="input-field" placeholder="Ex: Pizza de Calabresa">
                 </div>
 
                 <div class="md:col-span-2">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Descrição</label>
-                    <textarea id="descricao" class="input-field" rows="2"
-                        placeholder="Ex: Molho de tomate, mussarela e calabresa."></textarea>
+                    <textarea id="descricao" class="input-field" rows="2" placeholder="Ex: Molho de tomate, mussarela e calabresa."></textarea>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Categoria</label>
-                    <input list="lista-categorias" id="categoria" class="input-field"
-                        placeholder="Selecione ou digite nova...">
-                    <datalist id="lista-categorias">
-                        <option value="Pizzas">
-                        <option value="Bebidas">
-                        <option value="Hambúrgueres">
-                    </datalist>
+                    <input list="lista-categorias" id="categoria" class="input-field" placeholder="Selecione ou digite nova...">
+                    <!-- Datalist que será preenchido dinamicamente pelo JS -->
+                    <datalist id="lista-categorias"></datalist>
                 </div>
 
                 <!-- SELETOR DE TEMPLATE -->
@@ -117,17 +107,14 @@
                 <!-- SESSÃO PREÇO ÚNICO -->
                 <div id="sessao-preco-simples" class="md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-lg">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Preço Base (R$)</label>
-                    <input type="number" id="preco_base" class="input-field max-w-[200px]" placeholder="0.00"
-                        step="0.01">
+                    <input type="number" id="preco_base" class="input-field max-w-[200px]" placeholder="0.00" step="0.01">
                 </div>
 
-                <!-- SESSÃO TAMANHOS DINAÂMICOS -->
-                <div id="sessao-tamanhos"
-                    class="md:col-span-2 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden space-y-3">
+                <!-- SESSÃO TAMANHOS DINÂMICOS -->
+                <div id="sessao-tamanhos" class="md:col-span-2 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden space-y-3">
                     <h3 class="text-sm font-bold text-blue-800">Tamanhos e Preços</h3>
                     <div id="lista-de-tamanhos" class="space-y-2"></div>
-                    <button type="button" onclick="adicionarTamanho()"
-                        class="text-xs font-bold text-blue-700 bg-white border border-blue-300 px-3 py-1.5 rounded hover:bg-blue-100">
+                    <button type="button" onclick="adicionarTamanho()" class="text-xs font-bold text-blue-700 bg-white border border-blue-300 px-3 py-1.5 rounded hover:bg-blue-100">
                         + Adicionar Tamanho
                     </button>
                 </div>
@@ -139,7 +126,7 @@
         <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h2 class="text-md font-semibold text-slate-800">Cardápio Cadastrado</h2>
-                                                <div class="flex gap-2">
+                <div class="flex gap-2">
                     <button id="btnToggleListaProdutos" onclick="toggleSection('lista-produtos-wrapper', this)" class="text-xs text-slate-500 hover:text-blue-600 font-medium mr-2">▾</button>
                     <button onclick="carregarLista()" class="text-xs text-slate-500 hover:text-blue-600 font-medium">🔄 Atualizar</button>
                 </div>
@@ -196,7 +183,7 @@
 
         setTimeout(() => {
             if (!globalAccountId) {
-                globalAccountId = '2';
+                globalAccountId = '2'; // ID padrão para testes
                 iniciarApp();
             }
         }, 2000);
@@ -239,7 +226,31 @@
         }
 
         /* =========================================
-           LÓGICA DE DADOS (LISTAR)
+           EXTRAÇÃO DINÂMICA DE CATEGORIAS
+           ========================================= */
+        function atualizarDatalistCategorias() {
+            const datalist = document.getElementById('lista-categorias');
+            const categoriasUnicas = new Set();
+            
+            // Varre a lista de produtos atual
+            listaAtual.forEach(prod => {
+                const p = prod.json ? prod.json : prod;
+                if (p.categoria && p.categoria.trim() !== '') {
+                    categoriasUnicas.add(p.categoria.trim());
+                }
+            });
+
+            // Limpa e popula o Datalist com as categorias encontradas
+            datalist.innerHTML = '';
+            Array.from(categoriasUnicas).sort().forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                datalist.appendChild(option);
+            });
+        }
+
+        /* =========================================
+           LÓGICA DE DADOS (LISTAR E RENDERIZAR)
            ========================================= */
         async function carregarLista() {
             const tbody = document.getElementById('lista-produtos');
@@ -249,7 +260,10 @@
                 if (!res.ok) throw new Error("Erro ao buscar");
                 const dados = await res.json();
                 listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
-                renderizarTabela();
+                
+                atualizarDatalistCategorias(); // Atualiza a lista de categorias disponíveis
+                renderizarTabela(); // Desenha a tabela com aparência correta
+
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-red-500">Erro ao carregar lista.</td></tr>`;
             }
@@ -271,31 +285,32 @@
 
             listaFiltrada.forEach(prod => {
                 const p = prod.json ? prod.json : prod;
-                const isAtivo = p.ativo !== false;
+                // Ajuste no bool: Certifica que ativo só seja falso se o banco enviar false nativo ou em string
+                const isAtivo = p.ativo !== false && p.ativo !== "false"; 
 
-                // Trata a visualização inteligente de preços (lendo o JSON metadata)
                 let precoDisplay = formatarMoeda(p.preco_base);
                 if (p.metadata && p.metadata.tipo === 'com_tamanhos' && Array.isArray(p.metadata.tamanhos)) {
-                    let tamanhosListados = p.metadata.tamanhos.map(t => `<span class="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded border border-blue-200 mr-1">${t.nome}: ${formatarMoeda(t.preco)}</span>`).join('');
-                    precoDisplay = `<div class="flex flex-wrap gap-1 mt-1">${tamanhosListados}</div>`;
+                    let tamanhosListados = p.metadata.tamanhos.map(t => `<span class="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded border border-blue-200 mr-1 mb-1 inline-block">${t.nome}: ${formatarMoeda(t.preco)}</span>`).join('');
+                    precoDisplay = `<div class="flex flex-wrap mt-1">${tamanhosListados}</div>`;
                 }
 
                 const tr = document.createElement('tr');
-                tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50' : 'bg-slate-50/70 opacity-70'}`;
+                // Estilo Dinâmico: Se estiver inativo, a linha fica opaca, com fundo escuro e o texto tachado (line-through)
+                tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50 bg-white' : 'bg-slate-100 opacity-60 grayscale'}`;
                 tr.innerHTML = `
                     <td class="px-4 py-3">
                         ${isAtivo
-                        ? '<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Ativo</span>'
-                        : '<span class="bg-slate-200 text-slate-600 border border-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Inativo</span>'}
+                        ? '<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm">Ativo</span>'
+                        : '<span class="bg-slate-300 text-slate-700 border border-slate-400 text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm">Inativo</span>'}
                     </td>
                     <td class="px-4 py-3">
-                        <div class="font-medium text-slate-800">${p.nome}</div>
-                        <div class="text-[10px] text-slate-400 max-w-[200px] truncate" title="${p.descricao || ''}">${p.descricao || ''}</div>
+                        <div class="font-medium ${isAtivo ? 'text-slate-800' : 'text-slate-500 line-through'}">${p.nome}</div>
+                        <div class="text-[10px] ${isAtivo ? 'text-slate-400' : 'text-slate-400'} max-w-[200px] truncate" title="${p.descricao || ''}">${p.descricao || ''}</div>
                     </td>
                     <td class="px-4 py-3"><span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded font-medium">${p.categoria || '-'}</span></td>
                     <td class="px-4 py-3">${precoDisplay}</td>
                     <td class="px-4 py-3 text-right">
-                        <button onclick="editarProduto('${p.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors">
+                        <button onclick="editarProduto('${p.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors border border-blue-200 shadow-sm">
                             Editar ✏️
                         </button>
                     </td>
@@ -320,9 +335,8 @@
             document.getElementById('descricao').value = p.descricao || '';
             document.getElementById('categoria').value = p.categoria || '';
 
-            // Lógica para preencher Preço Simples ou Tamanhos
             const containerTamanhos = document.getElementById('lista-de-tamanhos');
-            containerTamanhos.innerHTML = ''; // limpa tamanhos
+            containerTamanhos.innerHTML = '';
 
             if (p.metadata && p.metadata.tipo === 'com_tamanhos') {
                 document.getElementById('tipo_venda').value = 'tamanhos';
@@ -332,12 +346,11 @@
             } else {
                 document.getElementById('tipo_venda').value = 'simples';
                 document.getElementById('preco_base').value = p.preco_base || '';
-                adicionarTamanho(); // deixa 1 em branco oculto
+                adicionarTamanho();
             }
             alternarCamposPreco();
 
-            // Status e Exclusão
-            statusAtualEdicao = p.ativo !== false;
+            statusAtualEdicao = p.ativo !== false && p.ativo !== "false";
             const btnStatus = document.getElementById('btnStatus');
             btnStatus.classList.remove('hidden', 'bg-slate-600', 'hover:bg-slate-700', 'bg-emerald-600', 'hover:bg-emerald-700');
             if (statusAtualEdicao) {
@@ -393,8 +406,7 @@
                     setTimeout(() => {
                         btnElement.innerText = txtOriginal;
                         limparFormulario();
-                        renderizarTabela();
-                        carregarLista();
+                        carregarLista(); // Já refaz a tabela com o visual atualizado
                         btnElement.disabled = false;
                     }, 1000);
                 } else { throw new Error(); }
@@ -463,6 +475,7 @@
 
             enviarAcao(payload, document.getElementById('btnSalvar'), 'Salvo! ✓');
         }
+
         function toggleSection(wrapperId, btn) {
             const wrapper = document.getElementById(wrapperId);
             if (!wrapper) return;

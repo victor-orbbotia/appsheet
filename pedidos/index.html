@@ -196,29 +196,63 @@
             carregarPedidos();
         }
 
-        // Navegação Segura para a Conversa no Chatwoot
-        function abrirChat(conversaId) {
-            if (!conversaId || conversaId === '?' || conversaId === 'null' || conversaId === 'undefined') {
-                mostrarToast('Pedido sem ID de conversa vinculado', 'error');
-                return;
-            }
+        
+        // Domínio fixo do seu servidor Chatwoot
+const CHATWOOT_BASE_URL = 'https://chat.orbbotia.com';
 
-            const path = `/app/accounts/${globalAccountId}/conversations/${conversaId}`;
-            
-            if (window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot')) {
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = `chatwootapp://${path}`;
-                document.body.appendChild(iframe);
-                setTimeout(() => iframe.remove(), 1000);
-            } else {
-                try {
-                    window.top.location.href = path;
-                } catch (e) {
-                    window.open(path, '_blank');
+function abrirChat(conversaId) {
+    if (!conversaId || conversaId === '?' || conversaId === 'null' || conversaId === 'undefined') {
+        mostrarToast('Pedido sem ID de conversa vinculado', 'error');
+        return;
+    }
+
+    const accountId = globalAccountId || '3';
+    
+    // Caminho relativo (para navegação interna via SDK postMessage)
+    const pathRelativo = `/app/accounts/${accountId}/conversations/${conversaId}`;
+    
+    // URL Absoluta e Completa para o Chatwoot
+    const urlAbsoluta = `${CHATWOOT_BASE_URL}${pathRelativo}`;
+
+    // 1. Notifica o Chatwoot (Caso o iFrame esteja dentro do painel)
+    try {
+        window.parent.postMessage(
+            JSON.stringify({
+                event: 'appContext',
+                data: { url: pathRelativo }
+            }),
+            '*'
+        );
+        window.parent.postMessage({ event: 'appContext', data: { url: pathRelativo } }, '*');
+    } catch (e) {
+        console.warn('Erro postMessage:', e);
+    }
+
+    // 2. Detecção de App Mobile (React Native) x Navegador Web
+    const isMobileApp = !!window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot');
+
+    if (isMobileApp) {
+        // App Mobile Nativo
+        const iframeMobile = document.createElement('iframe');
+        iframeMobile.style.display = 'none';
+        iframeMobile.src = `chatwootapp://${pathRelativo}`;
+        document.body.appendChild(iframeMobile);
+        setTimeout(() => iframeMobile.remove(), 1000);
+    } else {
+        // Navegador Web: Redireciona a janela pai para o domínio absoluto do Chatwoot
+        setTimeout(() => {
+            try {
+                if (window.top && window.top !== window) {
+                    window.top.location.href = urlAbsoluta;
+                } else {
+                    window.location.href = urlAbsoluta;
                 }
+            } catch (err) {
+                window.open(urlAbsoluta, '_blank');
             }
-        }
+        }, 100);
+    }
+}
 
         /* =============================================
            CARREGAR DADOS VIA WEBHOOK (N8N)

@@ -84,7 +84,6 @@
                 <h1 class="text-base font-bold text-slate-800">📦 Gestão de Pedidos</h1>
             </div>
 
-            <!-- Seletor de Data -->
             <div class="flex items-center gap-2">
                 <label for="filtroData" class="text-xs font-semibold text-slate-500">Filtrar Dia:</label>
                 <input type="date" id="filtroData" onchange="carregarPedidos()"
@@ -118,7 +117,6 @@
 
         <!-- Kanban Board -->
         <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
-
             <!-- Coluna: Aguardando PIX -->
             <div class="kanban-col flex flex-col gap-3">
                 <div class="flex items-center justify-between">
@@ -126,8 +124,7 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🕐 Aguardando PIX</h2>
                     </div>
-                    <span id="count-aguardando_pix"
-                        class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
+                    <span id="count-aguardando_pix" class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
                 </div>
                 <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
@@ -139,8 +136,7 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">💵 Cartão / Dinheiro</h2>
                     </div>
-                    <span id="count-pagamento_entrega"
-                        class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
+                    <span id="count-pagamento_entrega" class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
                 </div>
                 <div id="col-pagamento_entrega" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
@@ -152,8 +148,7 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Validar PIX</h2>
                     </div>
-                    <span id="count-comprovante_enviado"
-                        class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
+                    <span id="count-comprovante_enviado" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
                 </div>
                 <div id="col-comprovante_enviado" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
@@ -165,8 +160,7 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">✅ Confirmado</h2>
                     </div>
-                    <span id="count-confirmado"
-                        class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
+                    <span id="count-confirmado" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
                 </div>
                 <div id="col-confirmado" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
@@ -178,12 +172,10 @@
                         <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado</h2>
                     </div>
-                    <span id="count-cancelado"
-                        class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
+                    <span id="count-cancelado" class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
                 </div>
                 <div id="col-cancelado" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
-
         </div>
 
     </div>
@@ -196,7 +188,6 @@
         let handshakeInterval;
         let listaPedidos = [];
 
-        // Inicializa o seletor com a data de hoje no formato YYYY-MM-DD
         document.getElementById('filtroData').value = new Date().toISOString().split('T')[0];
 
         function setHoje() {
@@ -205,42 +196,15 @@
         }
 
         const STATUS_CONFIG = {
-            aguardando_pix: {
-                label: 'Aguardando PIX',
-                proximo: 'comprovante_enviado',
-                btnProximoLabel: 'Comprovante Recebido ✓',
-                btnProximoCor: 'bg-blue-600 hover:bg-blue-700',
-                podeCancel: true
-            },
-            pagamento_entrega: {
-                label: 'Pagamento na Entrega',
-                proximo: 'confirmado',
-                btnProximoLabel: 'Aprovar / Enviar ✅',
-                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
-                podeCancel: true
-            },
-            comprovante_enviado: {
-                label: 'Comprovante Enviado',
-                anterior: 'aguardando_pix',
-                btnAnteriorLabel: '← Reenviar PIX',
-                btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600',
-                proximo: 'confirmado',
-                btnProximoLabel: 'Aprovar Pagamento ✅',
-                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
-                podeCancel: true
-            },
-            confirmado: {
-                label: 'Confirmado',
-                podeCancel: false
-            },
-            cancelado: {
-                label: 'Cancelado',
-                podeCancel: false
-            }
+            aguardando_pix: { label: 'Aguardando PIX', proximo: 'comprovante_enviado', btnProximoLabel: 'Comprovante Recebido ✓', btnProximoCor: 'bg-blue-600 hover:bg-blue-700', podeCancel: true },
+            pagamento_entrega: { label: 'Pagamento na Entrega', proximo: 'confirmado', btnProximoLabel: 'Aprovar / Enviar ✅', btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', podeCancel: true },
+            comprovante_enviado: { label: 'Comprovante Enviado', anterior: 'aguardando_pix', btnAnteriorLabel: '← Reenviar PIX', btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600', proximo: 'confirmado', btnProximoLabel: 'Aprovar Pagamento ✅', btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', podeCancel: true },
+            confirmado: { label: 'Confirmado', podeCancel: false },
+            cancelado: { label: 'Cancelado', podeCancel: false }
         };
 
         /* =============================================
-           COMUNICAÇÃO COM CHATWOOT
+           COMUNICAÇÃO E REDIRECIONAMENTO (CHATWOOT)
         ============================================= */
         window.addEventListener('message', function (event) {
             let eventData = {};
@@ -271,13 +235,38 @@
             carregarPedidos();
         }
 
+        // Função de Deep Link e Redirecionamento (Adaptada para SDK Web e App Mobile)
+        function abrirChat(conversaId) {
+            if (!conversaId || conversaId === '?') return;
+            
+            const path = `/app/accounts/${globalAccountId}/conversations/${conversaId}`;
+            
+            // 1. Tenta notificar o painel via postMessage (Padrão SDK Chatwoot)
+            window.parent.postMessage({ event: "appContext", data: { url: path } }, "*");
+            
+            // 2. Fallback para Mobile App Nativo x Navegador
+            if (window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot')) {
+                // Injeta iframe oculto para forçar Custom URL Scheme no Android/iOS
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = `chatwootapp://${path}`;
+                document.body.appendChild(iframe);
+                setTimeout(() => iframe.remove(), 1000);
+            } else {
+                try {
+                    window.top.location.href = path;
+                } catch (e) {
+                    window.open(path, '_blank');
+                }
+            }
+        }
+
         /* =============================================
-           CARREGAR DADOS COM FILTRO DE DATA
+           CARREGAR DADOS E RENDERIZAR KANBAN
         ============================================= */
         async function carregarPedidos() {
             document.getElementById('area-loading').classList.remove('hidden');
             document.getElementById('kanban-board').classList.add('hidden');
-
             const dataSelecionada = document.getElementById('filtroData').value;
 
             try {
@@ -287,7 +276,6 @@
                 listaPedidos = Array.isArray(dados) ? dados : (dados.data || []);
                 renderizarKanban();
             } catch (error) {
-                console.error(error);
                 document.getElementById('area-loading').innerHTML = `
                     <div class="text-center space-y-2">
                         <p class="text-sm text-rose-500 font-medium">⚠️ Não foi possível carregar os pedidos.</p>
@@ -297,9 +285,6 @@
             }
         }
 
-        /* =============================================
-           RENDERIZAR KANBAN
-        ============================================= */
         function renderizarKanban() {
             const colunas = ['aguardando_pix', 'pagamento_entrega', 'comprovante_enviado', 'confirmado', 'cancelado'];
 
@@ -317,12 +302,10 @@
 
             pedidosAtivos.forEach(pedidoRaw => {
                 const p = pedidoRaw.json ? pedidoRaw.json : pedidoRaw;
-                
-                // Redireciona pagamentos presenciais (cartão/dinheiro) para a nova coluna se não forem PIX
                 let status = p.status || 'aguardando_pix';
                 const formaPgto = (p.forma_pagamento || '').toLowerCase();
                 
-                if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro'))) {
+                if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro') || formaPgto.includes('cartão'))) {
                     status = 'pagamento_entrega';
                 }
 
@@ -354,95 +337,76 @@
         function criarCard(p, statusCalculado) {
             const config = STATUS_CONFIG[statusCalculado] || {};
             const valor = parseFloat(p.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            const dataStr = p.created_at
-                ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-                : '';
+            const dataStr = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-            // Badge de Tipo de Pagamento
+            // Lógica de Cores da Forma de Pagamento e do Valor
             const formaPgto = (p.forma_pagamento || 'PIX').toUpperCase();
-            let badgePgtoClass = 'bg-slate-100 text-slate-700';
-            if (formaPgto.includes('PIX')) badgePgtoClass = 'bg-teal-50 text-teal-700 border-teal-200';
-            if (formaPgto.includes('DINHEIRO')) badgePgtoClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-            if (formaPgto.includes('CARTAO')) badgePgtoClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+            let badgePgtoClass = 'bg-slate-100 text-slate-700 border-slate-200';
+            let textColorClass = 'text-slate-700';
+
+            if (formaPgto.includes('PIX')) {
+                badgePgtoClass = 'bg-teal-50 text-teal-700 border-teal-200';
+                textColorClass = 'text-teal-700';
+            } else if (formaPgto.includes('DINHEIRO')) {
+                badgePgtoClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                textColorClass = 'text-emerald-700';
+            } else if (formaPgto.includes('CARTAO') || formaPgto.includes('CARTÃO')) {
+                badgePgtoClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                textColorClass = 'text-indigo-700';
+            }
 
             let itensHtml = '';
             if (Array.isArray(p.itens) && p.itens.length > 0) {
                 itensHtml = `<div class="flex flex-wrap gap-1">
-                    ${p.itens.map(i =>
-                    `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
-                        ${i.quantidade || 1}× ${i.nome}
-                    </span>`
-                ).join('')}
+                    ${p.itens.map(i => `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${i.quantidade || 1}× ${i.nome}</span>`).join('')}
                 </div>`;
             }
 
             let botoesHtml = '';
-            if (config.anterior) {
-                botoesHtml += `<button
-                    onclick="moverStatus('${p.id}', '${config.anterior}', this)"
-                    class="text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnAnteriorCor} transition-colors disabled:opacity-50">
-                    ${config.btnAnteriorLabel}
-                </button>`;
-            }
-            if (config.proximo) {
-                botoesHtml += `<button
-                    onclick="moverStatus('${p.id}', '${config.proximo}', this)"
-                    class="text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">
-                    ${config.btnProximoLabel}
-                </button>`;
-            }
-            if (config.podeCancel) {
-                botoesHtml += `<button
-                    onclick="cancelarPedido('${p.id}', this)"
-                    class="text-[10px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-2.5 py-1.5 rounded-md transition-colors disabled:opacity-50">
-                    Cancelar ✕
-                </button>`;
-            }
+            if (config.anterior) botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.anterior}', this)" class="text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnAnteriorCor} transition-colors disabled:opacity-50">${config.btnAnteriorLabel}</button>`;
+            if (config.proximo) botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.proximo}', this)" class="text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">${config.btnProximoLabel}</button>`;
+            if (config.podeCancel) botoesHtml += `<button onclick="cancelarPedido('${p.id}', this)" class="text-[10px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-2.5 py-1.5 rounded-md transition-colors disabled:opacity-50">Cancelar ✕</button>`;
 
             const card = document.createElement('div');
             card.id = `card-${p.id}`;
             card.className = 'card-pedido bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm space-y-2.5';
+            
+            // Nova Estrutura HTML do Card
             card.innerHTML = `
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <p class="text-sm font-bold text-slate-800 leading-snug">${p.cliente_nome || 'Cliente'}</p>
-                        <a href="https://wa.me/${p.cliente_telefone}" target="_blank"
-                            class="text-[10px] text-indigo-500 hover:underline font-mono">${p.cliente_telefone || ''}</a>
+                        <span class="text-[10px] text-slate-500 font-mono">${p.cliente_telefone || ''}</span>
                     </div>
-                    <span class="text-sm font-extrabold text-emerald-700 whitespace-nowrap shrink-0">${valor}</span>
+                    <!-- Botão de Chat com o ID da Conversa -->
+                    <button onclick="abrirChat('${p.conversa_id}')" title="Ir para o Chat" class="flex items-center gap-1 text-xs font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors shrink-0">
+                        💬 #${p.conversa_id || '?'}
+                    </button>
                 </div>
 
+                <!-- Forma de Pagamento e Valor Agrupados -->
                 <div class="flex items-center gap-1.5">
                     <span class="text-[9px] font-bold border px-2 py-0.5 rounded-md uppercase tracking-wider ${badgePgtoClass}">
                         💳 ${formaPgto}
                     </span>
+                    <span class="text-[11px] font-extrabold ${textColorClass}">${valor}</span>
                 </div>
 
                 ${itensHtml}
-
                 ${p.endereco_entrega ? `<p class="text-[10px] text-slate-500 flex items-start gap-1"><span>📍</span><span>${p.endereco_entrega}</span></p>` : ''}
-
                 ${p.observacoes ? `<p class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">⚠️ ${p.observacoes}</p>` : ''}
-
                 ${botoesHtml ? `<div class="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">${botoesHtml}</div>` : ''}
-
-                ${dataStr ? `<p class="text-[9px] text-slate-300 text-right">${dataStr}</p>` : ''}
+                ${dataStr ? `<p class="text-[9px] text-slate-300 text-right mt-1">${dataStr}</p>` : ''}
             `;
 
             return card;
         }
 
         /* =============================================
-           AÇÕES
+           AÇÕES DO KANBAN
         ============================================= */
         async function moverStatus(id, novoStatus, btn) {
-            const payload = {
-                action: 'status',
-                account_id: globalAccountId.toString(),
-                id: id,
-                status: novoStatus
-            };
-
+            const payload = { action: 'status', account_id: globalAccountId.toString(), id: id, status: novoStatus };
             await enviarAcao(payload, btn, () => {
                 atualizarStatusLocal(id, novoStatus);
                 renderizarKanban();
@@ -452,13 +416,7 @@
 
         async function cancelarPedido(id, btn) {
             if (!confirm('Confirmar cancelamento do pedido?')) return;
-            const payload = {
-                action: 'status',
-                account_id: globalAccountId.toString(),
-                id: id,
-                status: 'cancelado'
-            };
-
+            const payload = { action: 'status', account_id: globalAccountId.toString(), id: id, status: 'cancelado' };
             await enviarAcao(payload, btn, () => {
                 atualizarStatusLocal(id, 'cancelado');
                 renderizarKanban();
@@ -486,13 +444,9 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (res.ok) {
-                    onSuccess();
-                } else {
-                    throw new Error('Falha no servidor');
-                }
+                if (res.ok) onSuccess();
+                else throw new Error('Falha no servidor');
             } catch (error) {
-                console.error(error);
                 mostrarToast('Erro ao comunicar com o servidor', 'error');
                 btn.innerHTML = htmlOriginal;
                 btn.disabled = false;
@@ -507,7 +461,5 @@
             setTimeout(() => toast.classList.add('hidden'), 2500);
         }
     </script>
-
 </body>
-
 </html>

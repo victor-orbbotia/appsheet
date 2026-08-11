@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedidos — Kanban de Pagamento</title>
+    <title>Pedidos — Monitor de Pagamento</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -69,8 +69,8 @@
     <!-- App principal -->
     <div id="app-container" class="hidden flex flex-col flex-1 gap-4">
 
-        <!-- Cabeçalho -->
-        <div class="flex items-center justify-between gap-3 flex-wrap">
+        <!-- Cabeçalho com Filtro de Data -->
+        <div class="flex items-center justify-between gap-3 flex-wrap bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex items-center gap-3">
                 <a href="../index.html"
                     class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
@@ -78,20 +78,31 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Voltar ao Menu
+                    Menu
                 </a>
                 <span class="text-slate-300">|</span>
-                <h1 class="text-base font-bold text-slate-800">📦 Pedidos — Validação PIX</h1>
+                <h1 class="text-base font-bold text-slate-800">📦 Gestão de Pedidos</h1>
             </div>
-            <button id="btnAtualizar" onclick="carregarPedidos()"
-                class="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
-                    </path>
-                </svg>
-                Atualizar
-            </button>
+
+            <!-- Seletor de Data -->
+            <div class="flex items-center gap-2">
+                <label for="filtroData" class="text-xs font-semibold text-slate-500">Filtrar Dia:</label>
+                <input type="date" id="filtroData" onchange="carregarPedidos()"
+                    class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+                <button onclick="setHoje()"
+                    class="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1.5 rounded-lg transition-colors">
+                    Hoje
+                </button>
+                <button id="btnAtualizar" onclick="carregarPedidos()"
+                    class="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    Atualizar
+                </button>
+            </div>
         </div>
 
         <!-- Loading -->
@@ -121,12 +132,25 @@
                 <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
+            <!-- Coluna: Pagamento na Entrega (Dinheiro / Cartão) -->
+            <div class="kanban-col flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">💵 Cartão / Dinheiro</h2>
+                    </div>
+                    <span id="count-pagamento_entrega"
+                        class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
+                </div>
+                <div id="col-pagamento_entrega" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
             <!-- Coluna: Comprovante Enviado -->
             <div class="kanban-col flex flex-col gap-3">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Comprovante Enviado</h2>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Validar PIX</h2>
                     </div>
                     <span id="count-comprovante_enviado"
                         class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
@@ -172,13 +196,27 @@
         let handshakeInterval;
         let listaPedidos = [];
 
-        // Configuração do fluxo de status do Kanban
+        // Inicializa o seletor com a data de hoje no formato YYYY-MM-DD
+        document.getElementById('filtroData').value = new Date().toISOString().split('T')[0];
+
+        function setHoje() {
+            document.getElementById('filtroData').value = new Date().toISOString().split('T')[0];
+            carregarPedidos();
+        }
+
         const STATUS_CONFIG = {
             aguardando_pix: {
                 label: 'Aguardando PIX',
                 proximo: 'comprovante_enviado',
                 btnProximoLabel: 'Comprovante Recebido ✓',
                 btnProximoCor: 'bg-blue-600 hover:bg-blue-700',
+                podeCancel: true
+            },
+            pagamento_entrega: {
+                label: 'Pagamento na Entrega',
+                proximo: 'confirmado',
+                btnProximoLabel: 'Aprovar / Enviar ✅',
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
                 podeCancel: true
             },
             comprovante_enviado: {
@@ -219,7 +257,6 @@
             if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Fallback local
         setTimeout(() => {
             if (!globalAccountId) {
                 document.getElementById('alerta-chatwoot').innerText = 'Modo de teste (account_id = 2)';
@@ -235,14 +272,16 @@
         }
 
         /* =============================================
-           CARREGAR DADOS
+           CARREGAR DADOS COM FILTRO DE DATA
         ============================================= */
         async function carregarPedidos() {
             document.getElementById('area-loading').classList.remove('hidden');
             document.getElementById('kanban-board').classList.add('hidden');
 
+            const dataSelecionada = document.getElementById('filtroData').value;
+
             try {
-                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}&data_filtro=${dataSelecionada}`);
                 if (!res.ok) throw new Error('Erro ao buscar pedidos');
                 const dados = await res.json();
                 listaPedidos = Array.isArray(dados) ? dados : (dados.data || []);
@@ -262,9 +301,8 @@
            RENDERIZAR KANBAN
         ============================================= */
         function renderizarKanban() {
-            const colunas = ['aguardando_pix', 'comprovante_enviado', 'confirmado', 'cancelado'];
+            const colunas = ['aguardando_pix', 'pagamento_entrega', 'comprovante_enviado', 'confirmado', 'cancelado'];
 
-            // Limpa todas as colunas e zera contadores
             colunas.forEach(s => {
                 document.getElementById(`col-${s}`).innerHTML = '';
                 document.getElementById(`count-${s}`).textContent = '0';
@@ -279,20 +317,26 @@
 
             pedidosAtivos.forEach(pedidoRaw => {
                 const p = pedidoRaw.json ? pedidoRaw.json : pedidoRaw;
-                const status = p.status || 'aguardando_pix';
+                
+                // Redireciona pagamentos presenciais (cartão/dinheiro) para a nova coluna se não forem PIX
+                let status = p.status || 'aguardando_pix';
+                const formaPgto = (p.forma_pagamento || '').toLowerCase();
+                
+                if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro'))) {
+                    status = 'pagamento_entrega';
+                }
+
                 const coluna = document.getElementById(`col-${status}`);
                 if (!coluna) return;
 
                 contagens[status] = (contagens[status] || 0) + 1;
-                coluna.appendChild(criarCard(p));
+                coluna.appendChild(criarCard(p, status));
             });
 
-            // Atualiza contadores
             Object.entries(contagens).forEach(([status, total]) => {
                 document.getElementById(`count-${status}`).textContent = total;
             });
 
-            // Exibe estado vazio nas colunas sem cards
             colunas.forEach(status => {
                 if (contagens[status] === 0) {
                     document.getElementById(`col-${status}`).innerHTML = `
@@ -307,26 +351,31 @@
             document.getElementById('kanban-board').classList.remove('hidden');
         }
 
-        function criarCard(p) {
-            const config = STATUS_CONFIG[p.status] || {};
+        function criarCard(p, statusCalculado) {
+            const config = STATUS_CONFIG[statusCalculado] || {};
             const valor = parseFloat(p.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const dataStr = p.created_at
                 ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
                 : '';
 
-            // Itens resumidos como chips
+            // Badge de Tipo de Pagamento
+            const formaPgto = (p.forma_pagamento || 'PIX').toUpperCase();
+            let badgePgtoClass = 'bg-slate-100 text-slate-700';
+            if (formaPgto.includes('PIX')) badgePgtoClass = 'bg-teal-50 text-teal-700 border-teal-200';
+            if (formaPgto.includes('DINHEIRO')) badgePgtoClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            if (formaPgto.includes('CARTAO')) badgePgtoClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+
             let itensHtml = '';
             if (Array.isArray(p.itens) && p.itens.length > 0) {
                 itensHtml = `<div class="flex flex-wrap gap-1">
                     ${p.itens.map(i =>
                     `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
-                            ${i.quantidade || 1}× ${i.nome}
-                        </span>`
+                        ${i.quantidade || 1}× ${i.nome}
+                    </span>`
                 ).join('')}
                 </div>`;
             }
 
-            // Botões de ação
             let botoesHtml = '';
             if (config.anterior) {
                 botoesHtml += `<button
@@ -354,7 +403,6 @@
             card.id = `card-${p.id}`;
             card.className = 'card-pedido bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm space-y-2.5';
             card.innerHTML = `
-                <!-- Cliente + Valor -->
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <p class="text-sm font-bold text-slate-800 leading-snug">${p.cliente_nome || 'Cliente'}</p>
@@ -364,19 +412,20 @@
                     <span class="text-sm font-extrabold text-emerald-700 whitespace-nowrap shrink-0">${valor}</span>
                 </div>
 
-                <!-- Itens -->
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] font-bold border px-2 py-0.5 rounded-md uppercase tracking-wider ${badgePgtoClass}">
+                        💳 ${formaPgto}
+                    </span>
+                </div>
+
                 ${itensHtml}
 
-                <!-- Endereço -->
                 ${p.endereco_entrega ? `<p class="text-[10px] text-slate-500 flex items-start gap-1"><span>📍</span><span>${p.endereco_entrega}</span></p>` : ''}
 
-                <!-- Observações -->
                 ${p.observacoes ? `<p class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">⚠️ ${p.observacoes}</p>` : ''}
 
-                <!-- Ações -->
                 ${botoesHtml ? `<div class="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100">${botoesHtml}</div>` : ''}
 
-                <!-- Data -->
                 ${dataStr ? `<p class="text-[9px] text-slate-300 text-right">${dataStr}</p>` : ''}
             `;
 
@@ -395,7 +444,6 @@
             };
 
             await enviarAcao(payload, btn, () => {
-                // Atualização otimista em memória
                 atualizarStatusLocal(id, novoStatus);
                 renderizarKanban();
                 mostrarToast(`Movido: ${STATUS_CONFIG[novoStatus]?.label || novoStatus}`, 'success');
@@ -451,9 +499,6 @@
             }
         }
 
-        /* =============================================
-           TOAST
-        ============================================= */
         function mostrarToast(msg, tipo) {
             const toast = document.getElementById('toast');
             toast.textContent = msg;

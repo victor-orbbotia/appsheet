@@ -235,33 +235,42 @@
             carregarPedidos();
         }
 
-        // Função de Deep Link e Redirecionamento (Adaptada para SDK Web e App Mobile)
-        function abrirChat(conversaId) {
-            if (!conversaId || conversaId === '?') return;
-            
-            const path = `/app/accounts/${globalAccountId}/conversations/${conversaId}`;
-            
-            // 1. Tenta notificar o painel via postMessage (Padrão SDK Chatwoot)
-            window.parent.postMessage({ event: "appContext", data: { url: path } }, "*");
-            
-            // 2. Fallback para Mobile App Nativo x Navegador
-            if (window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot')) {
-                // Injeta iframe oculto para forçar Custom URL Scheme no Android/iOS
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = `chatwootapp://${path}`;
-                document.body.appendChild(iframe);
-                setTimeout(() => iframe.remove(), 1000);
-            } else {
-                try {
-                    window.top.location.href = path;
-                } catch (e) {
-                    window.open(path, '_blank');
-                }
-            }
-        }
+       // Função de Redirecionamento Direto para o Chat do Chatwoot
+function abrirChat(conversaId) {
+    if (!conversaId || conversaId === '?' || conversaId === 'null' || conversaId === 'undefined') {
+        mostrarToast('Pedido sem ID de conversa vinculado', 'error');
+        return;
+    }
 
-        /* =============================================
+    const pathRelativo = `/app/accounts/${globalAccountId}/conversations/${conversaId}`;
+
+    // 1. Detecção do Ambiente Mobile (React Native / App Nativo)
+    const isMobileApp = !!window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot');
+
+    if (isMobileApp) {
+        // Solução Mobile: Injeta iframe invisível com o Custom URL Scheme para não dar crash/tela branca
+        const iframeMobile = document.createElement('iframe');
+        iframeMobile.style.display = 'none';
+        iframeMobile.src = `chatwootapp://${pathRelativo}`;
+        document.body.appendChild(iframeMobile);
+        
+        setTimeout(() => {
+            iframeMobile.remove();
+        }, 1000);
+    } else {
+        // Solução Web Desktop: Força a janela principal do Chatwoot (janela Pai) a navegar para a conversa
+        try {
+            if (window.top && window.top !== window) {
+                window.top.location.href = pathRelativo;
+            } else {
+                window.location.href = pathRelativo;
+            }
+        } catch (e) {
+            // Fallback caso haja restrição estrita de origin
+            window.open(pathRelativo, '_top');
+        }
+    }
+}
            CARREGAR DADOS E RENDERIZAR KANBAN
         ============================================= */
         async function carregarPedidos() {

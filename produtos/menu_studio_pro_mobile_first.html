@@ -1,504 +1,460 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Produtos / Cardápio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Menu Studio Pro — Cardápio PDF</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
+        :root {
+            --color-primary: #1A1A1A;
+            --color-secondary: #D4AF37;
+            --color-bg: #FFFFFF;
+            --color-text: #333333;
+            --font-title: 'Playfair Display', serif;
+            --font-body: 'Lato', sans-serif;
+            --app-bg: #f8fafc;
+        }
+
         body {
-            background-color: #f8fafc;
-            font-family: system-ui, sans-serif;
+            background-color: var(--app-bg);
+            margin: 0;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .input-field {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.5rem;
-            outline: none;
-            transition: all 0.2s;
-            font-size: 0.875rem;
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #preview-canvas {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-body);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 210mm;
+            min-height: 297mm; 
+            margin: 0 auto;
+            padding: 20mm 15mm;
+            box-sizing: border-box;
+            transform-origin: top center;
         }
 
-        .input-field:focus {
-            border-color: #4f46e5;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        #preview-canvas .font-title {
+            font-family: var(--font-title);
+            color: var(--color-primary);
         }
+
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem; }
+        .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.15); margin: 0 1rem; position: relative; top: -4px; }
+        
+        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .destaque-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
+<body class="flex flex-col md:flex-row h-screen font-sans text-gray-800">
 
-<body class="p-4 md:p-6 space-y-6">
-
-    <!-- Alerta Chatwoot -->
-    <div id="alerta-chatwoot" class="max-w-5xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm transition-all">
-        ⏳ Autenticando com o painel Chatwoot...
-    </div>
-
-    <div id="app-container" class="max-w-5xl mx-auto hidden transition-all">
-
-        <!-- Header e Navegação das Abas -->
-        <div class="mb-6">
-            <a href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-4">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Voltar ao Menu Principal
-            </a>
-            
-            <!-- Barra de Submenu (Abas) -->
-            <div class="flex space-x-6 border-b border-slate-200 px-2 overflow-x-auto hide-scroll">
-                <button class="py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap focus:outline-none transition-colors">
-                    🍕 Gerenciar Produtos
-                </button>
-                <a id="link-menu-studio" href="menu_studio_pro_mobile_first.html" class="py-2.5 text-sm font-medium text-slate-400 hover:text-slate-700 border-b-2 border-transparent whitespace-nowrap transition-colors">
-                    🎨 Gerador de PDF (Menu Studio)
+    <aside id="editor-panel" class="w-full md:w-[450px] h-full flex flex-col bg-white shadow-2xl z-20 transition-transform duration-300">
+        
+        <header class="p-4 md:p-6 border-b border-gray-100 flex flex-col gap-2 bg-white shrink-0">
+            <div>
+                <a id="btn-voltar-gestao" href="produtos.html" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                    ← Voltar para Gestão do Cardápio
                 </a>
             </div>
-        </div>
-
-        <div class="space-y-6">
-            
-            <!-- BLOCO 1: FORMULÁRIO (MINIMIZADO POR PADRÃO) -->
-            <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
-                <div class="flex flex-wrap justify-between items-center p-4 md:p-5 border-b border-slate-100 bg-slate-50/80 gap-4">
-                    <div class="flex items-center gap-3">
-                        <button id="btnToggleFormProduto" onclick="toggleSection('form-produto-wrapper', this)" title="Expandir/Recolher formulário" class="flex items-center justify-center w-8 h-8 bg-white border border-slate-300 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 rounded-lg shadow-sm transition-all focus:outline-none">
-                            <svg class="w-5 h-5 transition-transform duration-300 transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <h1 id="titulo-form" class="text-lg font-bold text-slate-800">Adicionar Novo Produto</h1>
-                    </div>
-
-                    <div class="flex gap-2 flex-wrap">
-                        <button type="button" id="btnExcluir" onclick="excluirProduto()" class="hidden px-3 py-2 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors shadow-sm">
-                            🗑️ Excluir
-                        </button>
-                        <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 py-2 text-xs font-bold text-white rounded-lg transition-colors shadow-sm">
-                            Desativar
-                        </button>
-                        <button type="button" onclick="limparFormulario()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-                            Limpar
-                        </button>
-                        <button type="button" id="btnSalvar" onclick="salvarProduto()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                            Salvar Produto
-                        </button>
-                    </div>
-                </div>
-
-                <div id="form-produto-wrapper" class="hidden">
-                    <form id="formProduto" class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <input type="hidden" id="produto_id" value="">
-
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome do Produto <span class="text-rose-500">*</span></label>
-                            <input type="text" id="nome" required class="input-field" placeholder="Ex: Hambúrguer Artesanal Duplo">
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Descrição do Item <span class="text-rose-500">*</span></label>
-                            <textarea id="descricao" required class="input-field" rows="2" placeholder="Ex: Pão brioche, 2 blends de 150g, queijo cheddar e bacon."></textarea>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Categoria <span class="text-rose-500">*</span></label>
-                            <input list="lista-categorias" id="categoria" required class="input-field bg-amber-50/50 border-amber-200 focus:border-amber-400" placeholder="Ex: Hambúrgueres, Bebidas...">
-                            <datalist id="lista-categorias"></datalist>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Tipo de Venda</label>
-                            <select id="tipo_venda" class="input-field bg-white" onchange="alternarCamposPreco()">
-                                <option value="simples">Preço Único</option>
-                                <option value="tamanhos">Variação por Tamanho / Porção</option>
-                            </select>
-                        </div>
-
-                        <div id="sessao-preco-simples" class="md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Preço (R$)</label>
-                            <input type="number" id="preco_base" class="input-field max-w-[200px] font-mono font-bold text-emerald-700" placeholder="0.00" step="0.01">
-                        </div>
-
-                        <div id="sessao-tamanhos" class="md:col-span-2 p-4 bg-indigo-50 border border-indigo-100 rounded-xl hidden space-y-3">
-                            <h3 class="text-xs font-bold text-indigo-800 uppercase tracking-wide">Tamanhos e Preços</h3>
-                            <div id="lista-de-tamanhos" class="space-y-2"></div>
-                            <button type="button" onclick="adicionarTamanho()" class="text-[11px] font-bold text-indigo-700 bg-white border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm mt-2">
-                                + Adicionar Variação
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- BLOCO 2: LISTA DE PRODUTOS -->
-            <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col">
-                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <h2 class="text-md font-bold text-slate-800">Itens Cadastrados</h2>
-                    <button onclick="carregarLista()" class="flex items-center text-[11px] font-bold text-slate-500 hover:text-indigo-600 px-3 py-1.5 border border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-colors shadow-sm">
-                        🔄 Sincronizar
-                    </button>
+            <div class="flex justify-between items-center mt-1">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 tracking-tight">Menu Studio</h1>
+                    <p class="text-[10px] text-gray-400 font-bold tracking-wide uppercase">Gerador de PDF Impresso</p>
                 </div>
                 
-                <!-- Barra de Filtro de Categorias em Cards -->
-                <div id="filtro-categorias-container" class="flex gap-2 overflow-x-auto px-4 py-3 bg-white border-b border-slate-100 hide-scroll"></div>
+                <div class="flex gap-2">
+                    <button onclick="toggleMobilePreview()" class="md:hidden w-10 h-10 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                    <button onclick="exportPDF()" id="btn-export" class="bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg transition-transform active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-download"></i> <span>Baixar PDF</span>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-                <div class="p-0 overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
-                            <tr>
-                                <th class="px-4 py-3 w-20 text-center">Status</th>
-                                <th class="px-4 py-3">Produto</th>
-                                <th class="px-4 py-3">Categoria</th>
-                                <th class="px-4 py-3">Preço</th>
-                                <th class="px-4 py-3 text-right">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="lista-produtos" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Carregando produtos...</td></tr>
-                        </tbody>
-                    </table>
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 relative bg-gray-50/50 hide-scroll">
+            
+            <!-- TAB 1: IDENTIDADE -->
+            <div id="panel-identidade" class="tab-content fade-in space-y-6 block">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-5">
+                    <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-store text-gray-400"></i> Cabeçalho do Cardápio
+                    </h2>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2">Logotipo do Estabelecimento</label>
+                        <div class="relative group cursor-pointer">
+                            <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-200 border-dashed rounded-xl bg-gray-50 hover:border-gray-400 hover:bg-gray-100 transition-all overflow-hidden cursor-pointer">
+                                <div id="logo-preview-container" class="absolute inset-0 hidden items-center justify-center bg-white p-2">
+                                    <img id="logo-preview-img" class="max-h-full max-w-full object-contain drop-shadow-md">
+                                </div>
+                                <div id="logo-upload-prompt" class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-600 font-medium">Toque para enviar Logo</p>
+                                </div>
+                                <input id="input-logo" type="file" class="hidden" accept="image/png, image/jpeg, image/webp" onchange="handleSmartLogoUpload(event)" />
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2">Nome de Exibição no PDF</label>
+                        <input type="text" id="input-rest-name" value="Meu Restaurante" oninput="debounceUpdate()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:bg-white outline-none font-medium">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-2">Slogan / Subtítulo</label>
+                        <textarea id="input-rest-desc" oninput="debounceUpdate()" rows="2" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:bg-white outline-none text-gray-700" placeholder="Ex: O sabor artesanal em cada detalhe."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: CARROS-CHEFE -->
+            <div id="panel-destaques" class="tab-content fade-in hidden space-y-6">
+                <div class="bg-gradient-to-br from-gray-900 to-gray-800 p-5 rounded-2xl shadow-md text-white">
+                    <h2 class="text-sm font-bold uppercase tracking-wider flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-star text-yellow-400"></i> Pratos em Destaque
+                    </h2>
+                    <p class="text-xs text-gray-300 mb-4">Adicione fotos dos carros-chefe para figurar no topo do PDF[cite: 1].</p>
+                    
+                    <div id="destaques-list" class="space-y-4"></div>
+
+                    <button onclick="addDestaque()" id="btn-add-destaque" class="w-full mt-4 bg-white/10 hover:bg-white/20 border border-white/20 border-dashed rounded-xl py-3 text-sm font-bold transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Adicionar Destaque
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: DADOS ORIGINAIS -->
+            <div id="panel-dados" class="tab-content fade-in hidden space-y-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider"><i class="fa-solid fa-database text-indigo-500 mr-2"></i> Produtos Sincronizados</h2>
+                        <button onclick="carregarProdutosDoBanco()" class="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 hover:bg-indigo-100">
+                            🔄 Atualizar
+                        </button>
+                    </div>
+                    
+                    <p class="text-xs text-gray-500 mb-4">Puxados em tempo real do seu banco de dados. Desmarque a caixinha para ocultar temporariamente um item do PDF.</p>
+
+                    <div class="overflow-hidden border border-gray-100 rounded-xl bg-gray-50">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-gray-100 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase">Item</th>
+                                    <th class="px-3 py-2.5 text-right text-[10px] font-bold text-gray-500 uppercase w-20">Preço</th>
+                                    <th class="px-2 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase w-10"><i class="fa-solid fa-eye"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table-body" class="divide-y divide-gray-100 bg-white"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ESTILO -->
+            <div id="panel-design" class="tab-content fade-in hidden space-y-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4"><i class="fa-solid fa-palette text-gray-400 mr-2"></i> Cores do PDF</h2>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Cor Primária</label>
+                                <input type="color" id="color-primary" value="#1A1A1A" class="h-8 w-full rounded cursor-pointer border-0 p-1 bg-gray-50" onchange="updateTheme()">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Cor do Destaque</label>
+                                <input type="color" id="color-secondary" value="#D4AF37" class="h-8 w-full rounded cursor-pointer border-0 p-1 bg-gray-50" onchange="updateTheme()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-gray-100">
+
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4"><i class="fa-solid fa-table-columns text-gray-400 mr-2"></i> Layout de Impressão</h2>
+                        <div class="space-y-2">
+                            <button onclick="setLayout(1)" id="btn-layout-1" class="w-full text-left p-3 rounded-lg border-2 border-gray-900 bg-gray-50 flex items-center justify-between">
+                                <span class="text-sm font-bold text-gray-900">1 Coluna (Clássico)</span>
+                            </button>
+                            <button onclick="setLayout(2)" id="btn-layout-2" class="w-full text-left p-3 rounded-lg border border-gray-200 bg-white flex items-center justify-between text-gray-500">
+                                <span class="text-sm font-medium">2 Colunas (Densa)</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <nav class="absolute bottom-0 w-full md:relative bg-white border-t border-gray-200 pb-safe z-30 shrink-0">
+            <div class="flex justify-around items-center p-2">
+                <button onclick="switchTab('identidade')" id="tab-identidade" class="flex flex-col items-center p-2 text-gray-900 flex-1">
+                    <i class="fa-solid fa-store text-lg mb-1"></i>
+                    <span class="text-[10px] font-bold">Marca</span>
+                </button>
+                <button onclick="switchTab('destaques')" id="tab-destaques" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-900 flex-1">
+                    <i class="fa-solid fa-star text-lg mb-1"></i>
+                    <span class="text-[10px] font-bold">Chef</span>
+                </button>
+                <button onclick="switchTab('dados')" id="tab-dados" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-900 flex-1">
+                    <i class="fa-solid fa-database text-lg mb-1"></i>
+                    <span class="text-[10px] font-bold">Produtos</span>
+                </button>
+                <button onclick="switchTab('design')" id="tab-design" class="flex flex-col items-center p-2 text-gray-400 hover:text-gray-900 flex-1">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg mb-1"></i>
+                    <span class="text-[10px] font-bold">Estilo</span>
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-[#e2e8f0] overflow-y-auto flex justify-center py-6 md:py-10 z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
+        <div id="canvas-wrapper" class="origin-top transition-transform duration-200 mt-10 md:mt-0 shadow-2xl">
+            <div id="preview-canvas"></div>
+        </div>
+    </main>
 
     <script>
-        const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
-        const urlAcao = 'https://n8n.orbbotia.com/webhook/produtos-acao';
-
-        let globalAccountId = null;
-        let handshakeInterval;
-        let listaAtual = [];
-        let statusAtualEdicao = true;
-        let categoriaSelecionadaFiltro = 'Todas';
+        const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
+        
+        let globalAccountId = '3';
+        let appState = {
+            layout: 1,
+            zoom: 0.6,
+            restaurantName: "Meu Restaurante",
+            restaurantDescription: "",
+            logoUrl: null,
+            carrosChefe: [],
+            data: []
+        };
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
-        window.addEventListener('message', function (event) {
-            let eventData = {};
-            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+        async function carregarProdutosDoBanco() {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-500 font-bold">⏳ Buscando produtos originais...</td></tr>`;
 
-            if (eventData.event === 'appContext' && eventData.data) {
-                clearInterval(handshakeInterval);
-                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id) || globalAccountId;
-                iniciarApp();
-            }
-        });
-
-        handshakeInterval = setInterval(() => {
-            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
-        }, 500);
-
-        setTimeout(() => {
-            if (!globalAccountId) { globalAccountId = '3'; iniciarApp(); }
-        }, 1500);
-
-        function iniciarApp() {
-            document.getElementById('alerta-chatwoot').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            
-            // Atualiza o link do PDF com o account_id dinâmico
-            document.getElementById('link-menu-studio').href = `menu_studio_pro_mobile_first.html?account_id=${globalAccountId}`;
-            
-            carregarLista();
-            if (document.getElementById('lista-de-tamanhos').children.length === 0) adicionarTamanho();
-        }
-
-        function toggleSection(wrapperId, btn) {
-            const wrapper = document.getElementById(wrapperId);
-            const isHidden = wrapper.classList.toggle('hidden');
-            const svg = btn.querySelector('svg');
-            if (svg) {
-                if (isHidden) {
-                    svg.classList.add('-rotate-90');
-                    btn.classList.remove('bg-indigo-50', 'border-indigo-300', 'text-indigo-600');
-                } else {
-                    svg.classList.remove('-rotate-90');
-                    btn.classList.add('bg-indigo-50', 'border-indigo-300', 'text-indigo-600');
-                }
-            }
-        }
-
-        function alternarCamposPreco() {
-            const tipo = document.getElementById('tipo_venda').value;
-            if (tipo === 'simples') {
-                document.getElementById('sessao-preco-simples').classList.remove('hidden');
-                document.getElementById('sessao-tamanhos').classList.add('hidden');
-            } else {
-                document.getElementById('sessao-preco-simples').classList.add('hidden');
-                document.getElementById('sessao-tamanhos').classList.remove('hidden');
-            }
-        }
-
-        function adicionarTamanho(nome = '', preco = '') {
-            const container = document.getElementById('lista-de-tamanhos');
-            const div = document.createElement('div');
-            div.className = "flex gap-2 items-center";
-            div.innerHTML = `
-                <input type="text" placeholder="Tamanho (Ex: G, 500ml)" value="${nome}" class="input-field w-1/2 input-tamanho-nome text-sm font-medium">
-                <input type="number" placeholder="Preço (Ex: 45.00)" value="${preco}" class="input-field w-1/3 input-tamanho-preco font-mono font-bold text-emerald-700" step="0.01">
-                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-3 py-1.5 hover:bg-rose-100 rounded-lg transition-colors">✕</button>
-            `;
-            container.appendChild(div);
-        }
-
-        function formatarMoeda(valor) {
-            return parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        }
-
-        async function carregarLista() {
-            const tbody = document.getElementById('lista-produtos');
-            tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
             try {
-                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro");
-                const dados = await res.json();
-                listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
+                const res = await fetch(`${urlProdutos}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error("Erro de resposta");
+                const produtosBrutos = await res.json();
                 
-                atualizarDatalistCategorias();
-                renderizarFiltros();
-                renderizarTabela();
-            } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
+                const listaTratada = Array.isArray(produtosBrutos) ? produtosBrutos : (produtosBrutos.data || []);
+
+                const agrupado = {};
+                listaTratada.forEach(prod => {
+                    const p = prod.json || prod;
+                    if (p.deletado === true || p.ativo === false) return;
+
+                    const cat = p.categoria && p.categoria.trim() !== '' ? p.categoria.trim() : 'Gerais';
+                    if (!agrupado[cat]) agrupado[cat] = [];
+
+                    let precoFinal = parseFloat(p.preco_base) || 0;
+                    if (p.metadata && p.metadata.tipo === 'com_tamanhos' && Array.isArray(p.metadata.tamanhos) && p.metadata.tamanhos.length > 0) {
+                        precoFinal = parseFloat(p.metadata.tamanhos[0].preco) || precoFinal;
+                    }
+
+                    agrupado[cat].push({
+                        id: p.id,
+                        nome: p.nome,
+                        desc: p.descricao || '',
+                        preco: precoFinal,
+                        visivel: true
+                    });
+                });
+
+                appState.data = Object.keys(agrupado).sort().map(cat => ({
+                    categoria: cat,
+                    itens: agrupado[cat]
+                }));
+
+                renderTable();
+                renderPreview();
+
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
             }
         }
 
-        function atualizarDatalistCategorias() {
-            const datalist = document.getElementById('lista-categorias');
-            const categoriasUnicas = new Set();
-            listaAtual.forEach(prod => {
-                const p = prod.json || prod;
-                if (p.categoria && p.categoria.trim() !== '') categoriasUnicas.add(p.categoria.trim());
+        function switchTab(tabName) {
+            ['identidade', 'destaques', 'dados', 'design'].forEach(tab => {
+                const btn = document.getElementById(`tab-${tab}`);
+                const panel = document.getElementById(`panel-${tab}`);
+                if (tab === tabName) {
+                    btn.classList.add('text-gray-900');
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('text-gray-900');
+                    panel.classList.add('hidden');
+                }
             });
-            datalist.innerHTML = '';
-            Array.from(categoriasUnicas).sort().forEach(cat => datalist.appendChild(new Option(cat)));
         }
 
-        function renderizarFiltros() {
-            const container = document.getElementById('filtro-categorias-container');
-            const categoriasUnicas = new Set();
-            listaAtual.forEach(prod => {
-                const p = prod.json || prod;
-                if (p.deletado !== true && p.categoria) categoriasUnicas.add(p.categoria.trim());
-            });
-
-            const catOrdenadas = Array.from(categoriasUnicas).sort();
-            let html = `<button onclick="aplicarFiltro('Todas')" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${categoriaSelecionadaFiltro === 'Todas' ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">📋 Todas</button>`;
-            
-            catOrdenadas.forEach(cat => {
-                const isActive = categoriaSelecionadaFiltro === cat;
-                html += `<button onclick="aplicarFiltro('${cat}')" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${isActive ? 'bg-slate-800 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${cat}</button>`;
-            });
-
-            container.innerHTML = html;
+        function toggleMobilePreview() {
+            document.getElementById('preview-container').classList.toggle('translate-x-full');
         }
 
-        function aplicarFiltro(categoria) {
-            categoriaSelecionadaFiltro = categoria;
-            renderizarFiltros();
-            renderizarTabela();
+        function debounceUpdate() {
+            appState.restaurantName = document.getElementById('input-rest-name').value.trim() || "Meu Restaurante";
+            appState.restaurantDescription = document.getElementById('input-rest-desc').value.trim();
+            renderPreview();
         }
 
-        function renderizarTabela() {
-            const tbody = document.getElementById('lista-produtos');
+        function renderTable() {
+            const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = '';
 
-            const listaFiltrada = listaAtual.filter(item => {
-                const p = item.json || item;
-                if (p.deletado === true) return false;
-                if (categoriaSelecionadaFiltro !== 'Todas' && p.categoria !== categoriaSelecionadaFiltro) return false;
-                return true;
-            });
-
-            if (listaFiltrada.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhum produto cadastrado nesta visão.</td></tr>`;
+            if (appState.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-gray-400">Nenhum produto cadastrado no banco.</td></tr>`;
                 return;
             }
 
-            listaFiltrada.forEach(prod => {
-                const p = prod.json || prod;
-                const isAtivo = p.ativo !== false && p.ativo !== "false";
-
-                let precoDisplay = `<span class="font-mono font-bold text-emerald-700">${formatarMoeda(p.preco_base)}</span>`;
-                if (p.metadata && p.metadata.tipo === 'com_tamanhos' && Array.isArray(p.metadata.tamanhos)) {
-                    let tags = p.metadata.tamanhos.map(t => `<span class="bg-slate-100 text-slate-700 text-[10px] px-1.5 py-0.5 rounded border border-slate-200 mr-1 mb-1 inline-block">${t.nome}: <span class="font-bold text-emerald-700">${formatarMoeda(t.preco)}</span></span>`).join('');
-                    precoDisplay = `<div class="flex flex-wrap mt-1">${tags}</div>`;
-                }
-
-                const tr = document.createElement('tr');
-                tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50 bg-white' : 'bg-slate-50 opacity-60 grayscale'}`;
-                tr.innerHTML = `
-                    <td class="px-4 py-3 text-center">
-                        ${isAtivo
-                        ? '<span class="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm" title="Ativo"></span>'
-                        : '<span class="inline-block w-2.5 h-2.5 bg-slate-400 rounded-full shadow-sm" title="Inativo"></span>'}
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="font-bold text-sm ${isAtivo ? 'text-slate-800' : 'text-slate-500 line-through'}">${p.nome}</div>
-                        <div class="text-[11px] ${isAtivo ? 'text-slate-500' : 'text-slate-400'} max-w-[250px] truncate" title="${p.descricao || ''}">${p.descricao || ''}</div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-lg border border-indigo-100 uppercase tracking-wide whitespace-nowrap">${p.categoria || 'Sem Categoria'}</span>
-                    </td>
-                    <td class="px-4 py-3">${precoDisplay}</td>
-                    <td class="px-4 py-3 text-right">
-                        <button onclick="editarProduto('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors border border-indigo-200 shadow-sm">
-                            Editar
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+            appState.data.forEach((cat, catIndex) => {
+                tbody.innerHTML += `<tr class="bg-gray-100/50"><td colspan="3" class="px-3 py-1.5 text-[11px] font-bold text-gray-700 uppercase">${cat.categoria}</td></tr>`;
+                cat.itens.forEach((item, itemIndex) => {
+                    const tr = document.createElement('tr');
+                    tr.className = `group ${item.visivel ? 'hover:bg-blue-50/30' : 'bg-gray-50 opacity-50'}`;
+                    tr.innerHTML = `
+                        <td class="px-3 py-2">
+                            <div class="font-semibold text-gray-900 text-xs">${item.nome}</div>
+                            <div class="text-[10px] text-gray-500 line-clamp-1">${item.desc}</div>
+                        </td>
+                        <td class="px-3 py-2 text-right font-mono text-xs">R$ ${item.preco.toFixed(2)}</td>
+                        <td class="px-2 py-2 text-center">
+                            <input type="checkbox" class="accent-gray-900" ${item.visivel ? 'checked' : ''} onchange="toggleVisibility(${catIndex}, ${itemIndex})">
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             });
         }
 
-        function editarProduto(id) {
-            const prodObj = listaAtual.find(i => (i.json || i).id == id);
-            if (!prodObj) return;
-            const p = prodObj.json || prodObj;
-
-            document.getElementById('produto_id').value = p.id;
-            document.getElementById('nome').value = p.nome || '';
-            document.getElementById('descricao').value = p.descricao || '';
-            document.getElementById('categoria').value = p.categoria || '';
-
-            const container = document.getElementById('lista-de-tamanhos');
-            container.innerHTML = '';
-
-            if (p.metadata && p.metadata.tipo === 'com_tamanhos') {
-                document.getElementById('tipo_venda').value = 'tamanhos';
-                if (p.metadata.tamanhos) p.metadata.tamanhos.forEach(t => adicionarTamanho(t.nome, t.preco));
-            } else {
-                document.getElementById('tipo_venda').value = 'simples';
-                document.getElementById('preco_base').value = p.preco_base || '';
-                adicionarTamanho();
-            }
-            alternarCamposPreco();
-
-            statusAtualEdicao = p.ativo !== false && p.ativo !== "false";
-            const btnStatus = document.getElementById('btnStatus');
-            btnStatus.classList.remove('hidden', 'bg-slate-600', 'bg-emerald-600');
-            if (statusAtualEdicao) {
-                btnStatus.innerText = "Desativar";
-                btnStatus.classList.add('bg-slate-600');
-            } else {
-                btnStatus.innerText = "Reativar 🟢";
-                btnStatus.classList.add('bg-emerald-600');
-            }
-
-            document.getElementById('btnExcluir').classList.remove('hidden');
-            document.getElementById('titulo-form').innerText = "Editando Produto";
-            document.getElementById('btnSalvar').innerText = "Atualizar Produto";
-            
-            const formWrapper = document.getElementById('form-produto-wrapper');
-            if (formWrapper.classList.contains('hidden')) {
-                toggleSection('form-produto-wrapper', document.getElementById('btnToggleFormProduto'));
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        function toggleVisibility(catIdx, itemIdx) {
+            appState.data[catIdx].itens[itemIdx].visivel = !appState.data[catIdx].itens[itemIdx].visivel;
+            renderPreview();
         }
 
-        function limparFormulario() {
-            document.getElementById('formProduto').reset();
-            document.getElementById('produto_id').value = '';
-            document.getElementById('titulo-form').innerText = "Adicionar Novo Produto";
-            document.getElementById('btnSalvar').innerText = "Salvar Produto";
-            document.getElementById('btnStatus').classList.add('hidden');
-            document.getElementById('btnExcluir').classList.add('hidden');
-
-            document.getElementById('tipo_venda').value = 'simples';
-            document.getElementById('lista-de-tamanhos').innerHTML = '';
-            adicionarTamanho();
-            alternarCamposPreco();
-
-            const formWrapper = document.getElementById('form-produto-wrapper');
-            if (!formWrapper.classList.contains('hidden')) {
-                toggleSection('form-produto-wrapper', document.getElementById('btnToggleFormProduto'));
-            }
+        function updateTheme() {
+            const root = document.documentElement;
+            root.style.setProperty('--color-primary', document.getElementById('color-primary').value);
+            root.style.setProperty('--color-secondary', document.getElementById('color-secondary').value);
+            renderPreview();
         }
 
-        async function enviarAcao(payload, btnElement, txtSucesso) {
-            const txtOriginal = btnElement.innerText;
-            btnElement.innerText = '⏳';
-            btnElement.disabled = true;
+        function setLayout(id) {
+            appState.layout = id;
+            renderPreview();
+        }
 
-            try {
-                const response = await fetch(urlAcao, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+        function renderPreview() {
+            const canvas = document.getElementById('preview-canvas');
+            let html = '';
+
+            html += `<div class="text-center mb-8 avoid-break">`;
+            if (appState.logoUrl) html += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain">`;
+            html += `<h1 class="text-4xl font-bold uppercase tracking-widest mb-2 font-title">${appState.restaurantName}</h1>`;
+            if (appState.restaurantDescription) html += `<p class="text-sm italic mb-4">${appState.restaurantDescription}</p>`;
+            html += `<div style="width: 50px; height: 2px; background-color: var(--color-secondary); margin: 0 auto;"></div></div>`;
+
+            const filteredData = appState.data.map(cat => ({
+                categoria: cat.categoria,
+                itens: cat.itens.filter(i => i.visivel)
+            })).filter(cat => cat.itens.length > 0);
+
+            if (appState.layout === 1) {
+                html += `<div class="max-w-2xl mx-auto space-y-8">`;
+                filteredData.forEach(cat => {
+                    html += `<div class="avoid-break">
+                                <h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">${cat.categoria}</h2>
+                                <div class="space-y-4">`;
+                    cat.itens.forEach(item => {
+                        html += `<div>
+                                    <div class="l1-item-row">
+                                        <span class="font-bold text-base font-title">${item.nome}</span>
+                                        <div class="l1-dots"></div>
+                                        <span class="font-bold font-mono">${formatCurrency(item.preco)}</span>
+                                    </div>
+                                    <p class="text-xs italic opacity-75">${item.desc}</p>
+                                </div>`;
+                    });
+                    html += `</div></div>`;
                 });
-                if (response.ok) {
-                    btnElement.innerText = txtSucesso;
-                    setTimeout(() => {
-                        btnElement.innerText = txtOriginal;
-                        limparFormulario();
-                        carregarLista(); 
-                        btnElement.disabled = false;
-                    }, 800);
-                } else throw new Error();
-            } catch (error) {
-                alert("Erro ao salvar no banco de dados.");
-                btnElement.innerText = txtOriginal;
-                btnElement.disabled = false;
-            }
-        }
-
-        function alternarStatus() {
-            const id = document.getElementById('produto_id').value;
-            if (!id) return;
-            enviarAcao({ action: 'status', account_id: globalAccountId.toString(), id: id, ativo: !statusAtualEdicao }, document.getElementById('btnStatus'), '✓');
-        }
-
-        function excluirProduto() {
-            const id = document.getElementById('produto_id').value;
-            if (!id) return;
-            if (confirm("Deseja apagar este produto do cardápio?")) {
-                enviarAcao({ action: 'deletar', account_id: globalAccountId.toString(), id: id }, document.getElementById('btnExcluir'), '🗑️');
-            }
-        }
-
-        function salvarProduto() {
-            const id = document.getElementById('produto_id').value;
-            const nome = document.getElementById('nome').value.trim();
-            const descricao = document.getElementById('descricao').value.trim();
-            const categoria = document.getElementById('categoria').value.trim();
-            const tipo = document.getElementById('tipo_venda').value;
-
-            if (!nome || !categoria) return alert("Nome e Categoria são obrigatórios!");
-
-            let precoBase = 0.00;
-            let metadata = {};
-
-            if (tipo === 'simples') {
-                precoBase = parseFloat(document.getElementById('preco_base').value) || 0.00;
-                metadata = { tipo: 'simples' };
-            } else {
-                const nomes = document.querySelectorAll('.input-tamanho-nome');
-                const precos = document.querySelectorAll('.input-tamanho-preco');
-                let arrayTamanhos = [];
-                for (let i = 0; i < nomes.length; i++) {
-                    if (nomes[i].value) arrayTamanhos.push({ nome: nomes[i].value, preco: parseFloat(precos[i].value) || 0.00 });
-                }
-                if (arrayTamanhos.length === 0) return alert("Adicione pelo menos uma variação de tamanho!");
-                metadata = { tipo: 'com_tamanhos', tamanhos: arrayTamanhos };
+                html += `</div>`;
+            } else if (appState.layout === 2) {
+                html += `<div class="grid grid-cols-2 gap-x-8 gap-y-6">`;
+                filteredData.forEach(cat => {
+                    html += `<div class="col-span-2 text-center mt-2 mb-2 border-y border-dashed py-1 avoid-break">
+                                <h2 class="text-lg font-bold uppercase tracking-widest font-title">${cat.categoria}</h2>
+                             </div>`;
+                    cat.itens.forEach(item => {
+                        html += `<div class="avoid-break">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <span class="font-bold text-sm font-title pr-2">${item.nome}</span>
+                                        <span class="font-bold font-mono text-xs">${formatCurrency(item.preco)}</span>
+                                    </div>
+                                    <p class="text-[10px] italic opacity-75">${item.desc}</p>
+                                </div>`;
+                    });
+                });
+                html += `</div>`;
             }
 
-            enviarAcao({
-                action: id ? 'editar' : 'criar',
-                id: id,
-                account_id: globalAccountId.toString(),
-                nome: nome,
-                descricao: descricao,
-                categoria: categoria,
-                preco_base: precoBase,
-                metadata: metadata
-            }, document.getElementById('btnSalvar'), '✓ Salvo');
+            canvas.innerHTML = html;
         }
+
+        function exportPDF() {
+            const element = document.getElementById('preview-canvas');
+            html2pdf().set({
+                margin: 0,
+                filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(element).save();
+        }
+
+        function handleSmartLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                appState.logoUrl = e.target.result;
+                document.getElementById('logo-preview-img').src = e.target.result;
+                document.getElementById('logo-preview-container').classList.remove('hidden');
+                document.getElementById('logo-preview-container').classList.add('flex');
+                document.getElementById('logo-upload-prompt').classList.add('hidden');
+                renderPreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        window.onload = () => {
+            document.getElementById('btn-voltar-gestao').href = `produtos.html?account_id=${globalAccountId}`;
+            carregarProdutosDoBanco();
+        };
     </script>
 </body>
 </html>

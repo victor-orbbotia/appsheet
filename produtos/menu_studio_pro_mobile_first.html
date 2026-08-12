@@ -37,7 +37,6 @@
         .fade-in { animation: fadeIn 0.25s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Canvas folha A4 */
         #preview-canvas {
             background-color: var(--color-bg);
             color: var(--color-text);
@@ -328,7 +327,7 @@
         </nav>
     </aside>
 
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Z-40 garante que no mobile sobreponha o menu Z-20) -->
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Z-40 no mobile para sobrepor o menu) -->
     <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-y-auto flex justify-center py-4 md:py-8 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
         <!-- Header de Controle Mobile -->
@@ -347,8 +346,8 @@
         </div>
     </main>
 
-    <!-- CONTROLES DE ZOOM FLUTUANTES (Fora do transform do canvas para se manter fixo) -->
-    <div id="zoom-controls" class="fixed bottom-6 right-6 glass-panel p-1 rounded-xl shadow-lg flex items-center gap-1 z-[60] border border-slate-200 transition-opacity duration-300 md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto">
+    <!-- CONTROLES DE ZOOM FLUTUANTES (Fixado na raiz do body Z-50) -->
+    <div id="zoom-controls" class="fixed bottom-6 right-6 glass-panel p-1 rounded-xl shadow-lg flex items-center gap-1 z-50 border border-slate-200 transition-opacity duration-300 md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto">
         <button onclick="setZoom(-0.05)" title="Diminuir Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
             <i class="fa-solid fa-minus text-xs"></i>
         </button>
@@ -381,6 +380,76 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
+        /* =========================================
+           PERSISTÊNCIA EM CACHE (LOCALSTORAGE)
+           ========================================= */
+        function getCacheKey() {
+            return `menu_studio_config_${globalAccountId}`;
+        }
+
+        function salvarConfigNoCache() {
+            const configParaSalvar = {
+                restaurantName: appState.restaurantName,
+                restaurantDescription: appState.restaurantDescription,
+                logoUrl: appState.logoUrl,
+                carrosChefe: appState.carrosChefe,
+                colorPrimary: document.getElementById('color-primary').value,
+                colorSecondary: document.getElementById('color-secondary').value,
+                colorBg: document.getElementById('color-bg').value,
+                colorText: document.getElementById('color-text').value,
+                fontTitle: document.getElementById('font-title').value,
+                fontBody: document.getElementById('font-body').value,
+                layout: appState.layout
+            };
+            try {
+                localStorage.setItem(getCacheKey(), JSON.stringify(configParaSalvar));
+            } catch (e) {
+                console.warn("Espaço de LocalStorage esgotado ou desativado.", e);
+            }
+        }
+
+        function carregarConfigDoCache() {
+            try {
+                const salvo = localStorage.getItem(getCacheKey());
+                if (!salvo) return;
+                const config = JSON.parse(salvo);
+
+                if (config.restaurantName) {
+                    appState.restaurantName = config.restaurantName;
+                    document.getElementById('input-rest-name').value = config.restaurantName;
+                }
+                if (config.restaurantDescription) {
+                    appState.restaurantDescription = config.restaurantDescription;
+                    document.getElementById('input-rest-desc').value = config.restaurantDescription;
+                }
+                if (config.logoUrl) {
+                    appState.logoUrl = config.logoUrl;
+                    document.getElementById('logo-preview-img').src = config.logoUrl;
+                    document.getElementById('logo-preview-container').classList.remove('hidden');
+                    document.getElementById('logo-preview-container').classList.add('flex');
+                    document.getElementById('logo-upload-prompt').classList.add('hidden');
+                }
+                if (Array.isArray(config.carrosChefe)) {
+                    appState.carrosChefe = config.carrosChefe;
+                    renderDestaquesUI();
+                }
+                if (config.colorPrimary) document.getElementById('color-primary').value = config.colorPrimary;
+                if (config.colorSecondary) document.getElementById('color-secondary').value = config.colorSecondary;
+                if (config.colorBg) document.getElementById('color-bg').value = config.colorBg;
+                if (config.colorText) document.getElementById('color-text').value = config.colorText;
+                if (config.fontTitle) document.getElementById('font-title').value = config.fontTitle;
+                if (config.fontBody) document.getElementById('font-body').value = config.fontBody;
+                if (config.layout) setLayout(config.layout);
+
+                updateTheme();
+            } catch (e) {
+                console.warn("Erro ao restaurar cache do usuário.", e);
+            }
+        }
+
+        /* =========================================
+           HANDSHAKE & BUSCA DE DADOS (N8N)
+           ========================================= */
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -404,24 +473,34 @@
             document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
             document.getElementById('btn-voltar-gestao').href = `./produtos.html?account_id=${globalAccountId}`;
             
+            carregarConfigDoCache(); // Restaura as preferências salvas em cache
             resetZoomAdaptativo();
             carregarProdutosDoBanco();
         }
 
+        // Leitura Ultra-Tolerante de dados do n8n
         async function carregarProdutosDoBanco() {
             const tbody = document.getElementById('data-table-body');
-            tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio original...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
 
             try {
                 const res = await fetch(`${urlProdutos}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro de HTTP");
-                const produtosBrutos = await res.json();
+                if (!res.ok) throw new Error("Erro HTTP");
+                const dadosRetornados = await res.json();
                 
-                const listaTratada = Array.isArray(produtosBrutos) ? produtosBrutos : (produtosBrutos.data || []);
+                // Normaliza o array de itens independente do formato do n8n
+                let listaTratada = [];
+                if (Array.isArray(dadosRetornados)) {
+                    listaTratada = dadosRetornados;
+                } else if (dadosRetornados.data && Array.isArray(dadosRetornados.data)) {
+                    listaTratada = dadosRetornados.data;
+                } else if (dadosRetornados.payload && Array.isArray(dadosRetornados.payload)) {
+                    listaTratada = dadosRetornados.payload;
+                }
 
                 const agrupado = {};
                 listaTratada.forEach(prod => {
-                    const p = prod.json || prod;
+                    const p = prod.json ? prod.json : prod;
                     if (p.deletado === true || p.ativo === false) return;
 
                     const cat = p.categoria && p.categoria.trim() !== '' ? p.categoria.trim() : 'Outros';
@@ -433,8 +512,8 @@
                     }
 
                     agrupado[cat].push({
-                        id: p.id,
-                        nome: p.nome,
+                        id: p.id || Math.random().toString(),
+                        nome: p.nome || 'Sem Nome',
                         desc: p.descricao || '',
                         preco: precoFinal,
                         visivel: true
@@ -450,8 +529,8 @@
                 renderPreview();
 
             } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Falha de sincronização.</td></tr>`;
+                console.error("Erro na sincronização:", err);
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
             }
         }
 
@@ -461,11 +540,11 @@
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
             if (w < 768) {
-                appState.zoom = 0.32; // Pequeno no celular (iPhone)
+                appState.zoom = 0.32;
             } else if (w < 1100) {
-                appState.zoom = 0.50; // Chatwoot iFrame intermediário
+                appState.zoom = 0.50;
             } else {
-                appState.zoom = 0.77; // Desktop Padrão solicitado 77%
+                appState.zoom = 0.77; // Padrão solicitado 77% nos computadores
             }
             applyZoom();
         }
@@ -503,10 +582,8 @@
             const zControls = document.getElementById('zoom-controls');
             isMobilePreviewOpen = !isMobilePreviewOpen;
             
-            // Remove a classe translate-x-full para deslizar a tela de preview sobre o editor
             container.classList.toggle('translate-x-full', !isMobilePreviewOpen);
             
-            // Exibe a barrinha flutuante de Zoom no celular apenas quando o Preview estiver ativo
             if (isMobilePreviewOpen) {
                 zControls.classList.remove('opacity-0', 'pointer-events-none');
                 zControls.classList.add('opacity-100', 'pointer-events-auto');
@@ -522,6 +599,7 @@
                 appState.restaurantName = document.getElementById('input-rest-name').value.trim() || "Meu Restaurante";
                 appState.restaurantDescription = document.getElementById('input-rest-desc').value.trim();
                 renderPreview();
+                salvarConfigNoCache();
             }, 250);
         }
 
@@ -565,6 +643,7 @@
                         renderPreview();
                     }
                 };
+                salvarConfigNoCache();
             }
             reader.readAsDataURL(file);
         }
@@ -590,12 +669,14 @@
             
             renderDestaquesUI();
             renderPreview();
+            salvarConfigNoCache();
         }
 
         function removeDestaque(id) {
             appState.carrosChefe = appState.carrosChefe.filter(c => c.id !== id);
             renderDestaquesUI();
             renderPreview();
+            salvarConfigNoCache();
         }
 
         function renderDestaquesUI() {
@@ -660,6 +741,7 @@
                 if (field === 'preco') value = parseFloat(value) || 0;
                 appState.carrosChefe[index][field] = value;
                 renderPreview();
+                salvarConfigNoCache();
             }
         }
 
@@ -721,6 +803,7 @@
             root.style.setProperty('--font-body', document.getElementById('font-body').value);
 
             renderPreview();
+            salvarConfigNoCache();
         }
 
         function setLayout(id) {
@@ -739,10 +822,11 @@
                 }
             });
             renderPreview();
+            salvarConfigNoCache();
         }
 
         /* =========================================
-           RENDERIZAÇÃO DO CANVA E PDF
+           RENDERIZAÇÃO DO CANVA E GERADOR PDF
            ========================================= */
         function renderPreview() {
             const canvas = document.getElementById('preview-canvas');
@@ -837,11 +921,12 @@
             canvas.innerHTML = html;
         }
 
-        // Função de gerar PDF robusta: Zera o CSS Transform para renderizar sem estourar e volta no fim
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
         function exportPDF() {
             const wrapper = document.getElementById('canvas-wrapper');
             const oldTransform = wrapper.style.transform;
-            wrapper.style.transform = 'scale(1)'; // Retira o zoom para a foto do PDF sair perfeita
+            wrapper.style.transform = 'scale(1)'; // Zera o zoom no momento exato do snapshot do PDF
             
             const element = document.getElementById('preview-canvas');
             const btnDesktop = document.getElementById('btn-export-desktop');
@@ -872,6 +957,10 @@
                 alert("Erro ao exportar o arquivo PDF.");
             });
         }
+
+        window.onload = () => {
+            iniciarPagina();
+        };
     </script>
 </body>
 </html>

@@ -8,6 +8,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,6 +74,16 @@
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* REGRAS DE IMPRESSÃO LIMPA */
+        @media print {
+            @page { size: A4 portrait; margin: 0mm; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible !important; }
+            #editor-panel, #zoom-controls, .md\:hidden { display: none !important; }
+            #preview-container { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white !important; padding: 0 !important; transform: none !important; }
+            #zoom-container, #canvas-wrapper { transform: none !important; width: 100% !important; height: auto !important; box-shadow: none !important; margin: 0 !important; }
+            #preview-canvas { width: 210mm !important; box-shadow: none !important; margin: 0 auto !important; }
+        }
     </style>
 </head>
 
@@ -265,10 +276,10 @@
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fonte dos Títulos</label>
                                 <select id="font-title" onchange="updateTheme()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
-                                    <option value="'Playfair Display', serif">Playfair Display (Gourmet / Elegante)</option>
-                                    <option value="'Cinzel', serif">Cinzel (Clássica / Sofisticada)</option>
-                                    <option value="'Oswald', sans-serif">Oswald (Moderna / Hamburgueria)</option>
-                                    <option value="'Montserrat', sans-serif">Montserrat (Clean / Contemporânea)</option>
+                                    <option value="'Playfair Display', serif">Playfair Display (Elegante)</option>
+                                    <option value="'Cinzel', serif">Cinzel (Clássica)</option>
+                                    <option value="'Oswald', sans-serif">Oswald (Moderna)</option>
+                                    <option value="'Montserrat', sans-serif">Montserrat (Contemporânea)</option>
                                 </select>
                             </div>
                             <div>
@@ -364,6 +375,39 @@
         <button onclick="setZoom(0.05)" title="Aumentar Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
             <i class="fa-solid fa-plus text-xs"></i>
         </button>
+    </div>
+
+    <!-- MODAL DE IMAGEM IN-APP (Para Mobile Seguro) -->
+    <div id="modal-download" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[100] hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle text-emerald-500"></i> Cardápio Gerado
+                </h3>
+                <button onclick="fecharModalDownload()" class="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 bg-slate-100 rounded-md">✕</button>
+            </div>
+            
+            <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-start gap-2.5">
+                <i class="fa-solid fa-lightbulb text-indigo-500 mt-0.5"></i>
+                <p class="text-[11px] text-slate-600 leading-relaxed font-medium">
+                    <b>Dica:</b> No celular, pressione e segure a imagem abaixo e escolha <span class="font-bold text-indigo-700">"Salvar em Fotos"</span> ou Compartilhar no WhatsApp!
+                </p>
+            </div>
+            
+            <!-- Caixa da Imagem Renderizada -->
+            <div class="flex-1 overflow-y-auto rounded-xl bg-slate-200 border border-slate-300 p-1 flex items-center justify-center min-h-[260px] relative" id="modal-preview-area">
+                <span class="text-xs text-indigo-600 font-bold animate-pulse">Renderizando imagem...</span>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="fecharModalDownload()" class="flex-1 py-3 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                    Fechar
+                </button>
+                <a id="btn-modal-baixar-direto" href="#" class="flex-1 py-3 text-xs font-bold text-white bg-indigo-600 rounded-xl text-center hover:bg-indigo-700 shadow-md transition-colors flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Baixar Arquivo
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -556,7 +600,7 @@
         }
 
         /* =========================================
-           ZOOM E NAVEGAÇÃO
+           ZOOM, PANNING E MOBILE
            ========================================= */
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
@@ -954,109 +998,67 @@
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =========================================
-           GERAÇÃO DO BLOB HTML "NOVA GUIA" (O SEGREDO MOBILE)
+           GERAÇÃO DE PDF SEGURO E MODAL DE IMAGEM
            ========================================= */
-        function exportPDF() {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+        function fecharModalDownload() {
+            document.getElementById('modal-download').classList.add('hidden');
+        }
 
+        function exportPDF() {
+            const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
             const element = document.getElementById('preview-canvas');
             
+            // Backup
             const oldTransform = wrapper.style.transform;
             const oldWidth = zoomContainer.style.width;
             const oldHeight = zoomContainer.style.height;
 
+            // UI Loaders
             const btnDesktop = document.getElementById('btn-export-desktop');
             const btnMobile = document.getElementById('btn-export-mobile');
+            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
             
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo...'; btnMobile.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
 
-            // Restaura o tamanho do canvas para 100% de escala para garantir a leitura correta
+            // Prepara a tela (Zera escala)
             wrapper.style.transform = 'scale(1)';
             zoomContainer.style.width = '794px';
             zoomContainer.style.height = `${element.scrollHeight}px`;
 
             if (isMobile) {
-                // ESTRATÉGIA BLOB: Captura tudo, cria um HTML limpo em memória e abre em Nova Guia.
-                
-                // Pega todos os estilos atuais da página
-                let stylesHtml = '';
-                document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-                    stylesHtml += el.outerHTML;
-                });
+                // MODO MOBILE: Gera e Exibe a IMAGEM limpa no Modal
+                const previewArea = document.getElementById('modal-preview-area');
+                previewArea.innerHTML = `<span class="text-xs text-indigo-600 font-bold animate-pulse">Renderizando Cardápio...</span>`;
+                document.getElementById('modal-download').classList.remove('hidden');
 
-                // Inclui variáveis CSS ativas no root
-                const rootStyles = `
-                    <style>
-                        :root {
-                            --color-primary: ${document.getElementById('color-primary').value};
-                            --color-secondary: ${document.getElementById('color-secondary').value};
-                            --color-bg: ${document.getElementById('color-bg').value};
-                            --color-text: ${document.getElementById('color-text').value};
-                            --font-title: ${document.getElementById('font-title').value};
-                            --font-body: ${document.getElementById('font-body').value};
-                        }
-                        @page { size: A4 portrait; margin: 0; }
-                        body { background-color: var(--color-bg); margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        #preview-canvas { transform: none !important; width: 210mm !important; box-shadow: none !important; margin: 0 auto !important; }
-                        
-                        .print-btn { 
-                            position: fixed; bottom: 30px; right: 20px; 
-                            background: #4f46e5; color: white; padding: 16px 24px; 
-                            border-radius: 50px; font-family: sans-serif; font-size: 14px;
-                            font-weight: bold; text-decoration: none; 
-                            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); z-index: 9999; 
-                        }
-                        @media print { .print-btn { display: none !important; } }
-                    </style>
-                `;
-
-                // Monta o arquivo HTML final
-                const printContent = `
-                    <!DOCTYPE html>
-                    <html lang="pt-BR">
-                    <head>
-                        <meta charset="UTF-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>Imprimir Cardápio - ${appState.restaurantName}</title>
-                        ${stylesHtml}
-                        ${rootStyles}
-                    </head>
-                    <body>
-                        ${element.outerHTML}
-                        <a href="#" onclick="window.print(); return false;" class="print-btn">🖨️ Imprimir / Salvar PDF</a>
-                        <script>
-                            // Espera 1.2 segundos para garantir que Tailwind e Fontes renderizaram e chama a impressora nativa
-                            setTimeout(() => { window.print(); }, 1200);
-                        <\/script>
-                    </body>
-                    </html>
-                `;
-
-                // Transforma em arquivo virtual Blob
-                const blob = new Blob([printContent], { type: 'text/html;charset=utf-8' });
-                const blobUrl = URL.createObjectURL(blob);
-
-                // Abre o arquivo na aba ao lado (fora do Chatwoot)
-                const linkVirtual = document.createElement('a');
-                linkVirtual.href = blobUrl;
-                linkVirtual.target = '_blank';
-                document.body.appendChild(linkVirtual);
-                linkVirtual.click();
-                document.body.removeChild(linkVirtual);
-
-                // Restaura a interface do usuário
                 setTimeout(() => {
-                    wrapper.style.transform = oldTransform;
-                    zoomContainer.style.width = oldWidth;
-                    zoomContainer.style.height = oldHeight;
-                    if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-download"></i> Gerar PDF'; btnMobile.disabled = false; }
-                }, 500);
+                    // html2canvas é perfeito e seguro para iOS/Android
+                    html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                        
+                        // Renderiza a imagem
+                        previewArea.innerHTML = `<img src="${imgData}" class="w-full h-auto object-contain rounded-lg shadow-sm border border-slate-300">`;
+                        
+                        // Arruma link de Download nativo
+                        const btnBaixar = document.getElementById('btn-modal-baixar-direto');
+                        btnBaixar.href = imgData;
+                        btnBaixar.download = `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.jpg`;
+
+                        restaurarBotoes();
+                    }).catch(err => {
+                        restaurarBotoes();
+                        document.getElementById('modal-download').classList.add('hidden');
+                        alert("Não foi possível gerar a imagem no celular: " + err.message);
+                    });
+                }, 150); // Timeout para a tela respirar sem o transform
 
             } else {
-                // MODO DESKTOP (Baixa o arquivo via html2pdf normal)
+                // MODO DESKTOP: Gera PDF Originalmente
                 const opt = {
                     margin: 0,
                     filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
@@ -1067,18 +1069,20 @@
 
                 setTimeout(() => {
                     html2pdf().set(opt).from(element).save().then(() => {
-                        wrapper.style.transform = oldTransform;
-                        zoomContainer.style.width = oldWidth;
-                        zoomContainer.style.height = oldHeight;
-                        if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Baixar PDF'; btnDesktop.disabled = false; }
+                        restaurarBotoes();
                     }).catch(err => {
-                        wrapper.style.transform = oldTransform;
-                        zoomContainer.style.width = oldWidth;
-                        zoomContainer.style.height = oldHeight;
-                        if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Baixar PDF'; btnDesktop.disabled = false; }
-                        alert("Erro ao exportar PDF: " + err.message);
+                        restaurarBotoes();
+                        alert("Erro ao exportar PDF no Desktop: " + err.message);
                     });
-                }, 500);
+                }, 150);
+            }
+
+            function restaurarBotoes() {
+                wrapper.style.transform = oldTransform;
+                zoomContainer.style.width = oldWidth;
+                zoomContainer.style.height = oldHeight;
+                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
             }
         }
     </script>

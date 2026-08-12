@@ -339,7 +339,7 @@
             </button>
         </div>
 
-        <!-- CANVAS WRAPPER INTELIGENTE (Resolve o bug de corte no mobile) -->
+        <!-- CANVAS WRAPPER INTELIGENTE -->
         <div id="zoom-container" class="mx-auto text-left relative mt-12 md:mt-0 transition-all duration-200 inline-block bg-transparent" style="width: 397px; height: 500px;">
             <div id="canvas-wrapper" class="origin-top-left absolute top-0 left-0 shadow-2xl bg-white transition-transform duration-200">
                 <div id="preview-canvas"></div>
@@ -471,39 +471,68 @@
             carregarProdutosDoBanco();
         }
 
+        // Leitura Ultra-Tolerante de dados do n8n com tratamento de JSON String
         async function carregarProdutosDoBanco() {
             const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
 
             try {
-                const res = await fetch(`${urlProdutos}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro HTTP");
+                const endpoint = `${urlProdutos}?account_id=${globalAccountId}`;
+                console.log("Buscando produtos em:", endpoint);
+
+                const res = await fetch(endpoint);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                
                 const dadosRetornados = await res.json();
+                console.log("Dados do n8n:", dadosRetornados);
                 
                 let listaTratada = [];
-                if (Array.isArray(dadosRetornados)) { listaTratada = dadosRetornados; } 
-                else if (dadosRetornados.data && Array.isArray(dadosRetornados.data)) { listaTratada = dadosRetornados.data; }
+                if (Array.isArray(dadosRetornados)) {
+                    listaTratada = dadosRetornados;
+                } else if (dadosRetornados && Array.isArray(dadosRetornados.data)) {
+                    listaTratada = dadosRetornados.data;
+                } else if (dadosRetornados && Array.isArray(dadosRetornados.payload)) {
+                    listaTratada = dadosRetornados.payload;
+                } else if (dadosRetornados && typeof dadosRetornados === 'object') {
+                    listaTratada = [dadosRetornados];
+                }
 
                 const agrupado = {};
+
                 listaTratada.forEach(prod => {
-                    const p = prod.json ? prod.json : prod;
-                    if (p.deletado === true || p.ativo === false) return;
+                    try {
+                        const p = (prod && prod.json) ? prod.json : prod;
+                        if (!p || typeof p !== 'object') return;
 
-                    const cat = p.categoria && p.categoria.trim() !== '' ? p.categoria.trim() : 'Outros';
-                    if (!agrupado[cat]) agrupado[cat] = [];
+                        if (p.deletado === true || p.deletado === "true") return;
+                        if (p.ativo === false || p.ativo === "false") return;
 
-                    let precoFinal = parseFloat(p.preco_base) || 0;
-                    if (p.metadata && p.metadata.tipo === 'com_tamanhos' && Array.isArray(p.metadata.tamanhos) && p.metadata.tamanhos.length > 0) {
-                        precoFinal = parseFloat(p.metadata.tamanhos[0].preco) || precoFinal;
+                        const cat = (p.categoria && String(p.categoria).trim() !== '') ? String(p.categoria).trim() : 'Outros';
+                        if (!agrupado[cat]) agrupado[cat] = [];
+
+                        let precoFinal = parseFloat(p.preco_base) || 0;
+
+                        // Tratamento de Metadata caso venha como JSON String do Postgres
+                        let meta = p.metadata;
+                        if (typeof meta === 'string') {
+                            try { meta = JSON.parse(meta); } catch (e) { meta = {}; }
+                        }
+
+                        if (meta && meta.tipo === 'com_tamanhos' && Array.isArray(meta.tamanhos) && meta.tamanhos.length > 0) {
+                            const pTamanho = parseFloat(meta.tamanhos[0].preco);
+                            if (!isNaN(pTamanho) && pTamanho > 0) precoFinal = pTamanho;
+                        }
+
+                        agrupado[cat].push({
+                            id: p.id || Math.random().toString(),
+                            nome: p.nome || 'Sem Nome',
+                            desc: p.descricao || '',
+                            preco: precoFinal,
+                            visivel: true
+                        });
+                    } catch (itemErr) {
+                        console.warn("Item ignorado por erro de parse:", itemErr, prod);
                     }
-
-                    agrupado[cat].push({
-                        id: p.id || Math.random().toString(),
-                        nome: p.nome || 'Sem Nome',
-                        desc: p.descricao || '',
-                        preco: precoFinal,
-                        visivel: true
-                    });
                 });
 
                 appState.data = Object.keys(agrupado).sort().map(cat => ({
@@ -515,7 +544,8 @@
                 renderPreview();
 
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
+                console.error("Erro crítico na sincronização:", err);
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar. Verifique o console.</td></tr>`;
             }
         }
 
@@ -525,11 +555,11 @@
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
             if (w < 768) {
-                appState.zoom = 0.50; // Padrão Celular
+                appState.zoom = 0.50;
             } else if (w < 1100) {
-                appState.zoom = 0.50; // Padrão Chatwoot Iframe
+                appState.zoom = 0.50;
             } else {
-                appState.zoom = 0.77; // Padrão Desktop Grande
+                appState.zoom = 0.77;
             }
             applyZoom();
         }
@@ -546,10 +576,8 @@
             const zoomContainer = document.getElementById('zoom-container');
             const canvasElement = document.getElementById('preview-canvas');
             
-            // Aplica a escala visual no canvas
             wrapper.style.transform = `scale(${appState.zoom})`;
             
-            // Calcula o espaço que o canvas ocupará na tela para liberar o scroll sem cortar a esquerda
             const canvasUnscaledWidth = 794; 
             const canvasUnscaledHeight = canvasElement.scrollHeight > 1123 ? canvasElement.scrollHeight : 1123;
             
@@ -602,63 +630,7 @@
         }
 
         /* =========================================
-           GERADOR DE PDF (HTML2PDF)
-           ========================================= */
-        function exportPDF() {
-            const wrapper = document.getElementById('canvas-wrapper');
-            const zoomContainer = document.getElementById('zoom-container');
-            const element = document.getElementById('preview-canvas');
-            
-            // Backup dos tamanhos atuais
-            const oldTransform = wrapper.style.transform;
-            const oldWidth = zoomContainer.style.width;
-            const oldHeight = zoomContainer.style.height;
-
-            // Altera botões de carregamento
-            const btnDesktop = document.getElementById('btn-export-desktop');
-            const btnMobile = document.getElementById('btn-export-mobile');
-            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
-            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
-            
-            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...'; btnMobile.disabled = true; }
-
-            // PASSO 1: Força o canvas a ter escala 1:1 para a foto sair perfeita
-            wrapper.style.transform = 'scale(1)';
-            zoomContainer.style.width = '794px';
-            zoomContainer.style.height = `${element.scrollHeight}px`;
-
-            const opt = {
-                margin: 0,
-                filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            // PASSO 2: O setTimeout() é crucial no mobile para dar tempo do navegador aplicar o scale(1)
-            // antes de fotografar. Sem ele, a função quebra silenciosamente.
-            setTimeout(() => {
-                html2pdf().set(opt).from(element).save().then(() => {
-                    // Restaura a visualização e botões originais
-                    wrapper.style.transform = oldTransform;
-                    zoomContainer.style.width = oldWidth;
-                    zoomContainer.style.height = oldHeight;
-                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-                }).catch(err => {
-                    wrapper.style.transform = oldTransform;
-                    zoomContainer.style.width = oldWidth;
-                    zoomContainer.style.height = oldHeight;
-                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-                    alert("Ocorreu um erro ao exportar o PDF.");
-                });
-            }, 300);
-        }
-
-        /* =========================================
-           LOGO SMART & CORES
+           DESTAQUES / CARROS-CHEFE E LOGO SMART
            ========================================= */
         function handleSmartLogoUpload(event) {
             const file = event.target.files[0];
@@ -970,7 +942,59 @@
             }
 
             canvas.innerHTML = html;
-            setTimeout(() => { applyZoom(); }, 50); // Recalcula altura do Scroll após injetar html
+            setTimeout(() => { applyZoom(); }, 50);
+        }
+
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+        /* =========================================
+           GERADOR DE PDF (HTML2PDF) COM TIMEOUT MOBILE
+           ========================================= */
+        function exportPDF() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            const zoomContainer = document.getElementById('zoom-container');
+            const element = document.getElementById('preview-canvas');
+            
+            const oldTransform = wrapper.style.transform;
+            const oldWidth = zoomContainer.style.width;
+            const oldHeight = zoomContainer.style.height;
+
+            const btnDesktop = document.getElementById('btn-export-desktop');
+            const btnMobile = document.getElementById('btn-export-mobile');
+            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
+            
+            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...'; btnMobile.disabled = true; }
+
+            wrapper.style.transform = 'scale(1)';
+            zoomContainer.style.width = '794px';
+            zoomContainer.style.height = `${element.scrollHeight}px`;
+
+            const opt = {
+                margin: 0,
+                filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    wrapper.style.transform = oldTransform;
+                    zoomContainer.style.width = oldWidth;
+                    zoomContainer.style.height = oldHeight;
+                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
+                }).catch(err => {
+                    wrapper.style.transform = oldTransform;
+                    zoomContainer.style.width = oldWidth;
+                    zoomContainer.style.height = oldHeight;
+                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
+                    alert("Ocorreu um erro ao exportar o PDF.");
+                });
+            }, 300);
         }
     </script>
 </body>

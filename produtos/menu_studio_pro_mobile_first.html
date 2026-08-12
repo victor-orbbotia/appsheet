@@ -42,7 +42,7 @@
             background-color: var(--color-bg);
             color: var(--color-text);
             font-family: var(--font-body);
-            width: 794px; /* Fixado para padrão A4 96 DPI */
+            width: 794px; /* Padrão A4 a 96 DPI */
             min-height: 1123px;
             margin: 0;
             padding: 18mm 14mm;
@@ -73,6 +73,43 @@
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* MODO IMPRESSÃO / IMPRESSORA MOBILE NATIVA */
+        body.print-mode #editor-panel, 
+        body.print-mode #zoom-controls, 
+        body.print-mode .md\:hidden { 
+            display: none !important; 
+        }
+        body.print-mode #preview-container {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background: white !important; overflow: visible !important;
+            padding: 0 !important; transform: none !important; z-index: 9999;
+        }
+        body.print-mode #zoom-container, body.print-mode #canvas-wrapper {
+            transform: none !important; width: 100% !important; height: auto !important;
+            box-shadow: none !important; margin: 0 !important;
+        }
+        body.print-mode #preview-canvas {
+            width: 210mm !important; box-shadow: none !important; margin: 0 auto !important;
+        }
+
+        @media print {
+            @page { size: A4 portrait; margin: 0mm; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #editor-panel, #zoom-controls, .md\:hidden { display: none !important; }
+            #preview-container { 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%; 
+                background: white !important; overflow: visible !important; 
+                padding: 0 !important; transform: none !important;
+            }
+            #zoom-container, #canvas-wrapper { 
+                transform: none !important; width: 100% !important; height: auto !important; 
+                box-shadow: none !important; margin: 0 !important;
+            }
+            #preview-canvas { 
+                width: 210mm !important; box-shadow: none !important; margin: 0 auto !important; 
+            }
+        }
     </style>
 </head>
 
@@ -265,10 +302,10 @@
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fonte dos Títulos</label>
                                 <select id="font-title" onchange="updateTheme()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
-                                    <option value="'Playfair Display', serif">Playfair Display (Gourmet / Elegante)</option>
-                                    <option value="'Cinzel', serif">Cinzel (Clássica / Sofisticada)</option>
-                                    <option value="'Oswald', sans-serif">Oswald (Moderna / Hamburgueria)</option>
-                                    <option value="'Montserrat', sans-serif">Montserrat (Clean / Contemporânea)</option>
+                                    <option value="'Playfair Display', serif">Playfair Display (Elegante)</option>
+                                    <option value="'Cinzel', serif">Cinzel (Clássica)</option>
+                                    <option value="'Oswald', sans-serif">Oswald (Moderna)</option>
+                                    <option value="'Montserrat', sans-serif">Montserrat (Contemporânea)</option>
                                 </select>
                             </div>
                             <div>
@@ -332,7 +369,7 @@
         </nav>
     </aside>
 
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Z-40 no mobile para sobrepor o menu) -->
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO -->
     <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-auto block text-center py-6 md:py-10 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
         <!-- Header de Controle Mobile -->
@@ -340,9 +377,10 @@
             <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto transition-transform active:scale-95">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <button onclick="exportPDF()" id="btn-export-mobile" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
-                <i class="fa-solid fa-download"></i> Baixar PDF
-            </button>
+            <!-- BOTÃO MOBILE DE ESCAPE: ABRE EM NOVA GUIA FORA DO IFRAME DO CHATWOOT -->
+            <a id="btn-export-mobile" href="#" target="_blank" onclick="prepararLinkImpressao(this)" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
+                <i class="fa-solid fa-external-link-alt"></i> Imprimir / PDF
+            </a>
         </div>
 
         <!-- CANVAS WRAPPER INTELIGENTE -->
@@ -481,8 +519,25 @@
             if (btnGestao) btnGestao.href = `${urlProdutos}?account_id=${globalAccountId}`;
 
             carregarConfigDoCache();
-            resetZoomAdaptativo();
-            carregarProdutosDoBanco();
+
+            // MODO IMPRESSÃO EXTERNA (NOVA GUIA FORA DO CHATWOOT)
+            if (urlParams.get('print_mode') === '1') {
+                document.body.classList.add('print-mode');
+                appState.zoom = 1;
+                carregarProdutosDoBanco().then(() => {
+                    setTimeout(() => { window.print(); }, 1200);
+                });
+            } else {
+                resetZoomAdaptativo();
+                carregarProdutosDoBanco();
+            }
+        }
+
+        function prepararLinkImpressao(linkElement) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('print_mode', '1');
+            url.searchParams.set('account_id', globalAccountId);
+            linkElement.href = url.toString();
         }
 
         async function carregarProdutosDoBanco() {
@@ -955,11 +1010,9 @@
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =========================================
-           GERADOR DE PDF OTMIZADO (RESOLVE O ERRO DE MOBILE)
+           GERADOR DE PDF (EXPORT DESKTOP)
            ========================================= */
         function exportPDF() {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
-
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
             const element = document.getElementById('preview-canvas');
@@ -969,50 +1022,36 @@
             const oldHeight = zoomContainer.style.height;
 
             const btnDesktop = document.getElementById('btn-export-desktop');
-            const btnMobile = document.getElementById('btn-export-mobile');
             const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
-            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
             
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
 
-            // Passo 1: Remove o zoom temporariamente para a foto sair perfeita em A4
             wrapper.style.transform = 'scale(1)';
             zoomContainer.style.width = '794px';
             zoomContainer.style.height = `${element.scrollHeight}px`;
 
-            // Configuração com scale menor para não estourar a memória do celular
             const opt = {
                 margin: 0,
                 filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: { 
-                    scale: isMobile ? 1.5 : 2, 
-                    useCORS: true, 
-                    letterRendering: true, 
-                    windowWidth: 794 
-                },
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Passo 2: Timeout maior (600ms) para dar tempo de renderizar a folha sem zoom
             setTimeout(() => {
                 html2pdf().set(opt).from(element).save().then(() => {
                     wrapper.style.transform = oldTransform;
                     zoomContainer.style.width = oldWidth;
                     zoomContainer.style.height = oldHeight;
                     if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
                 }).catch(err => {
-                    console.error("Erro no html2pdf:", err);
                     wrapper.style.transform = oldTransform;
                     zoomContainer.style.width = oldWidth;
                     zoomContainer.style.height = oldHeight;
                     if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-                    alert("Ocorreu um erro ao gerar o PDF. Verifique sua conexão ou tente imagens mais leves.");
+                    alert("Erro ao gerar o PDF no Desktop: " + err.message);
                 });
-            }, 600);
+            }, 500);
         }
     </script>
 </body>

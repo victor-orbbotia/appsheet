@@ -73,43 +73,6 @@
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* MODO IMPRESSÃO / IMPRESSORA MOBILE NATIVA */
-        body.print-mode #editor-panel, 
-        body.print-mode #zoom-controls, 
-        body.print-mode .md\:hidden { 
-            display: none !important; 
-        }
-        body.print-mode #preview-container {
-            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-            background: white !important; overflow: visible !important;
-            padding: 0 !important; transform: none !important; z-index: 9999;
-        }
-        body.print-mode #zoom-container, body.print-mode #canvas-wrapper {
-            transform: none !important; width: 100% !important; height: auto !important;
-            box-shadow: none !important; margin: 0 !important;
-        }
-        body.print-mode #preview-canvas {
-            width: 210mm !important; box-shadow: none !important; margin: 0 auto !important;
-        }
-
-        @media print {
-            @page { size: A4 portrait; margin: 0mm; }
-            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            #editor-panel, #zoom-controls, .md\:hidden { display: none !important; }
-            #preview-container { 
-                position: absolute; left: 0; top: 0; width: 100%; height: 100%; 
-                background: white !important; overflow: visible !important; 
-                padding: 0 !important; transform: none !important;
-            }
-            #zoom-container, #canvas-wrapper { 
-                transform: none !important; width: 100% !important; height: auto !important; 
-                box-shadow: none !important; margin: 0 !important;
-            }
-            #preview-canvas { 
-                width: 210mm !important; box-shadow: none !important; margin: 0 auto !important; 
-            }
-        }
     </style>
 </head>
 
@@ -377,10 +340,9 @@
             <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto transition-transform active:scale-95">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <!-- BOTÃO MOBILE DE ESCAPE: ABRE EM NOVA GUIA FORA DO IFRAME DO CHATWOOT -->
-            <a id="btn-export-mobile" href="#" target="_blank" onclick="prepararLinkImpressao(this)" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
-                <i class="fa-solid fa-external-link-alt"></i> Imprimir / PDF
-            </a>
+            <button onclick="exportPDF()" id="btn-export-mobile" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
+                <i class="fa-solid fa-file-pdf"></i> Baixar PDF
+            </button>
         </div>
 
         <!-- CANVAS WRAPPER INTELIGENTE -->
@@ -402,6 +364,35 @@
         <button onclick="setZoom(0.05)" title="Aumentar Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
             <i class="fa-solid fa-plus text-xs"></i>
         </button>
+    </div>
+
+    <!-- MODAL DE DOWNLOAD DENTRO DO CHATWOOT (IN-APP) -->
+    <div id="modal-download" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-file-pdf text-indigo-600"></i> Seu Cardápio está Pronto!
+                </h3>
+                <button onclick="fecharModalDownload()" class="text-slate-400 hover:text-slate-600 font-bold p-1">✕</button>
+            </div>
+            
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Clique no botão abaixo para iniciar o download do arquivo PDF do seu cardápio.
+            </p>
+            
+            <div class="flex-1 overflow-y-auto border rounded-xl p-2 bg-slate-50 text-center flex items-center justify-center" id="modal-preview-area">
+                <!-- Preview Base64 do PDF -->
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="fecharModalDownload()" class="flex-1 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
+                    Fechar
+                </button>
+                <a id="btn-modal-baixar-direto" href="#" download="Cardapio.pdf" class="flex-1 py-2.5 text-xs font-bold text-white bg-indigo-600 rounded-xl text-center hover:bg-indigo-700 shadow-md transition-colors flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-download"></i> Salvar PDF
+                </a>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -509,7 +500,6 @@
         function iniciarPagina() {
             document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
             
-            // CÁLCULO DE ROTAS ABSOLUTAS DINÂMICAS PARA NAVEGAÇÃO SEGURA
             const urlMenuPrincipal = new URL('../index.html', window.location.href).href;
             const btnMenu = document.getElementById('btn-voltar-menu');
             if (btnMenu) btnMenu.href = `${urlMenuPrincipal}?account_id=${globalAccountId}`;
@@ -519,25 +509,8 @@
             if (btnGestao) btnGestao.href = `${urlProdutos}?account_id=${globalAccountId}`;
 
             carregarConfigDoCache();
-
-            // MODO IMPRESSÃO EXTERNA (NOVA GUIA FORA DO CHATWOOT)
-            if (urlParams.get('print_mode') === '1') {
-                document.body.classList.add('print-mode');
-                appState.zoom = 1;
-                carregarProdutosDoBanco().then(() => {
-                    setTimeout(() => { window.print(); }, 1200);
-                });
-            } else {
-                resetZoomAdaptativo();
-                carregarProdutosDoBanco();
-            }
-        }
-
-        function prepararLinkImpressao(linkElement) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('print_mode', '1');
-            url.searchParams.set('account_id', globalAccountId);
-            linkElement.href = url.toString();
+            resetZoomAdaptativo();
+            carregarProdutosDoBanco();
         }
 
         async function carregarProdutosDoBanco() {
@@ -612,7 +585,7 @@
         }
 
         /* =========================================
-           ZOOM, PANNING E MOBILE
+           ZOOM E NAVEGAÇÃO
            ========================================= */
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
@@ -1010,9 +983,27 @@
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =========================================
-           GERADOR DE PDF (EXPORT DESKTOP)
+           GERAÇÃO E DOWNLOAD DO PDF (IN-APP SAFE)
            ========================================= */
+        function abrirModalDownload(pdfBase64) {
+            const modal = document.getElementById('modal-download');
+            const previewArea = document.getElementById('modal-preview-area');
+            const btnBaixar = document.getElementById('btn-modal-baixar-direto');
+
+            btnBaixar.href = pdfBase64;
+            btnBaixar.download = `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`;
+
+            previewArea.innerHTML = `<iframe src="${pdfBase64}" class="w-full h-64 rounded-xl border-0 shadow-inner"></iframe>`;
+            modal.classList.remove('hidden');
+        }
+
+        function fecharModalDownload() {
+            document.getElementById('modal-download').classList.add('hidden');
+        }
+
         function exportPDF() {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
             const element = document.getElementById('preview-canvas');
@@ -1022,9 +1013,10 @@
             const oldHeight = zoomContainer.style.height;
 
             const btnDesktop = document.getElementById('btn-export-desktop');
-            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const btnMobile = document.getElementById('btn-export-mobile');
             
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
 
             wrapper.style.transform = 'scale(1)';
             zoomContainer.style.width = '794px';
@@ -1033,25 +1025,39 @@
             const opt = {
                 margin: 0,
                 filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
+                image: { type: 'jpeg', quality: 0.95 },
+                html2canvas: { scale: isMobile ? 1.5 : 2, useCORS: true, letterRendering: true, windowWidth: 794 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             setTimeout(() => {
-                html2pdf().set(opt).from(element).save().then(() => {
-                    wrapper.style.transform = oldTransform;
-                    zoomContainer.style.width = oldWidth;
-                    zoomContainer.style.height = oldHeight;
-                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                }).catch(err => {
-                    wrapper.style.transform = oldTransform;
-                    zoomContainer.style.width = oldWidth;
-                    zoomContainer.style.height = oldHeight;
-                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    alert("Erro ao gerar o PDF no Desktop: " + err.message);
-                });
-            }, 500);
+                if (isMobile) {
+                    // Mobile: gera PDF em memória Base64 e exibe no modal interno sem sair do Chatwoot
+                    html2pdf().set(opt).from(element).outputPdf('datauristring').then(function(pdfBase64) {
+                        restaurarBotoes();
+                        abrirModalDownload(pdfBase64);
+                    }).catch(err => {
+                        restaurarBotoes();
+                        alert("Erro ao processar o arquivo no celular: " + err.message);
+                    });
+                } else {
+                    // Desktop: salva direto
+                    html2pdf().set(opt).from(element).save().then(() => {
+                        restaurarBotoes();
+                    }).catch(err => {
+                        restaurarBotoes();
+                        alert("Erro ao exportar o PDF: " + err.message);
+                    });
+                }
+            }, 400);
+
+            function restaurarBotoes() {
+                wrapper.style.transform = oldTransform;
+                zoomContainer.style.width = oldWidth;
+                zoomContainer.style.height = oldHeight;
+                if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Baixar PDF'; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Gerar PDF'; btnMobile.disabled = false; }
+            }
         }
     </script>
 </body>

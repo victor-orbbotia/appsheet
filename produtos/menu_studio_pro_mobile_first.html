@@ -10,7 +10,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 
-    <!-- Pré-carregamento de fontes dinâmicas para o PDF -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
@@ -38,7 +37,7 @@
         .fade-in { animation: fadeIn 0.25s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Canvas que simula a folha A4 em 96 DPI */
+        /* Canvas folha A4 */
         #preview-canvas {
             background-color: var(--color-bg);
             color: var(--color-text);
@@ -57,6 +56,12 @@
             color: var(--color-primary);
         }
 
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
         
         .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
@@ -73,7 +78,7 @@
     </style>
 </head>
 
-<body class="flex flex-col md:flex-row h-screen text-slate-800">
+<body class="flex flex-col md:flex-row h-screen text-slate-800 relative">
 
     <!-- PAINEL LATERAL DE EDIÇÃO -->
     <aside id="editor-panel" class="w-full md:w-[420px] h-full flex flex-col bg-white border-r border-slate-200 shadow-xl z-20 shrink-0">
@@ -97,10 +102,10 @@
                 </div>
 
                 <div class="flex gap-2">
-                    <button onclick="toggleMobilePreview()" title="Ver Pré-visualização" class="md:hidden w-9 h-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors">
+                    <button onclick="toggleMobilePreview()" title="Ver Pré-visualização" class="md:hidden w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center hover:bg-indigo-100 transition-colors">
                         <i class="fa-solid fa-eye text-sm"></i>
                     </button>
-                    <button onclick="exportPDF()" id="btn-export" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5">
+                    <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>Baixar PDF</span>
                     </button>
@@ -171,7 +176,7 @@
                 </div>
             </div>
 
-            <!-- TAB 3: DADOS (PRODUTOS DO BANCO) -->
+            <!-- TAB 3: DADOS -->
             <div id="panel-dados" class="tab-content fade-in hidden space-y-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex justify-between items-center">
@@ -184,7 +189,7 @@
                     </div>
 
                     <p class="text-[11px] text-slate-500">
-                        Desmarque a caixa de seleção para oculta um item do PDF impresso sem excluí-lo do seu sistema.
+                        Desmarque a caixa de seleção para ocultar um item do PDF impresso sem excluí-lo do seu sistema.
                     </p>
 
                     <div class="overflow-hidden border border-slate-200 rounded-lg bg-slate-50">
@@ -204,7 +209,7 @@
                 </div>
             </div>
 
-            <!-- TAB 4: DESIGN E CORES -->
+            <!-- TAB 4: ESTILO -->
             <div id="panel-design" class="tab-content fade-in hidden space-y-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
 
@@ -286,7 +291,7 @@
                                 <i class="fa-solid fa-circle-check text-indigo-600 layout-icon text-xs"></i>
                             </button>
                             <button onclick="setLayout(2)" id="btn-layout-2" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500">
-                                <span class="text-xs font-medium">2. Alta Densidade (2 Colunas - Pizzaria/Pub)</span>
+                                <span class="text-xs font-medium">2. Alta Densidade (2 Colunas - Pizzaria)</span>
                                 <i class="fa-regular fa-circle layout-icon text-xs"></i>
                             </button>
                             <button onclick="setLayout(3)" id="btn-layout-3" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500">
@@ -301,7 +306,6 @@
 
         </div>
 
-        <!-- Rodapé da Navegação por Abas -->
         <nav class="bg-white border-t border-slate-200 p-1.5 shrink-0">
             <div class="flex justify-around items-center">
                 <button onclick="switchTab('identidade')" id="tab-identidade" class="flex flex-col items-center p-1.5 text-indigo-600 flex-1 transition-colors">
@@ -324,33 +328,37 @@
         </nav>
     </aside>
 
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO COM ZOOM ADAPTATIVO -->
-    <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/80 overflow-y-auto flex justify-center py-4 md:py-6 z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Z-40 garante que no mobile sobreponha o menu Z-20) -->
+    <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-y-auto flex justify-center py-4 md:py-8 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
-        <!-- Botão Fechar Preview no Mobile -->
-        <div class="fixed top-3 left-3 z-50 md:hidden">
-            <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-9 h-9 rounded-full shadow-lg flex items-center justify-center">
+        <!-- Header de Controle Mobile -->
+        <div class="fixed top-4 left-4 right-4 z-50 md:hidden flex justify-between pointer-events-none">
+            <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto transition-transform active:scale-95">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-        </div>
-
-        <!-- CONTROLES DE ZOOM FLUTUANTES (Ideal para a tela do Chatwoot) -->
-        <div class="fixed bottom-4 right-4 glass-panel p-1 rounded-xl shadow-lg flex items-center gap-1 z-30 border border-slate-200">
-            <button onclick="setZoom(-0.05)" title="Diminuir Zoom" class="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 active:scale-95 transition-all">
-                <i class="fa-solid fa-minus text-xs"></i>
-            </button>
-            <button onclick="resetZoomAdaptativo()" title="Ajustar à Tela" class="px-2 h-8 text-[11px] font-extrabold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all flex items-center gap-1">
-                <span id="zoom-level">42%</span>
-            </button>
-            <button onclick="setZoom(0.05)" title="Aumentar Zoom" class="w-8 h-8 flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 active:scale-95 transition-all">
-                <i class="fa-solid fa-plus text-xs"></i>
+            <button onclick="exportPDF()" id="btn-export-mobile" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
+                <i class="fa-solid fa-download"></i> Baixar PDF
             </button>
         </div>
 
-        <div id="canvas-wrapper" class="origin-top transition-transform duration-200 mt-4 shadow-2xl">
+        <!-- CANVAS -->
+        <div id="canvas-wrapper" class="origin-top transition-transform duration-200 mt-14 md:mt-0 shadow-2xl">
             <div id="preview-canvas"></div>
         </div>
     </main>
+
+    <!-- CONTROLES DE ZOOM FLUTUANTES (Fora do transform do canvas para se manter fixo) -->
+    <div id="zoom-controls" class="fixed bottom-6 right-6 glass-panel p-1 rounded-xl shadow-lg flex items-center gap-1 z-[60] border border-slate-200 transition-opacity duration-300 md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto">
+        <button onclick="setZoom(-0.05)" title="Diminuir Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
+            <i class="fa-solid fa-minus text-xs"></i>
+        </button>
+        <button onclick="resetZoomAdaptativo()" title="Redefinir Zoom" class="px-2.5 h-9 text-xs font-extrabold text-indigo-600 hover:bg-indigo-50/60 rounded-lg transition-all flex items-center gap-1">
+            <span id="zoom-level">77%</span>
+        </button>
+        <button onclick="setZoom(0.05)" title="Aumentar Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
+            <i class="fa-solid fa-plus text-xs"></i>
+        </button>
+    </div>
 
     <script>
         const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -362,7 +370,7 @@
 
         let appState = {
             layout: 1,
-            zoom: 0.42, // Padrão reduzido para o iframe do Chatwoot
+            zoom: 0.77,
             restaurantName: "Meu Restaurante",
             restaurantDescription: "",
             logoUrl: null,
@@ -370,13 +378,9 @@
             data: []
         };
 
-        // Captura account_id da URL
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
-        /* =========================================
-           HANDSHAKE & BUSCA DE DADOS (N8N)
-           ========================================= */
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -406,11 +410,11 @@
 
         async function carregarProdutosDoBanco() {
             const tbody = document.getElementById('data-table-body');
-            tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio original...</td></tr>`;
 
             try {
                 const res = await fetch(`${urlProdutos}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro");
+                if (!res.ok) throw new Error("Erro de HTTP");
                 const produtosBrutos = await res.json();
                 
                 const listaTratada = Array.isArray(produtosBrutos) ? produtosBrutos : (produtosBrutos.data || []);
@@ -447,7 +451,7 @@
 
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Falha de sincronização.</td></tr>`;
             }
         }
 
@@ -457,11 +461,11 @@
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
             if (w < 768) {
-                appState.zoom = 0.32;
+                appState.zoom = 0.32; // Pequeno no celular (iPhone)
             } else if (w < 1100) {
-                appState.zoom = 0.42;
+                appState.zoom = 0.50; // Chatwoot iFrame intermediário
             } else {
-                appState.zoom = 0.55;
+                appState.zoom = 0.77; // Desktop Padrão solicitado 77%
             }
             applyZoom();
         }
@@ -496,8 +500,20 @@
 
         function toggleMobilePreview() {
             const container = document.getElementById('preview-container');
+            const zControls = document.getElementById('zoom-controls');
             isMobilePreviewOpen = !isMobilePreviewOpen;
+            
+            // Remove a classe translate-x-full para deslizar a tela de preview sobre o editor
             container.classList.toggle('translate-x-full', !isMobilePreviewOpen);
+            
+            // Exibe a barrinha flutuante de Zoom no celular apenas quando o Preview estiver ativo
+            if (isMobilePreviewOpen) {
+                zControls.classList.remove('opacity-0', 'pointer-events-none');
+                zControls.classList.add('opacity-100', 'pointer-events-auto');
+            } else {
+                zControls.classList.add('opacity-0', 'pointer-events-none');
+                zControls.classList.remove('opacity-100', 'pointer-events-auto');
+            }
         }
 
         function debounceUpdate() {
@@ -648,29 +664,29 @@
         }
 
         /* =========================================
-           TABELA E DADOS DO PREVIEW
+           TABELA DE DADOS
            ========================================= */
         function renderTable() {
             const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = '';
 
             if (appState.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Nenhum produto cadastrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Nenhum produto sincronizado.</td></tr>`;
                 return;
             }
 
             appState.data.forEach((cat, catIndex) => {
-                tbody.innerHTML += `<tr class="bg-slate-100/70"><td colspan="3" class="px-3 py-1 text-[10px] font-bold text-slate-700 uppercase">${cat.categoria}</td></tr>`;
+                tbody.innerHTML += `<tr class="bg-slate-100/70"><td colspan="3" class="px-3 py-1.5 text-[10px] font-bold text-slate-700 uppercase">${cat.categoria}</td></tr>`;
                 cat.itens.forEach((item, itemIndex) => {
                     const tr = document.createElement('tr');
                     tr.className = `group ${item.visivel ? 'hover:bg-indigo-50/20' : 'bg-slate-50 opacity-40'}`;
                     tr.innerHTML = `
-                        <td class="px-3 py-1.5">
+                        <td class="px-3 py-2">
                             <div class="font-bold text-slate-800 text-xs">${item.nome}</div>
                             <div class="text-[10px] text-slate-500 line-clamp-1">${item.desc}</div>
                         </td>
-                        <td class="px-3 py-1.5 text-right font-mono text-xs font-bold text-slate-700">R$ ${item.preco.toFixed(2)}</td>
-                        <td class="px-2 py-1.5 text-center">
+                        <td class="px-3 py-2 text-right font-mono text-[11px] font-bold text-slate-700">R$ ${item.preco.toFixed(2)}</td>
+                        <td class="px-2 py-2 text-center">
                             <input type="checkbox" class="accent-indigo-600 rounded cursor-pointer" ${item.visivel ? 'checked' : ''} onchange="toggleVisibility(${catIndex}, ${itemIndex})">
                         </td>
                     `;
@@ -725,20 +741,19 @@
             renderPreview();
         }
 
-        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
+        /* =========================================
+           RENDERIZAÇÃO DO CANVA E PDF
+           ========================================= */
         function renderPreview() {
             const canvas = document.getElementById('preview-canvas');
             let html = '';
 
-            // Header do PDF
             html += `<div class="text-center mb-8 avoid-break">`;
             if (appState.logoUrl) html += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain">`;
             html += `<h1 class="text-4xl font-bold uppercase tracking-widest mb-2 font-title">${appState.restaurantName}</h1>`;
             if (appState.restaurantDescription) html += `<p class="text-sm italic mb-4 max-w-xl mx-auto" style="opacity: 0.8">${appState.restaurantDescription}</p>`;
             html += `<div style="width: 50px; height: 2.5px; background-color: var(--color-secondary); margin: 0 auto;"></div></div>`;
 
-            // Destaques / Chef
             const destaquesValidos = appState.carrosChefe.filter(c => c.nome.trim() !== "");
             if (destaquesValidos.length > 0) {
                 html += `
@@ -759,14 +774,12 @@
                 html += `</div></div>`;
             }
 
-            // Grid de produtos
             const filteredData = appState.data.map(cat => ({
                 categoria: cat.categoria,
                 itens: cat.itens.filter(i => i.visivel)
             })).filter(cat => cat.itens.length > 0);
 
             if (appState.layout === 1) {
-                // Layout 1 Coluna
                 html += `<div class="max-w-2xl mx-auto space-y-7">`;
                 filteredData.forEach(cat => {
                     html += `<div class="avoid-break">
@@ -786,7 +799,6 @@
                 });
                 html += `</div>`;
             } else if (appState.layout === 2) {
-                // Layout 2 Colunas
                 html += `<div class="grid grid-cols-2 gap-x-8 gap-y-6">`;
                 filteredData.forEach(cat => {
                     html += `<div class="col-span-2 text-center mt-2 mb-1 border-y border-dashed py-1 avoid-break">
@@ -804,7 +816,6 @@
                 });
                 html += `</div>`;
             } else if (appState.layout === 3) {
-                // Layout 3 Blocos
                 html += `<div class="columns-2 gap-6 space-y-6">`;
                 filteredData.forEach(cat => {
                     html += `<div class="avoid-break break-inside-avoid">
@@ -826,36 +837,41 @@
             canvas.innerHTML = html;
         }
 
+        // Função de gerar PDF robusta: Zera o CSS Transform para renderizar sem estourar e volta no fim
         function exportPDF() {
-            const element = document.getElementById('preview-canvas');
-            const btn = document.getElementById('btn-export');
-            const originalHTML = btn.innerHTML;
+            const wrapper = document.getElementById('canvas-wrapper');
+            const oldTransform = wrapper.style.transform;
+            wrapper.style.transform = 'scale(1)'; // Retira o zoom para a foto do PDF sair perfeita
             
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...';
-            btn.disabled = true;
+            const element = document.getElementById('preview-canvas');
+            const btnDesktop = document.getElementById('btn-export-desktop');
+            const btnMobile = document.getElementById('btn-export-mobile');
+            
+            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
+            
+            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...'; btnMobile.disabled = true; }
 
             const opt = {
                 margin: 0,
                 filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2.5, useCORS: true, letterRendering: true },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             html2pdf().set(opt).from(element).save().then(() => {
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
+                wrapper.style.transform = oldTransform; // Devolve o zoom da tela
+                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
             }).catch(err => {
-                console.error(err);
-                alert("Erro ao exportar PDF.");
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
+                wrapper.style.transform = oldTransform;
+                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
+                alert("Erro ao exportar o arquivo PDF.");
             });
         }
-
-        window.onload = () => {
-            iniciarPagina();
-        };
     </script>
 </body>
 </html>

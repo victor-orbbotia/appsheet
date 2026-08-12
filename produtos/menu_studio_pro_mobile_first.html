@@ -8,6 +8,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -377,11 +378,11 @@
             </div>
             
             <p class="text-xs text-slate-500 leading-relaxed">
-                Clique no botão abaixo para iniciar o download do arquivo PDF do seu cardápio.
+                Pré-visualização gerada com sucesso. Clique em salvar para baixar o arquivo PDF.
             </p>
             
-            <div class="flex-1 overflow-y-auto border rounded-xl p-2 bg-slate-50 text-center flex items-center justify-center" id="modal-preview-area">
-                <!-- Preview Base64 do PDF -->
+            <div class="flex-1 overflow-y-auto border rounded-xl p-2 bg-slate-50 text-center flex items-center justify-center min-h-[180px]" id="modal-preview-area">
+                <!-- Imagem gerada do cardápio -->
             </div>
 
             <div class="flex gap-2 pt-2">
@@ -585,7 +586,7 @@
         }
 
         /* =========================================
-           ZOOM E NAVEGAÇÃO
+           ZOOM, PANNING E MOBILE
            ========================================= */
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
@@ -985,15 +986,23 @@
         /* =========================================
            GERAÇÃO E DOWNLOAD DO PDF (IN-APP SAFE)
            ========================================= */
-        function abrirModalDownload(pdfBase64) {
+        function abrirModalDownload(blobUrl) {
             const modal = document.getElementById('modal-download');
             const previewArea = document.getElementById('modal-preview-area');
             const btnBaixar = document.getElementById('btn-modal-baixar-direto');
+            const element = document.getElementById('preview-canvas');
 
-            btnBaixar.href = pdfBase64;
+            btnBaixar.href = blobUrl;
             btnBaixar.download = `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`;
 
-            previewArea.innerHTML = `<iframe src="${pdfBase64}" class="w-full h-64 rounded-xl border-0 shadow-inner"></iframe>`;
+            previewArea.innerHTML = `<span class="text-xs text-indigo-600 font-bold animate-pulse">Carregando foto do cardápio...</span>`;
+
+            // Renderiza imagem cristalina do cardápio usando html2canvas para a caixa do modal
+            html2canvas(element, { scale: 1.2, useCORS: true }).then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                previewArea.innerHTML = `<img src="${imgData}" class="w-full h-auto max-h-60 object-contain rounded-lg shadow-sm border">`;
+            });
+
             modal.classList.remove('hidden');
         }
 
@@ -1032,10 +1041,11 @@
 
             setTimeout(() => {
                 if (isMobile) {
-                    // Mobile: gera PDF em memória Base64 e exibe no modal interno sem sair do Chatwoot
-                    html2pdf().set(opt).from(element).outputPdf('datauristring').then(function(pdfBase64) {
+                    // Mobile: gera PDF como Blob URL nativo
+                    html2pdf().set(opt).from(element).output('blob').then(function(pdfBlob) {
+                        const blobUrl = URL.createObjectURL(pdfBlob);
                         restaurarBotoes();
-                        abrirModalDownload(pdfBase64);
+                        abrirModalDownload(blobUrl);
                     }).catch(err => {
                         restaurarBotoes();
                         alert("Erro ao processar o arquivo no celular: " + err.message);
@@ -1056,7 +1066,7 @@
                 zoomContainer.style.width = oldWidth;
                 zoomContainer.style.height = oldHeight;
                 if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Baixar PDF'; btnDesktop.disabled = false; }
-                if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Gerar PDF'; btnMobile.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Baixar PDF'; btnMobile.disabled = false; }
             }
         }
     </script>

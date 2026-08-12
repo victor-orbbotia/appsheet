@@ -73,6 +73,31 @@
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* =========================================
+           REGRAS MÁGICAS DE IMPRESSÃO (NATIVO MOBILE)
+           ========================================= */
+        @media print {
+            @page { size: A4 portrait; margin: 0mm; }
+            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            /* Esconde todo o sistema (Painel, Botões, Zoom) */
+            #editor-panel, #zoom-controls, .md\:hidden { display: none !important; }
+            
+            /* Libera o Preview para ocupar a folha limpa */
+            #preview-container { 
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%; 
+                background: white !important; overflow: visible !important; 
+                padding: 0 !important; transform: none !important;
+            }
+            #zoom-container, #canvas-wrapper { 
+                transform: none !important; width: 100% !important; height: auto !important; 
+                box-shadow: none !important; margin: 0 !important;
+            }
+            #preview-canvas { 
+                width: 210mm !important; box-shadow: none !important; margin: 0 !important; 
+            }
+        }
     </style>
 </head>
 
@@ -158,7 +183,7 @@
                 <div class="bg-slate-900 p-4 rounded-xl shadow-md text-white space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-amber-400">
-                            <i class="fa-solid fa-star"></i> Destaques do Chef (Fotos)
+                            <i class="fa-solid fa-star"></i> Destaques do Chef
                         </h2>
                         <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">Máx 3</span>
                     </div>
@@ -187,7 +212,7 @@
                     </div>
 
                     <p class="text-[11px] text-slate-500">
-                        Desmarque a caixa de seleção para ocultar um item do PDF impresso sem excluí-lo do seu sistema.
+                        Desmarque a caixa para ocultar um item apenas deste PDF impresso.
                     </p>
 
                     <div class="overflow-hidden border border-slate-200 rounded-lg bg-slate-50">
@@ -259,10 +284,10 @@
                             <div>
                                 <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fonte dos Títulos</label>
                                 <select id="font-title" onchange="updateTheme()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500">
-                                    <option value="'Playfair Display', serif">Playfair Display (Gourmet / Elegante)</option>
-                                    <option value="'Cinzel', serif">Cinzel (Clássica / Sofisticada)</option>
-                                    <option value="'Oswald', sans-serif">Oswald (Moderna / Hamburgueria)</option>
-                                    <option value="'Montserrat', sans-serif">Montserrat (Clean / Contemporânea)</option>
+                                    <option value="'Playfair Display', serif">Playfair Display (Elegante)</option>
+                                    <option value="'Cinzel', serif">Cinzel (Clássica)</option>
+                                    <option value="'Oswald', sans-serif">Oswald (Moderna)</option>
+                                    <option value="'Montserrat', sans-serif">Montserrat (Contemporânea)</option>
                                 </select>
                             </div>
                             <div>
@@ -326,7 +351,7 @@
         </nav>
     </aside>
 
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Técnica Block com Zoom Wrapper para Panning Seguro) -->
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO -->
     <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-auto block text-center py-6 md:py-10 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
         <!-- Header de Controle Mobile -->
@@ -335,12 +360,12 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <button onclick="exportPDF()" id="btn-export-mobile" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
-                <i class="fa-solid fa-download"></i> Baixar PDF
+                <i class="fa-solid fa-file-pdf"></i> Gerar PDF
             </button>
         </div>
 
         <!-- CANVAS WRAPPER INTELIGENTE -->
-        <div id="zoom-container" class="mx-auto text-left relative mt-12 md:mt-0 transition-all duration-200 inline-block bg-transparent" style="width: 397px; height: 500px;">
+        <div id="zoom-container" class="mx-auto text-left relative mt-12 md:mt-0 transition-all duration-200 inline-block bg-transparent">
             <div id="canvas-wrapper" class="origin-top-left absolute top-0 left-0 shadow-2xl bg-white transition-transform duration-200">
                 <div id="preview-canvas"></div>
             </div>
@@ -471,27 +496,21 @@
             carregarProdutosDoBanco();
         }
 
-        // Leitura Ultra-Tolerante de dados do n8n com tratamento de JSON String
         async function carregarProdutosDoBanco() {
             const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
 
             try {
-                const endpoint = `${urlProdutos}?account_id=${globalAccountId}`;
-                console.log("Buscando produtos em:", endpoint);
-
-                const res = await fetch(endpoint);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                
+                const res = await fetch(`${urlProdutos}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error("Erro HTTP");
                 const dadosRetornados = await res.json();
-                console.log("Dados do n8n:", dadosRetornados);
                 
                 let listaTratada = [];
                 if (Array.isArray(dadosRetornados)) {
                     listaTratada = dadosRetornados;
-                } else if (dadosRetornados && Array.isArray(dadosRetornados.data)) {
+                } else if (dadosRetornados.data && Array.isArray(dadosRetornados.data)) {
                     listaTratada = dadosRetornados.data;
-                } else if (dadosRetornados && Array.isArray(dadosRetornados.payload)) {
+                } else if (dadosRetornados.payload && Array.isArray(dadosRetornados.payload)) {
                     listaTratada = dadosRetornados.payload;
                 } else if (dadosRetornados && typeof dadosRetornados === 'object') {
                     listaTratada = [dadosRetornados];
@@ -512,7 +531,6 @@
 
                         let precoFinal = parseFloat(p.preco_base) || 0;
 
-                        // Tratamento de Metadata caso venha como JSON String do Postgres
                         let meta = p.metadata;
                         if (typeof meta === 'string') {
                             try { meta = JSON.parse(meta); } catch (e) { meta = {}; }
@@ -530,9 +548,7 @@
                             preco: precoFinal,
                             visivel: true
                         });
-                    } catch (itemErr) {
-                        console.warn("Item ignorado por erro de parse:", itemErr, prod);
-                    }
+                    } catch (itemErr) {}
                 });
 
                 appState.data = Object.keys(agrupado).sort().map(cat => ({
@@ -544,13 +560,12 @@
                 renderPreview();
 
             } catch (err) {
-                console.error("Erro crítico na sincronização:", err);
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar. Verifique o console.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
             }
         }
 
         /* =========================================
-           ZOOM, PANNING E MOBILE
+           ZOOM, PANNING E MOBILE FIXO
            ========================================= */
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
@@ -578,11 +593,12 @@
             
             wrapper.style.transform = `scale(${appState.zoom})`;
             
-            const canvasUnscaledWidth = 794; 
-            const canvasUnscaledHeight = canvasElement.scrollHeight > 1123 ? canvasElement.scrollHeight : 1123;
+            // Corrige o bug de panning no mobile forçando a largura exata multiplicada pelo zoom
+            const canvasWidth = 794; 
+            const canvasHeight = canvasElement.scrollHeight > 1123 ? canvasElement.scrollHeight : 1123;
             
-            zoomContainer.style.width = `${canvasUnscaledWidth * appState.zoom}px`;
-            zoomContainer.style.height = `${canvasUnscaledHeight * appState.zoom}px`;
+            zoomContainer.style.width = `${canvasWidth * appState.zoom}px`;
+            zoomContainer.style.height = `${canvasHeight * appState.zoom}px`;
             
             document.getElementById('zoom-level').innerText = `${Math.round(appState.zoom * 100)}%`;
         }
@@ -630,7 +646,7 @@
         }
 
         /* =========================================
-           DESTAQUES / CARROS-CHEFE E LOGO SMART
+           DESTAQUES / CARROS-CHEFE
            ========================================= */
         function handleSmartLogoUpload(event) {
             const file = event.target.files[0];
@@ -948,28 +964,46 @@
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =========================================
-           GERADOR DE PDF (HTML2PDF) COM TIMEOUT MOBILE
+           GERADOR DE PDF (NATIVO MOBILE / HTML2PDF)
            ========================================= */
         function exportPDF() {
+            // Verifica se é um dispositivo Mobile ou IFrame pequeno
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768;
+
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
-            const element = document.getElementById('preview-canvas');
             
             const oldTransform = wrapper.style.transform;
             const oldWidth = zoomContainer.style.width;
             const oldHeight = zoomContainer.style.height;
 
-            const btnDesktop = document.getElementById('btn-export-desktop');
-            const btnMobile = document.getElementById('btn-export-mobile');
-            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
-            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
-            
-            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...'; btnMobile.disabled = true; }
-
+            // Zera o zoom para renderizar perfeitamente
             wrapper.style.transform = 'scale(1)';
             zoomContainer.style.width = '794px';
-            zoomContainer.style.height = `${element.scrollHeight}px`;
+            zoomContainer.style.height = 'auto';
+
+            if (isMobile) {
+                // ESTRATÉGIA MOBILE: Invoca o Print Nativo do celular! 
+                // Evita todos os bloqueios de download dos navegadores/chatwoot
+                setTimeout(() => {
+                    window.print();
+                    
+                    // Devolve o zoom quando a tela do sistema voltar
+                    setTimeout(() => {
+                        wrapper.style.transform = oldTransform;
+                        zoomContainer.style.width = oldWidth;
+                        zoomContainer.style.height = oldHeight;
+                    }, 500);
+                }, 300);
+                return;
+            }
+
+            // ESTRATÉGIA DESKTOP: Download direto
+            const element = document.getElementById('preview-canvas');
+            const btnDesktop = document.getElementById('btn-export-desktop');
+            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            
+            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
 
             const opt = {
                 margin: 0,
@@ -985,13 +1019,11 @@
                     zoomContainer.style.width = oldWidth;
                     zoomContainer.style.height = oldHeight;
                     if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
                 }).catch(err => {
                     wrapper.style.transform = oldTransform;
                     zoomContainer.style.width = oldWidth;
                     zoomContainer.style.height = oldHeight;
                     if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
                     alert("Ocorreu um erro ao exportar o PDF.");
                 });
             }, 300);

@@ -37,17 +37,16 @@
         .fade-in { animation: fadeIn 0.25s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Canvas folha A4 */
         #preview-canvas {
             background-color: var(--color-bg);
             color: var(--color-text);
             font-family: var(--font-body);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
+            width: 794px; /* Fixado para padrão A4 96 DPI */
+            min-height: 1123px;
+            margin: 0;
             padding: 18mm 14mm;
             box-sizing: border-box;
-            transform-origin: top center;
         }
 
         #preview-canvas .font-title {
@@ -290,7 +289,7 @@
                                 <i class="fa-solid fa-circle-check text-indigo-600 layout-icon text-xs"></i>
                             </button>
                             <button onclick="setLayout(2)" id="btn-layout-2" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500">
-                                <span class="text-xs font-medium">2. Alta Densidade (2 Colunas - Pizzaria)</span>
+                                <span class="text-xs font-medium">2. Alta Densidade (2 Colunas)</span>
                                 <i class="fa-regular fa-circle layout-icon text-xs"></i>
                             </button>
                             <button onclick="setLayout(3)" id="btn-layout-3" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500">
@@ -327,8 +326,8 @@
         </nav>
     </aside>
 
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Z-40 no mobile para sobrepor o menu) -->
-    <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-y-auto flex justify-center py-4 md:py-8 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Técnica Block com Zoom Wrapper para Panning Seguro) -->
+    <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-auto block text-center py-6 md:py-10 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
         <!-- Header de Controle Mobile -->
         <div class="fixed top-4 left-4 right-4 z-50 md:hidden flex justify-between pointer-events-none">
@@ -340,19 +339,21 @@
             </button>
         </div>
 
-        <!-- CANVAS -->
-        <div id="canvas-wrapper" class="origin-top transition-transform duration-200 mt-14 md:mt-0 shadow-2xl">
-            <div id="preview-canvas"></div>
+        <!-- CANVAS WRAPPER INTELIGENTE (Resolve o bug de corte no mobile) -->
+        <div id="zoom-container" class="mx-auto text-left relative mt-12 md:mt-0 transition-all duration-200 inline-block bg-transparent" style="width: 397px; height: 500px;">
+            <div id="canvas-wrapper" class="origin-top-left absolute top-0 left-0 shadow-2xl bg-white transition-transform duration-200">
+                <div id="preview-canvas"></div>
+            </div>
         </div>
     </main>
 
-    <!-- CONTROLES DE ZOOM FLUTUANTES (Fixado na raiz do body Z-50) -->
+    <!-- CONTROLES DE ZOOM FLUTUANTES -->
     <div id="zoom-controls" class="fixed bottom-6 right-6 glass-panel p-1 rounded-xl shadow-lg flex items-center gap-1 z-50 border border-slate-200 transition-opacity duration-300 md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto">
         <button onclick="setZoom(-0.05)" title="Diminuir Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
             <i class="fa-solid fa-minus text-xs"></i>
         </button>
         <button onclick="resetZoomAdaptativo()" title="Redefinir Zoom" class="px-2.5 h-9 text-xs font-extrabold text-indigo-600 hover:bg-indigo-50/60 rounded-lg transition-all flex items-center gap-1">
-            <span id="zoom-level">77%</span>
+            <span id="zoom-level">50%</span>
         </button>
         <button onclick="setZoom(0.05)" title="Aumentar Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
             <i class="fa-solid fa-plus text-xs"></i>
@@ -369,7 +370,7 @@
 
         let appState = {
             layout: 1,
-            zoom: 0.77,
+            zoom: 0.50,
             restaurantName: "Meu Restaurante",
             restaurantDescription: "",
             logoUrl: null,
@@ -381,11 +382,9 @@
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
         /* =========================================
-           PERSISTÊNCIA EM CACHE (LOCALSTORAGE)
+           PERSISTÊNCIA EM CACHE
            ========================================= */
-        function getCacheKey() {
-            return `menu_studio_config_${globalAccountId}`;
-        }
+        function getCacheKey() { return `menu_studio_config_${globalAccountId}`; }
 
         function salvarConfigNoCache() {
             const configParaSalvar = {
@@ -401,11 +400,7 @@
                 fontBody: document.getElementById('font-body').value,
                 layout: appState.layout
             };
-            try {
-                localStorage.setItem(getCacheKey(), JSON.stringify(configParaSalvar));
-            } catch (e) {
-                console.warn("Espaço de LocalStorage esgotado ou desativado.", e);
-            }
+            try { localStorage.setItem(getCacheKey(), JSON.stringify(configParaSalvar)); } catch (e) {}
         }
 
         function carregarConfigDoCache() {
@@ -442,13 +437,11 @@
                 if (config.layout) setLayout(config.layout);
 
                 updateTheme();
-            } catch (e) {
-                console.warn("Erro ao restaurar cache do usuário.", e);
-            }
+            } catch (e) {}
         }
 
         /* =========================================
-           HANDSHAKE & BUSCA DE DADOS (N8N)
+           HANDSHAKE E DADOS
            ========================================= */
         window.addEventListener('message', function (event) {
             let eventData = {};
@@ -473,12 +466,11 @@
             document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
             document.getElementById('btn-voltar-gestao').href = `./produtos.html?account_id=${globalAccountId}`;
             
-            carregarConfigDoCache(); // Restaura as preferências salvas em cache
+            carregarConfigDoCache();
             resetZoomAdaptativo();
             carregarProdutosDoBanco();
         }
 
-        // Leitura Ultra-Tolerante de dados do n8n
         async function carregarProdutosDoBanco() {
             const tbody = document.getElementById('data-table-body');
             tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
@@ -488,15 +480,9 @@
                 if (!res.ok) throw new Error("Erro HTTP");
                 const dadosRetornados = await res.json();
                 
-                // Normaliza o array de itens independente do formato do n8n
                 let listaTratada = [];
-                if (Array.isArray(dadosRetornados)) {
-                    listaTratada = dadosRetornados;
-                } else if (dadosRetornados.data && Array.isArray(dadosRetornados.data)) {
-                    listaTratada = dadosRetornados.data;
-                } else if (dadosRetornados.payload && Array.isArray(dadosRetornados.payload)) {
-                    listaTratada = dadosRetornados.payload;
-                }
+                if (Array.isArray(dadosRetornados)) { listaTratada = dadosRetornados; } 
+                else if (dadosRetornados.data && Array.isArray(dadosRetornados.data)) { listaTratada = dadosRetornados.data; }
 
                 const agrupado = {};
                 listaTratada.forEach(prod => {
@@ -529,22 +515,21 @@
                 renderPreview();
 
             } catch (err) {
-                console.error("Erro na sincronização:", err);
                 tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
             }
         }
 
         /* =========================================
-           GERENCIAMENTO DE ZOOM E NAVEGAÇÃO
+           ZOOM, PANNING E MOBILE
            ========================================= */
         function resetZoomAdaptativo() {
             const w = window.innerWidth;
             if (w < 768) {
-                appState.zoom = 0.32;
+                appState.zoom = 0.50; // Padrão Celular
             } else if (w < 1100) {
-                appState.zoom = 0.50;
+                appState.zoom = 0.50; // Padrão Chatwoot Iframe
             } else {
-                appState.zoom = 0.77; // Padrão solicitado 77% nos computadores
+                appState.zoom = 0.77; // Padrão Desktop Grande
             }
             applyZoom();
         }
@@ -557,7 +542,20 @@
         }
 
         function applyZoom() {
-            document.getElementById('canvas-wrapper').style.transform = `scale(${appState.zoom})`;
+            const wrapper = document.getElementById('canvas-wrapper');
+            const zoomContainer = document.getElementById('zoom-container');
+            const canvasElement = document.getElementById('preview-canvas');
+            
+            // Aplica a escala visual no canvas
+            wrapper.style.transform = `scale(${appState.zoom})`;
+            
+            // Calcula o espaço que o canvas ocupará na tela para liberar o scroll sem cortar a esquerda
+            const canvasUnscaledWidth = 794; 
+            const canvasUnscaledHeight = canvasElement.scrollHeight > 1123 ? canvasElement.scrollHeight : 1123;
+            
+            zoomContainer.style.width = `${canvasUnscaledWidth * appState.zoom}px`;
+            zoomContainer.style.height = `${canvasUnscaledHeight * appState.zoom}px`;
+            
             document.getElementById('zoom-level').innerText = `${Math.round(appState.zoom * 100)}%`;
         }
 
@@ -604,7 +602,63 @@
         }
 
         /* =========================================
-           DESTAQUES / CARROS-CHEFE E LOGO SMART
+           GERADOR DE PDF (HTML2PDF)
+           ========================================= */
+        function exportPDF() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            const zoomContainer = document.getElementById('zoom-container');
+            const element = document.getElementById('preview-canvas');
+            
+            // Backup dos tamanhos atuais
+            const oldTransform = wrapper.style.transform;
+            const oldWidth = zoomContainer.style.width;
+            const oldHeight = zoomContainer.style.height;
+
+            // Altera botões de carregamento
+            const btnDesktop = document.getElementById('btn-export-desktop');
+            const btnMobile = document.getElementById('btn-export-mobile');
+            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
+            
+            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...'; btnMobile.disabled = true; }
+
+            // PASSO 1: Força o canvas a ter escala 1:1 para a foto sair perfeita
+            wrapper.style.transform = 'scale(1)';
+            zoomContainer.style.width = '794px';
+            zoomContainer.style.height = `${element.scrollHeight}px`;
+
+            const opt = {
+                margin: 0,
+                filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // PASSO 2: O setTimeout() é crucial no mobile para dar tempo do navegador aplicar o scale(1)
+            // antes de fotografar. Sem ele, a função quebra silenciosamente.
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    // Restaura a visualização e botões originais
+                    wrapper.style.transform = oldTransform;
+                    zoomContainer.style.width = oldWidth;
+                    zoomContainer.style.height = oldHeight;
+                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
+                }).catch(err => {
+                    wrapper.style.transform = oldTransform;
+                    zoomContainer.style.width = oldWidth;
+                    zoomContainer.style.height = oldHeight;
+                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                    if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
+                    alert("Ocorreu um erro ao exportar o PDF.");
+                });
+            }, 300);
+        }
+
+        /* =========================================
+           LOGO SMART & CORES
            ========================================= */
         function handleSmartLogoUpload(event) {
             const file = event.target.files[0];
@@ -746,7 +800,7 @@
         }
 
         /* =========================================
-           TABELA DE DADOS
+           RENDERIZAÇÃO DA TABELA
            ========================================= */
         function renderTable() {
             const tbody = document.getElementById('data-table-body');
@@ -825,9 +879,6 @@
             salvarConfigNoCache();
         }
 
-        /* =========================================
-           RENDERIZAÇÃO DO CANVA E GERADOR PDF
-           ========================================= */
         function renderPreview() {
             const canvas = document.getElementById('preview-canvas');
             let html = '';
@@ -919,48 +970,8 @@
             }
 
             canvas.innerHTML = html;
+            setTimeout(() => { applyZoom(); }, 50); // Recalcula altura do Scroll após injetar html
         }
-
-        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-        function exportPDF() {
-            const wrapper = document.getElementById('canvas-wrapper');
-            const oldTransform = wrapper.style.transform;
-            wrapper.style.transform = 'scale(1)'; // Zera o zoom no momento exato do snapshot do PDF
-            
-            const element = document.getElementById('preview-canvas');
-            const btnDesktop = document.getElementById('btn-export-desktop');
-            const btnMobile = document.getElementById('btn-export-mobile');
-            
-            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
-            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
-            
-            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguarde...'; btnMobile.disabled = true; }
-
-            const opt = {
-                margin: 0,
-                filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                wrapper.style.transform = oldTransform; // Devolve o zoom da tela
-                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-            }).catch(err => {
-                wrapper.style.transform = oldTransform;
-                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-                alert("Erro ao exportar o arquivo PDF.");
-            });
-        }
-
-        window.onload = () => {
-            iniciarPagina();
-        };
     </script>
 </body>
 </html>

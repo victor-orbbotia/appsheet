@@ -377,17 +377,21 @@
         }
 
         /* =============================================
-           AÇÕES COM ENVIO DE CONVERSA_ID PARA O N8N
+           AÇÕES COM GARANTIA DE ENVIO DE CONVERSA_ID
         ============================================= */
         async function moverStatus(id, novoStatus, btn) {
-            const item = listaPedidos.find(i => (i.json ? i.json : i).id === id);
+            // Busca o pedido garantindo compatibilidade com item.json ou item simples
+            const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             const p = item ? (item.json ? item.json : item) : {};
+
+            // Resgata o conversa_id sem deixar virar undefined
+            const conversaId = p.conversa_id || p.conversaId || null;
 
             const payload = { 
                 action: 'status', 
                 account_id: globalAccountId.toString(), 
                 id: id, 
-                conversa_id: p.conversa_id, // 👈 Enviando a conversa para o Chatwoot receber a etiqueta
+                conversa_id: conversaId,
                 status: novoStatus 
             };
 
@@ -400,14 +404,16 @@
 
         async function cancelarPedido(id, btn) {
             if (!confirm('Confirmar cancelamento do pedido?')) return;
-            const item = listaPedidos.find(i => (i.json ? i.json : i).id === id);
+            const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             const p = item ? (item.json ? item.json : item) : {};
+
+            const conversaId = p.conversa_id || p.conversaId || null;
 
             const payload = { 
                 action: 'status', 
                 account_id: globalAccountId.toString(), 
                 id: id, 
-                conversa_id: p.conversa_id, 
+                conversa_id: conversaId, 
                 status: 'cancelado' 
             };
 
@@ -419,7 +425,7 @@
         }
 
         function atualizarStatusLocal(id, novoStatus) {
-            const item = listaPedidos.find(i => (i.json ? i.json : i).id === id);
+            const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             if (item) {
                 const p = item.json ? item.json : item;
                 p.status = novoStatus;

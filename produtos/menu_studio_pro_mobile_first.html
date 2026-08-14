@@ -1,386 +1,814 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu Studio Pro</title>
-    <!-- Tailwind CSS CDN -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Menu Studio Pro — Gerador de Cardápio</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         :root {
             --color-primary: #111827;
             --color-secondary: #4f46e5;
-            --color-bg: #ffffff;
+            --color-bg: #FFFFFF;
             --color-text: #333333;
             --font-title: 'Playfair Display', serif;
-            --font-body: 'Montserrat', sans-serif;
+            --font-body: 'Lato', sans-serif;
+            --app-bg: #f8fafc;
         }
 
         body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f3f4f6;
+            background-color: var(--app-bg);
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Estilização do Canvas A4 de Preview */
+        .fade-in { animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Canvas folha A4 Pura */
         #preview-canvas {
-            width: 794px;
-            min-height: 1123px;
-            padding: 18mm 14mm;
-            margin: 0 auto;
-            box-sizing: border-box;
             background-color: var(--color-bg);
             color: var(--color-text);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            font-family: var(--font-body);
+            width: 794px; /* A4 a 96DPI */
+            min-height: 1123px;
+            margin: 0 auto;
+            padding: 18mm 14mm;
+            box-sizing: border-box;
         }
 
-        #preview-canvas .font-title {
-            font-family: var(--font-title);
-            color: var(--color-primary);
-        }
-
-        .l1-item-row {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 0.4rem;
-        }
-
-        .l1-dots {
-            flex-grow: 1;
-            border-bottom: 2px dotted rgba(0,0,0,0.18);
-            margin: 0 0.8rem;
-            position: relative;
-            top: -3px;
-        }
-
-        .avoid-break {
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-
-        @page {
-            size: A4 portrait;
-            margin: 0mm;
-        }
+        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
+        .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
+        .l3-card { background-color: rgba(0,0,0,0.02); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
+        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.65rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; }
+        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <!-- PAINEL DE CONTROLE (LATERAL ESQUERDA) -->
-    <aside class="w-full md:w-96 bg-white border-r border-gray-200 flex flex-col h-full z-10 shadow-lg">
-        <!-- Header com Ações Globais -->
-        <div class="p-4 border-b border-gray-200 bg-gray-50">
-            <h1 class="text-xl font-bold text-gray-800 mb-1">Menu Studio Pro</h1>
-            <p class="text-xs text-gray-500 mb-3">Gerenciador e Gerador de PDF</p>
-            
-            <div class="grid grid-cols-2 gap-2">
-                <button onclick="salvarEstadoCardapio()" id="btn-salvar" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2 px-3 rounded text-xs flex items-center justify-center gap-1 transition">
-                    💾 Salvar Estado
+<body class="flex flex-col md:flex-row h-screen text-slate-800 relative">
+
+    <!-- PAINEL LATERAL DE EDIÇÃO -->
+    <aside id="editor-panel" class="w-full md:w-[420px] h-full flex flex-col bg-white border-r border-slate-200 shadow-xl z-20 shrink-0">
+
+        <!-- Header -->
+        <header class="p-4 border-b border-slate-200 bg-white shrink-0 space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <a id="btn-voltar-menu" href="../index.html" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Menu Principal
+                    </a>
+                    <span class="text-slate-300">|</span>
+                    <a id="btn-voltar-gestao" href="./novo.html" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                        🍕 Produtos
+                    </a>
+                </div>
+                <span id="badge-account" class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border">ID: ...</span>
+            </div>
+
+            <!-- NOVOS BOTÕES: SALVAR & SINCRONIZAR ESTADO NO SUPABASE -->
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Estado
                 </button>
-                <button onclick="sincronizarCardapio()" id="btn-sincronizar" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 px-3 rounded text-xs flex items-center justify-center gap-1 transition">
-                    🔄 Sincronizar
+                <button onclick="sincronizarCardapio()" id="btn-sincronizar-estado" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
+                    <i class="fa-solid fa-rotate"></i> Sincronizar
                 </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-2">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">Menu Studio <span class="text-indigo-600">Pro</span></h1>
+                    <p class="text-[11px] text-slate-400 font-medium">Gerador de Cardápio Impresso (PDF)</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="toggleMobilePreview()" title="Ver Pré-visualização" class="md:hidden w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center hover:bg-indigo-100 transition-colors">
+                        <i class="fa-solid fa-eye text-sm"></i>
+                    </button>
+                    <!-- BOTÃO DESKTOP -->
+                    <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
+                        <i class="fa-solid fa-paper-plane"></i> <span>Enviar PDF no Chat</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Conteúdo das Abas -->
+        <div class="flex-1 overflow-y-auto p-4 relative bg-slate-50/50 hide-scroll space-y-4">
+            <!-- TAB 1: IDENTIDADE -->
+            <div id="panel-identidade" class="tab-content fade-in space-y-4 block">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-store text-indigo-500"></i> Identidade</h2>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">Logotipo</label>
+                        <div class="relative group cursor-pointer">
+                            <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-xl bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all overflow-hidden cursor-pointer">
+                                <div id="logo-preview-container" class="absolute inset-0 hidden items-center justify-center bg-white p-2">
+                                    <img id="logo-preview-img" class="max-h-full max-w-full object-contain drop-shadow-md">
+                                </div>
+                                <div id="logo-upload-prompt" class="flex flex-col items-center justify-center py-4">
+                                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
+                                    <p class="text-xs text-slate-600 font-semibold">Enviar Logo</p>
+                                </div>
+                                <input id="input-logo" type="file" class="hidden" accept="image/*" onchange="handleSmartLogoUpload(event)" />
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nome no Cabeçalho</label>
+                        <input type="text" id="input-rest-name" value="Meu Restaurante" oninput="debounceUpdate()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:border-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Slogan</label>
+                        <textarea id="input-rest-desc" oninput="debounceUpdate()" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:bg-white outline-none" placeholder="Ex: Culinária artesanal"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: CARROS-CHEFE -->
+            <div id="panel-destaques" class="tab-content fade-in hidden space-y-4">
+                <div class="bg-slate-900 p-4 rounded-xl shadow-md text-white space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-amber-400"><i class="fa-solid fa-star"></i> Destaques do Chef</h2>
+                        <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">Máx 3</span>
+                    </div>
+                    <div id="destaques-list" class="space-y-3"></div>
+                    <button onclick="addDestaque()" id="btn-add-destaque" class="w-full mt-2 bg-white/10 hover:bg-white/20 border border-white/20 border-dashed rounded-lg py-2.5 text-xs font-bold transition-colors flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-plus text-xs"></i> Adicionar Prato
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: DADOS -->
+            <div id="panel-dados" class="tab-content fade-in hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-database text-indigo-500"></i> Produtos</h2>
+                        <button onclick="carregarProdutosDoBanco()" class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 hover:bg-indigo-100 transition-colors">🔄 Sincronizar</button>
+                    </div>
+                    <div class="overflow-hidden border border-slate-200 rounded-lg bg-slate-50">
+                        <table class="min-w-full text-xs">
+                            <thead class="bg-slate-100 border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px]">
+                                <tr><th class="px-3 py-2 text-left">Item</th><th class="px-3 py-2 text-right w-20">Preço</th><th class="px-2 py-2 text-center w-10"><i class="fa-solid fa-eye"></i></th></tr>
+                            </thead>
+                            <tbody id="data-table-body" class="divide-y divide-slate-100 bg-white">
+                                <tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Sincronizando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ESTILO -->
+            <div id="panel-design" class="tab-content fade-in hidden space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div>
+                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-1.5"><i class="fa-solid fa-palette text-indigo-500"></i> Cores</h2>
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div class="p-2 border border-slate-200 rounded-lg bg-slate-50"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Títulos</label><input type="color" id="color-primary" value="#111827" class="h-6 w-6 rounded cursor-pointer border-0 p-0 bg-transparent" onchange="updateTheme()"></div>
+                            <div class="p-2 border border-slate-200 rounded-lg bg-slate-50"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Destaques</label><input type="color" id="color-secondary" value="#4F46E5" class="h-6 w-6 rounded cursor-pointer border-0 p-0 bg-transparent" onchange="updateTheme()"></div>
+                            <div class="p-2 border border-slate-200 rounded-lg bg-slate-50"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Fundo</label><input type="color" id="color-bg" value="#FFFFFF" class="h-6 w-6 rounded cursor-pointer border-0 p-0 bg-transparent" onchange="updateTheme()"></div>
+                            <div class="p-2 border border-slate-200 rounded-lg bg-slate-50"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Texto</label><input type="color" id="color-text" value="#333333" class="h-6 w-6 rounded cursor-pointer border-0 p-0 bg-transparent" onchange="updateTheme()"></div>
+                        </div>
+                    </div>
+                    <hr class="border-slate-100">
+                    <div>
+                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-1.5"><i class="fa-solid fa-font text-indigo-500"></i> Tipografia</h2>
+                        <div class="space-y-2.5">
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fonte Títulos</label><select id="font-title" onchange="updateTheme()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 outline-none"><option value="'Playfair Display', serif">Playfair Display</option><option value="'Cinzel', serif">Cinzel</option><option value="'Oswald', sans-serif">Oswald</option><option value="'Montserrat', sans-serif">Montserrat</option></select></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Fonte Texto</label><select id="font-body" onchange="updateTheme()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 outline-none"><option value="'Lato', sans-serif">Lato</option><option value="'Roboto', sans-serif">Roboto</option><option value="'Montserrat', sans-serif">Montserrat</option></select></div>
+                        </div>
+                    </div>
+                    <hr class="border-slate-100">
+                    <div>
+                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide mb-3 flex items-center gap-1.5"><i class="fa-solid fa-table-columns text-indigo-500"></i> Layout</h2>
+                        <div class="space-y-2">
+                            <button onclick="setLayout(1)" id="btn-layout-1" class="w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between"><span class="text-xs font-bold text-indigo-900">1. Minimalista</span></button>
+                            <button onclick="setLayout(2)" id="btn-layout-2" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white text-slate-500"><span class="text-xs font-medium">2. Alta Densidade (2 Colunas)</span></button>
+                            <button onclick="setLayout(3)" id="btn-layout-3" class="w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white text-slate-500"><span class="text-xs font-medium">3. Blocos Modernos</span></button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Formulário de Customização -->
-        <div class="p-4 flex-1 overflow-y-auto space-y-5">
-            
-            <!-- ID da Conta -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Account ID (Supabase / Chatwoot)</label>
-                <input type="text" id="account-id" value="3" oninput="atualizarPreview()" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <nav class="bg-white border-t border-slate-200 p-1.5 shrink-0">
+            <div class="flex justify-around items-center">
+                <button onclick="switchTab('identidade')" id="tab-identidade" class="flex flex-col items-center p-1.5 text-indigo-600 flex-1"><i class="fa-solid fa-store text-sm mb-0.5"></i><span class="text-[10px] font-bold">Marca</span></button>
+                <button onclick="switchTab('destaques')" id="tab-destaques" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-800 flex-1"><i class="fa-solid fa-star text-sm mb-0.5"></i><span class="text-[10px] font-bold">Chef</span></button>
+                <button onclick="switchTab('dados')" id="tab-dados" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-800 flex-1"><i class="fa-solid fa-database text-sm mb-0.5"></i><span class="text-[10px] font-bold">Itens</span></button>
+                <button onclick="switchTab('design')" id="tab-design" class="flex flex-col items-center p-1.5 text-slate-400 hover:text-slate-800 flex-1"><i class="fa-solid fa-wand-magic-sparkles text-sm mb-0.5"></i><span class="text-[10px] font-bold">Estilo</span></button>
             </div>
-
-            <!-- Dados Básicos -->
-            <div>
-                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nome do Restaurante</label>
-                <input type="text" id="restaurant-name" value="Meu Restaurante" oninput="atualizarPreview()" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            </div>
-
-            <!-- Estilo & Cores -->
-            <div class="border-t border-gray-200 pt-4">
-                <h3 class="text-xs font-bold text-gray-700 uppercase mb-3">Identidade Visual</h3>
-                
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Cor Primária</label>
-                        <input type="color" id="color-primary" value="#111827" onchange="atualizarPreview()" class="w-full h-9 rounded cursor-pointer border border-gray-300">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Cor Secundária</label>
-                        <input type="color" id="color-secondary" value="#4f46e5" onchange="atualizarPreview()" class="w-full h-9 rounded cursor-pointer border border-gray-300">
-                    </div>
-                </div>
-
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">Fonte dos Títulos</label>
-                        <select id="font-title" onchange="atualizarPreview()" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                            <option value="'Playfair Display', serif">Playfair Display</option>
-                            <option value="'Cinzel', serif">Cinzel</option>
-                            <option value="'Oswald', sans-serif">Oswald</option>
-                            <option value="'Montserrat', sans-serif">Montserrat</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Botão de Envio de PDF -->
-            <div class="border-t border-gray-200 pt-4">
-                <button onclick="enviarParaWebhookPDF()" id="btn-gerar-pdf" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded shadow-md text-sm flex items-center justify-center gap-2 transition">
-                    📄 Gerar e Enviar PDF (Chatwoot)
-                </button>
-            </div>
-        </div>
+        </nav>
     </aside>
 
-    <!-- CANVA DE PREVIEW A4 (DIREITA) -->
-    <main class="flex-1 bg-gray-200 p-6 overflow-y-auto flex justify-center items-start">
-        <div id="preview-canvas">
-            
-            <!-- CABEÇALHO DO CARDÁPIO -->
-            <div class="text-center mb-8 avoid-break">
-                <h1 id="view-title" class="text-4xl font-bold uppercase tracking-widest mb-2 font-title">Meu Restaurante</h1>
-                <div id="view-divider" style="width: 50px; height: 2.5px; background-color: var(--color-secondary); margin: 0 auto;"></div>
-            </div>
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO -->
+    <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-auto block text-center py-6 md:py-10 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
-            <!-- CONTEÚDO / CATEGORIAS -->
-            <div class="max-w-2xl mx-auto space-y-7">
-                
-                <!-- Categoria: Bebidas -->
-                <div class="avoid-break">
-                    <h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">Bebidas</h2>
-                    <div class="space-y-3.5">
-                        <div class="avoid-break">
-                            <div class="l1-item-row">
-                                <span class="font-bold text-base font-title">Suco de Laranja</span>
-                                <div class="l1-dots"></div>
-                                <span class="font-bold font-mono text-sm">R$&nbsp;12,00</span>
-                            </div>
-                            <p class="text-xs italic opacity-75" style="padding-right: 50px;">Delicioso suco de laranja feito 100% da fruta sem adição de açúcar e gelo.</p>
-                        </div>
-                    </div>
-                </div>
+        <div class="fixed top-4 left-4 right-4 z-50 md:hidden flex justify-between pointer-events-none">
+            <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <!-- BOTÃO MOBILE -->
+            <button id="btn-export-mobile" onclick="exportPDF()" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2">
+                <i class="fa-solid fa-paper-plane"></i> Enviar PDF
+            </button>
+        </div>
 
-                <!-- Categoria: Drinks -->
-                <div class="avoid-break">
-                    <h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">Drinks</h2>
-                    <div class="space-y-3.5">
-                        <div class="avoid-break">
-                            <div class="l1-item-row">
-                                <span class="font-bold text-base font-title">Caipirinha</span>
-                                <div class="l1-dots"></div>
-                                <span class="font-bold font-mono text-sm">R$&nbsp;15,00</span>
-                            </div>
-                            <p class="text-xs italic opacity-75" style="padding-right: 50px;">Feita com limão, cachaça e gelo.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Categoria: Hambúrguer -->
-                <div class="avoid-break">
-                    <h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">Hambúrguer</h2>
-                    <div class="space-y-3.5">
-                        <div class="avoid-break">
-                            <div class="l1-item-row">
-                                <span class="font-bold text-base font-title">Hamburguer Duplo Bacon</span>
-                                <div class="l1-dots"></div>
-                                <span class="font-bold font-mono text-sm">R$&nbsp;25,00</span>
-                            </div>
-                            <p class="text-xs italic opacity-75" style="padding-right: 50px;">Duas carnes de hambúrguer e bacon crocante.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Categoria: Prato Executivo -->
-                <div class="avoid-break">
-                    <h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">Prato Executivo</h2>
-                    <div class="space-y-3.5">
-                        <div class="avoid-break">
-                            <div class="l1-item-row">
-                                <span class="font-bold text-base font-title">Almoço: Creme de milho com frango crocante</span>
-                                <div class="l1-dots"></div>
-                                <span class="font-bold font-mono text-sm">R$&nbsp;22,00</span>
-                            </div>
-                            <p class="text-xs italic opacity-75" style="padding-right: 50px;">Acompanha arroz e batata palha.</p>
-                        </div>
-                        <div class="avoid-break">
-                            <div class="l1-item-row">
-                                <span class="font-bold text-base font-title">Almoço: Tutu à Mineira com Pernil Assado</span>
-                                <div class="l1-dots"></div>
-                                <span class="font-bold font-mono text-sm">R$&nbsp;26,00</span>
-                            </div>
-                            <p class="text-xs italic opacity-75" style="padding-right: 50px;">Acompanha arroz, couve e mandioca frita.</p>
-                        </div>
-                    </div>
-                </div>
-
+        <div id="zoom-container" class="mx-auto text-left relative mt-12 md:mt-0 inline-block bg-transparent" style="width: 397px; height: 500px;">
+            <div id="canvas-wrapper" class="origin-top-left absolute top-0 left-0 shadow-2xl bg-white transition-transform duration-200">
+                <div id="preview-canvas"></div>
             </div>
         </div>
     </main>
 
-    <!-- SCRIPTS JS DA APLICAÇÃO -->
+    <!-- ZOOM FLUTUANTE -->
+    <div id="zoom-controls" class="fixed bottom-6 right-6 glass-panel p-1 rounded-xl shadow-lg flex items-center gap-1 z-50 border border-slate-200 transition-opacity md:opacity-100 opacity-0 pointer-events-none md:pointer-events-auto">
+        <button onclick="setZoom(-0.05)" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700"><i class="fa-solid fa-minus text-xs"></i></button>
+        <button onclick="resetZoomAdaptativo()" class="px-2.5 h-9 text-xs font-extrabold text-indigo-600 hover:bg-indigo-50/60 rounded-lg flex items-center gap-1"><span id="zoom-level">50%</span></button>
+        <button onclick="setZoom(0.05)" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700"><i class="fa-solid fa-plus text-xs"></i></button>
+    </div>
+
     <script>
-        // URLs do seu n8n
-        const N8N_URL_PDF = "https://n8n.orbbotia.com/webhook/gerador-pdf-impresso";
-        const N8N_URL_SALVAR = "https://n8n.orbbotia.com/webhook/cardapio-salvar";
-        const N8N_URL_OBTER = "https://n8n.orbbotia.com/webhook/cardapio-obter";
+        // WEBHOOKS DO N8N
+        const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
+        const urlGerarPDFServerSide = 'https://n8n.orbbotia.com/webhook/gerador-pdf-impresso';
+        const urlSalvarCardapio = 'https://n8n.orbbotia.com/webhook/cardapio-salvar';
+        const urlObterCardapio = 'https://n8n.orbbotia.com/webhook/cardapio-obter';
 
-        // Atualiza as variáveis CSS e o DOM em tempo real
-        function atualizarPreview() {
-            const name = document.getElementById('restaurant-name').value;
-            const primary = document.getElementById('color-primary').value;
-            const secondary = document.getElementById('color-secondary').value;
-            const fontTitle = document.getElementById('font-title').value;
+        let globalAccountId = '3';
+        let handshakeInterval;
+        let isMobilePreviewOpen = false;
+        let updateTimeout;
 
-            // Aplica no DOM
-            document.getElementById('view-title').innerText = name || "Meu Restaurante";
-            
-            // Aplica nas variáveis CSS nativas
-            document.documentElement.style.setProperty('--color-primary', primary);
-            document.documentElement.style.setProperty('--color-secondary', secondary);
-            document.documentElement.style.setProperty('--font-title', fontTitle);
-            
-            document.getElementById('view-divider').style.backgroundColor = secondary;
-        }
+        let appState = {
+            layout: 1, zoom: 0.50, restaurantName: "Meu Restaurante",
+            restaurantDescription: "", logoUrl: null, carrosChefe: [], data: []
+        };
 
-        // 1. AÇÃO: SALVAR ESTADO NO SUPABASE VIA N8N
-        async function salvarEstadoCardapio() {
-            const btn = document.getElementById('btn-salvar');
-            btn.innerText = "⏳ Salvando...";
-            btn.disabled = true;
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
-            const accountId = document.getElementById('account-id').value;
-            const configState = {
-                restaurantName: document.getElementById('restaurant-name').value,
+        function getCacheKey() { return `menu_studio_config_${globalAccountId}`; }
+
+        function salvarConfigNoCache() {
+            const configParaSalvar = {
+                restaurantName: appState.restaurantName, restaurantDescription: appState.restaurantDescription,
+                logoUrl: appState.logoUrl, carrosChefe: appState.carrosChefe,
                 colorPrimary: document.getElementById('color-primary').value,
                 colorSecondary: document.getElementById('color-secondary').value,
-                fontTitle: document.getElementById('font-title').value
+                colorBg: document.getElementById('color-bg').value, colorText: document.getElementById('color-text').value,
+                fontTitle: document.getElementById('font-title').value, fontBody: document.getElementById('font-body').value,
+                layout: appState.layout
+            };
+            try { localStorage.setItem(getCacheKey(), JSON.stringify(configParaSalvar)); } catch (e) {}
+        }
+
+        function carregarConfigDoCache() {
+            try {
+                const salvo = localStorage.getItem(getCacheKey());
+                if (!salvo) return;
+                const config = JSON.parse(salvo);
+
+                if (config.restaurantName) { appState.restaurantName = config.restaurantName; document.getElementById('input-rest-name').value = config.restaurantName; }
+                if (config.restaurantDescription) { appState.restaurantDescription = config.restaurantDescription; document.getElementById('input-rest-desc').value = config.restaurantDescription; }
+                if (config.logoUrl) {
+                    appState.logoUrl = config.logoUrl; document.getElementById('logo-preview-img').src = config.logoUrl;
+                    document.getElementById('logo-preview-container').classList.remove('hidden'); document.getElementById('logo-preview-container').classList.add('flex');
+                    document.getElementById('logo-upload-prompt').classList.add('hidden');
+                }
+                if (Array.isArray(config.carrosChefe)) { appState.carrosChefe = config.carrosChefe; renderDestaquesUI(); }
+                if (config.colorPrimary) document.getElementById('color-primary').value = config.colorPrimary;
+                if (config.colorSecondary) document.getElementById('color-secondary').value = config.colorSecondary;
+                if (config.colorBg) document.getElementById('color-bg').value = config.colorBg;
+                if (config.colorText) document.getElementById('color-text').value = config.colorText;
+                if (config.fontTitle) document.getElementById('font-title').value = config.fontTitle;
+                if (config.fontBody) document.getElementById('font-body').value = config.fontBody;
+                if (config.layout) setLayout(config.layout);
+                updateTheme();
+            } catch (e) {}
+        }
+
+        /* =======================================================
+           NOVA FUNCIONALIDADE: SALVAR ESTADO NO SUPABASE
+           ======================================================= */
+        async function salvarEstadoCardapio() {
+            const btn = document.getElementById('btn-salvar-estado');
+            const origText = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true; }
+
+            const configParaSalvar = {
+                restaurantName: appState.restaurantName,
+                restaurantDescription: appState.restaurantDescription,
+                logoUrl: appState.logoUrl,
+                carrosChefe: appState.carrosChefe,
+                colorPrimary: document.getElementById('color-primary').value,
+                colorSecondary: document.getElementById('color-secondary').value,
+                colorBg: document.getElementById('color-bg').value,
+                colorText: document.getElementById('color-text').value,
+                fontTitle: document.getElementById('font-title').value,
+                fontBody: document.getElementById('font-body').value,
+                layout: appState.layout
             };
 
             try {
-                const response = await fetch(N8N_URL_SALVAR, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                const response = await fetch(urlSalvarCardapio, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        account_id: accountId,
-                        config_state: configState
+                        account_id: globalAccountId,
+                        config_state: configParaSalvar
                     })
                 });
 
-                if (response.ok) {
-                    alert("✅ Estado do cardápio salvo no Supabase com sucesso!");
-                } else {
-                    alert("❌ Erro ao salvar estado.");
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                alert("✅ Estado do cardápio salvo no banco de dados com sucesso!");
+
             } catch (err) {
-                alert("❌ Erro de conexão com o servidor n8n.");
+                console.error("Erro ao salvar:", err);
+                alert("⚠️ Falha ao salvar o estado do cardápio no servidor.");
             } finally {
-                btn.innerText = "💾 Salvar Estado";
-                btn.disabled = false;
+                if (btn) { btn.innerHTML = origText; btn.disabled = false; }
             }
         }
 
-        // 2. AÇÃO: SINCRONIZAR ESTADO DO SUPABASE
+        /* =======================================================
+           NOVA FUNCIONALIDADE: SINCRONIZAR ESTADO DO SUPABASE
+           ======================================================= */
         async function sincronizarCardapio() {
-            const btn = document.getElementById('btn-sincronizar');
-            btn.innerText = "⏳ Buscando...";
-            btn.disabled = true;
+            const btn = document.getElementById('btn-sincronizar-estado');
+            const origText = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando...'; btn.disabled = true; }
 
-            // Limpa o cache/localStorage do navegador
-            localStorage.clear();
-
-            const accountId = document.getElementById('account-id').value;
+            // Limpa o cache local
+            try { localStorage.removeItem(getCacheKey()); } catch(e){}
 
             try {
-                const response = await fetch(`${N8N_URL_OBTER}?account_id=${accountId}`);
-                const data = await response.json();
+                const response = await fetch(`${urlObterCardapio}?account_id=${globalAccountId}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-                if (data && Object.keys(data).length > 0) {
-                    // Restaura os campos na tela
-                    if (data.restaurantName) document.getElementById('restaurant-name').value = data.restaurantName;
-                    if (data.colorPrimary) document.getElementById('color-primary').value = data.colorPrimary;
-                    if (data.colorSecondary) document.getElementById('color-secondary').value = data.colorSecondary;
-                    if (data.fontTitle) document.getElementById('font-title').value = data.fontTitle;
+                const config = await response.json();
 
-                    atualizarPreview();
-                    alert("🔄 Configurações sincronizadas com sucesso!");
+                if (config && Object.keys(config).length > 0) {
+                    if (config.restaurantName) { appState.restaurantName = config.restaurantName; document.getElementById('input-rest-name').value = config.restaurantName; }
+                    if (config.restaurantDescription) { appState.restaurantDescription = config.restaurantDescription; document.getElementById('input-rest-desc').value = config.restaurantDescription; }
+                    if (config.logoUrl) {
+                        appState.logoUrl = config.logoUrl; document.getElementById('logo-preview-img').src = config.logoUrl;
+                        document.getElementById('logo-preview-container').classList.remove('hidden'); document.getElementById('logo-preview-container').classList.add('flex');
+                        document.getElementById('logo-upload-prompt').classList.add('hidden');
+                    }
+                    if (Array.isArray(config.carrosChefe)) { appState.carrosChefe = config.carrosChefe; renderDestaquesUI(); }
+                    if (config.colorPrimary) document.getElementById('color-primary').value = config.colorPrimary;
+                    if (config.colorSecondary) document.getElementById('color-secondary').value = config.colorSecondary;
+                    if (config.colorBg) document.getElementById('color-bg').value = config.colorBg;
+                    if (config.colorText) document.getElementById('color-text').value = config.colorText;
+                    if (config.fontTitle) document.getElementById('font-title').value = config.fontTitle;
+                    if (config.fontBody) document.getElementById('font-body').value = config.fontBody;
+                    if (config.layout) setLayout(config.layout);
+
+                    updateTheme();
+                    salvarConfigNoCache();
+                    alert("🔄 Configurações do cardápio restauradas com sucesso!");
                 } else {
-                    alert("⚠️ Nenhuma configuração encontrada para este Account ID.");
+                    alert("⚠️ Nenhuma configuração salva encontrada no banco para este ID.");
                 }
+
             } catch (err) {
-                alert("❌ Erro ao sincronizar com o banco.");
+                console.error("Erro ao sincronizar:", err);
+                alert("❌ Erro ao buscar dados salvos no servidor.");
             } finally {
-                btn.innerText = "🔄 Sincronizar";
-                btn.disabled = false;
+                if (btn) { btn.innerHTML = origText; btn.disabled = false; }
             }
         }
 
-        // 3. AÇÃO: GERAR PDF VIA GOTENBERG E ENVIAR AO CHATWOOT
-        async function enviarParaWebhookPDF() {
-            const btn = document.getElementById('btn-gerar-pdf');
-            btn.innerText = "⏳ Gerando PDF e Enviando...";
-            btn.disabled = true;
+        window.addEventListener('message', function (event) {
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
-            const accountId = document.getElementById('account-id').value;
-            const htmlCompleto = `<!DOCTYPE html>
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id) || globalAccountId;
+                iniciarPagina();
+            }
+        });
+
+        handshakeInterval = setInterval(() => { 
+            if (!globalAccountId) {
+                window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'chatwoot-dashboard-app:fetch-info' }));
+                }
+            }
+        }, 500);
+
+        setTimeout(() => { if (!globalAccountId) { globalAccountId = '3'; iniciarPagina(); } }, 1200);
+
+        function iniciarPagina() {
+            document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
+            const urlMenuPrincipal = new URL('../index.html', window.location.href).href;
+            const btnMenu = document.getElementById('btn-voltar-menu');
+            if (btnMenu) btnMenu.href = `${urlMenuPrincipal}?account_id=${globalAccountId}`;
+            const urlProdutos = new URL('./novo.html', window.location.href).href;
+            const btnGestao = document.getElementById('btn-voltar-gestao');
+            if (btnGestao) btnGestao.href = `${urlProdutos}?account_id=${globalAccountId}`;
+
+            carregarConfigDoCache();
+            resetZoomAdaptativo();
+            carregarProdutosDoBanco();
+        }
+
+        async function carregarProdutosDoBanco() {
+            const tbody = document.getElementById('data-table-body');
+            if(tbody) tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
+
+            try {
+                const res = await fetch(`${urlProdutos}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const dadosRetornados = await res.json();
+                let listaTratada = [];
+                if (Array.isArray(dadosRetornados)) listaTratada = dadosRetornados;
+                else if (dadosRetornados && Array.isArray(dadosRetornados.data)) listaTratada = dadosRetornados.data;
+                else if (dadosRetornados && Array.isArray(dadosRetornados.payload)) listaTratada = dadosRetornados.payload;
+                else if (dadosRetornados && typeof dadosRetornados === 'object') listaTratada = [dadosRetornados];
+
+                const agrupado = {};
+                listaTratada.forEach(prod => {
+                    try {
+                        const p = (prod && prod.json) ? prod.json : prod;
+                        if (!p || typeof p !== 'object') return;
+                        if (p.deletado === true || p.deletado === "true") return;
+                        if (p.ativo === false || p.ativo === "false") return;
+
+                        const cat = (p.categoria && String(p.categoria).trim() !== '') ? String(p.categoria).trim() : 'Outros';
+                        if (!agrupado[cat]) agrupado[cat] = [];
+
+                        let precoFinal = parseFloat(p.preco_base) || 0;
+                        let meta = p.metadata;
+                        if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+                        if (meta && meta.tipo === 'com_tamanhos' && Array.isArray(meta.tamanhos) && meta.tamanhos.length > 0) {
+                            const pTamanho = parseFloat(meta.tamanhos[0].preco);
+                            if (!isNaN(pTamanho) && pTamanho > 0) precoFinal = pTamanho;
+                        }
+
+                        agrupado[cat].push({
+                            id: p.id || Math.random().toString(), nome: p.nome || 'Sem Nome',
+                            desc: p.descricao || '', preco: precoFinal, visivel: true
+                        });
+                    } catch (itemErr) {}
+                });
+
+                appState.data = Object.keys(agrupado).sort().map(cat => ({ categoria: cat, itens: agrupado[cat] }));
+                renderTable(); renderPreview();
+            } catch (err) {
+                if(tbody) tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
+            }
+        }
+
+        function resetZoomAdaptativo() {
+            const w = window.innerWidth;
+            if (w < 768) appState.zoom = 0.50;
+            else if (w < 1100) appState.zoom = 0.50;
+            else appState.zoom = 0.77;
+            applyZoom();
+        }
+
+        function setZoom(delta) {
+            appState.zoom += delta;
+            if (appState.zoom < 0.2) appState.zoom = 0.2;
+            if (appState.zoom > 1.2) appState.zoom = 1.2;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const wrapper = document.getElementById('canvas-wrapper');
+            const zoomContainer = document.getElementById('zoom-container');
+            const canvasElement = document.getElementById('preview-canvas');
+            
+            wrapper.style.transform = `scale(${appState.zoom})`;
+            const canvasUnscaledWidth = 794; 
+            const canvasUnscaledHeight = canvasElement.scrollHeight > 1123 ? canvasElement.scrollHeight : 1123;
+            
+            zoomContainer.style.width = `${canvasUnscaledWidth * appState.zoom}px`;
+            zoomContainer.style.height = `${canvasUnscaledHeight * appState.zoom}px`;
+            document.getElementById('zoom-level').innerText = `${Math.round(appState.zoom * 100)}%`;
+        }
+
+        function switchTab(tabName) {
+            ['identidade', 'destaques', 'dados', 'design'].forEach(tab => {
+                const btn = document.getElementById(`tab-${tab}`);
+                const panel = document.getElementById(`panel-${tab}`);
+                if (tab === tabName) {
+                    btn.classList.add('text-indigo-600'); btn.classList.remove('text-slate-400'); panel.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('text-indigo-600'); btn.classList.add('text-slate-400'); panel.classList.add('hidden');
+                }
+            });
+        }
+
+        function toggleMobilePreview() {
+            const container = document.getElementById('preview-container');
+            const zControls = document.getElementById('zoom-controls');
+            isMobilePreviewOpen = !isMobilePreviewOpen;
+            
+            container.classList.toggle('translate-x-full', !isMobilePreviewOpen);
+            
+            if (isMobilePreviewOpen) {
+                zControls.classList.remove('opacity-0', 'pointer-events-none'); zControls.classList.add('opacity-100', 'pointer-events-auto');
+            } else {
+                zControls.classList.add('opacity-0', 'pointer-events-none'); zControls.classList.remove('opacity-100', 'pointer-events-auto');
+            }
+        }
+
+        function debounceUpdate() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                appState.restaurantName = document.getElementById('input-rest-name').value.trim() || "Meu Restaurante";
+                appState.restaurantDescription = document.getElementById('input-rest-desc').value.trim();
+                renderPreview(); salvarConfigNoCache();
+            }, 250);
+        }
+
+        function handleSmartLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgData = e.target.result;
+                appState.logoUrl = imgData;
+                document.getElementById('logo-preview-img').src = imgData;
+                document.getElementById('logo-preview-container').classList.remove('hidden');
+                document.getElementById('logo-preview-container').classList.add('flex');
+                document.getElementById('logo-upload-prompt').classList.add('hidden');
+
+                const imgEl = new Image();
+                imgEl.src = imgData;
+                imgEl.onload = () => {
+                    try {
+                        const colorThief = new ColorThief();
+                        const dominantColor = colorThief.getColor(imgEl);
+                        const palette = colorThief.getPalette(imgEl, 3);
+                        const hexDominant = rgbToHex(dominantColor[0], dominantColor[1], dominantColor[2]);
+                        let hexSecondary = "#4F46E5";
+                        if(palette && palette.length > 1) hexSecondary = rgbToHex(palette[1][0], palette[1][1], palette[1][2]);
+
+                        document.getElementById('color-primary').value = hexDominant;
+                        document.getElementById('color-secondary').value = hexSecondary;
+                        updateTheme();
+                    } catch (err) { renderPreview(); }
+                };
+                salvarConfigNoCache();
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function rgbToHex(r, g, b) { return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase(); }
+
+        function addDestaque() {
+            if (appState.carrosChefe.length >= 3) return alert("Máximo 3 destaques no topo.");
+            appState.carrosChefe.push({ id: "c_" + Date.now(), imgBase64: "https://placehold.co/400x300/111827/FFFFFF?text=Adicione+Foto", nome: "Prato", desc: "Descrição", preco: 0 });
+            renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
+        }
+
+        function removeDestaque(id) {
+            appState.carrosChefe = appState.carrosChefe.filter(c => c.id !== id);
+            renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
+        }
+
+        function renderDestaquesUI() {
+            const container = document.getElementById('destaques-list');
+            const btnAdd = document.getElementById('btn-add-destaque');
+            if(!container) return;
+            container.innerHTML = '';
+            appState.carrosChefe.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = "bg-white/5 border border-white/10 rounded-lg p-2.5 flex gap-2.5 relative group";
+                div.innerHTML = `
+                    <button onclick="removeDestaque('${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] shadow"><i class="fa-solid fa-xmark"></i></button>
+                    <label class="w-16 h-16 bg-black/20 rounded-md overflow-hidden cursor-pointer flex-shrink-0 relative">
+                        <img src="${item.imgBase64}" class="w-full h-full object-cover">
+                        <input type="file" class="hidden" accept="image/*" onchange="handleDestaqueImgUpload(event, '${item.id}')">
+                    </label>
+                    <div class="flex-1 space-y-1">
+                        <input type="text" value="${item.nome}" onchange="updateDestaque('${item.id}', 'nome', this.value)" class="w-full bg-transparent border-b border-white/20 text-xs font-bold text-white outline-none">
+                        <input type="text" value="${item.desc}" onchange="updateDestaque('${item.id}', 'desc', this.value)" class="w-full bg-transparent text-[10px] text-slate-300 outline-none">
+                        <div class="flex items-center text-amber-400 font-mono text-xs font-bold"><span class="mr-0.5">R$</span><input type="number" step="0.01" value="${item.preco}" onchange="updateDestaque('${item.id}', 'preco', this.value)" class="w-16 bg-transparent text-white border-b border-white/20 outline-none"></div>
+                    </div>`;
+                container.appendChild(div);
+            });
+            if(btnAdd) btnAdd.style.display = appState.carrosChefe.length >= 3 ? 'none' : 'flex';
+        }
+
+        function handleDestaqueImgUpload(event, id) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 500; canvas.height = img.height * (500 / img.width);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    updateDestaque(id, 'imgBase64', canvas.toDataURL('image/jpeg', 0.8));
+                }
+                img.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function updateDestaque(id, field, value) {
+            const index = appState.carrosChefe.findIndex(c => c.id === id);
+            if (index > -1) {
+                if (field === 'preco') value = parseFloat(value) || 0;
+                appState.carrosChefe[index][field] = value;
+                renderPreview(); salvarConfigNoCache();
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('data-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (appState.data.length === 0) return tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Nenhum produto sincronizado.</td></tr>`;
+
+            appState.data.forEach((cat, catIndex) => {
+                tbody.innerHTML += `<tr class="bg-slate-100/70"><td colspan="3" class="px-3 py-1.5 text-[10px] font-bold text-slate-700 uppercase">${cat.categoria}</td></tr>`;
+                cat.itens.forEach((item, itemIndex) => {
+                    const tr = document.createElement('tr');
+                    tr.className = `group ${item.visivel ? 'hover:bg-indigo-50/20' : 'bg-slate-50 opacity-40'}`;
+                    tr.innerHTML = `
+                        <td class="px-3 py-2"><div class="font-bold text-slate-800 text-xs">${item.nome}</div><div class="text-[10px] text-slate-500 line-clamp-1">${item.desc}</div></td>
+                        <td class="px-3 py-2 text-right font-mono text-[11px] font-bold text-slate-700">R$ ${item.preco.toFixed(2)}</td>
+                        <td class="px-2 py-2 text-center"><input type="checkbox" class="accent-indigo-600 rounded cursor-pointer" ${item.visivel ? 'checked' : ''} onchange="toggleVisibility(${catIndex}, ${itemIndex})"></td>`;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function toggleVisibility(catIdx, itemIdx) {
+            appState.data[catIdx].itens[itemIdx].visivel = !appState.data[catIdx].itens[itemIdx].visivel;
+            renderPreview();
+        }
+
+        function updateTheme() {
+            const root = document.documentElement;
+            root.style.setProperty('--color-primary', document.getElementById('color-primary').value);
+            root.style.setProperty('--color-secondary', document.getElementById('color-secondary').value);
+            root.style.setProperty('--color-bg', document.getElementById('color-bg').value);
+            root.style.setProperty('--color-text', document.getElementById('color-text').value);
+            root.style.setProperty('--font-title', document.getElementById('font-title').value);
+            root.style.setProperty('--font-body', document.getElementById('font-body').value);
+            renderPreview(); salvarConfigNoCache();
+        }
+
+        function setLayout(id) {
+            appState.layout = id;
+            [1, 2, 3].forEach(i => {
+                const btn = document.getElementById(`btn-layout-${i}`);
+                if(!btn) return;
+                if(i === id) { btn.className = "w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between transition-all"; btn.querySelector('span').className = "text-xs font-bold text-indigo-900"; } 
+                else { btn.className = "w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500"; btn.querySelector('span').className = "text-xs font-medium"; }
+            });
+            renderPreview(); salvarConfigNoCache();
+        }
+
+        function renderPreview() {
+            const canvas = document.getElementById('preview-canvas');
+            let html = `<div class="text-center mb-8 avoid-break">`;
+            if (appState.logoUrl) html += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain">`;
+            html += `<h1 class="text-4xl font-bold uppercase tracking-widest mb-2 font-title">${appState.restaurantName}</h1>`;
+            if (appState.restaurantDescription) html += `<p class="text-sm italic mb-4 max-w-xl mx-auto" style="opacity: 0.8">${appState.restaurantDescription}</p>`;
+            html += `<div style="width: 50px; height: 2.5px; background-color: var(--color-secondary); margin: 0 auto;"></div></div>`;
+
+            const destaquesValidos = appState.carrosChefe.filter(c => c.nome.trim() !== "");
+            if (destaquesValidos.length > 0) {
+                html += `<div class="avoid-break mb-10"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 font-title" style="color: var(--color-secondary)">— Especialidades —</h2><div class="destaques-grid">`;
+                destaquesValidos.forEach(item => {
+                    html += `<div class="destaque-card text-center"><img src="${item.imgBase64}"><h3 class="font-bold text-base font-title mt-2 leading-tight">${item.nome}</h3><p class="text-[11px] italic mb-1" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">${formatCurrency(item.preco)}</span></div>`;
+                });
+                html += `</div></div>`;
+            }
+
+            const filteredData = appState.data.map(cat => ({ categoria: cat.categoria, itens: cat.itens.filter(i => i.visivel) })).filter(cat => cat.itens.length > 0);
+
+            if (appState.layout === 1) {
+                html += `<div class="max-w-2xl mx-auto space-y-7">`;
+                filteredData.forEach(cat => {
+                    html += `<div class="avoid-break"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">${cat.categoria}</h2><div class="space-y-3.5">`;
+                    cat.itens.forEach(item => { html += `<div class="avoid-break"><div class="l1-item-row"><span class="font-bold text-base font-title">${item.nome}</span><div class="l1-dots"></div><span class="font-bold font-mono text-sm">${formatCurrency(item.preco)}</span></div><p class="text-xs italic opacity-75" style="padding-right: 50px;">${item.desc}</p></div>`; });
+                    html += `</div></div>`;
+                });
+                html += `</div>`;
+            } else if (appState.layout === 2) {
+                html += `<div class="grid grid-cols-2 gap-x-8 gap-y-6">`;
+                filteredData.forEach(cat => {
+                    html += `<div class="col-span-2 text-center mt-2 mb-1 border-y border-dashed py-1 avoid-break"><h2 class="text-base font-bold uppercase tracking-widest font-title">${cat.categoria}</h2></div>`;
+                    cat.itens.forEach(item => { html += `<div class="avoid-break"><div class="flex justify-between items-start mb-0.5"><span class="font-bold text-xs font-title pr-2">${item.nome}</span><span class="font-bold font-mono text-[11px]">${formatCurrency(item.preco)}</span></div><p class="text-[10px] italic opacity-75 leading-tight">${item.desc}</p></div>`; });
+                });
+                html += `</div>`;
+            } else if (appState.layout === 3) {
+                html += `<div class="columns-2 gap-6 space-y-6">`;
+                filteredData.forEach(cat => {
+                    html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-3 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>`;
+                    cat.itens.forEach(item => { html += `<div class="l3-card avoid-break"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-xs font-title pr-1">${item.nome}</h3><span class="l3-price-badge font-mono">${formatCurrency(item.preco)}</span></div><p class="text-[10px] leading-tight opacity-75">${item.desc}</p></div>`; });
+                    html += `</div>`;
+                });
+                html += `</div>`;
+            }
+            canvas.innerHTML = html;
+        }
+
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+        /* =======================================================
+           EXPORTAÇÃO ASSÍNCRONA PARA O N8N (MULTI-TENANT SERVER-SIDE)
+           ======================================================= */
+        async function exportPDF() {
+            const btnDesktop = document.getElementById('btn-export-desktop');
+            const btnMobile = document.getElementById('btn-export-mobile');
+            const origDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const origMobile = btnMobile ? btnMobile.innerHTML : '';
+
+            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
+
+            const canvasHtml = document.getElementById('preview-canvas').outerHTML;
+            const rootStyles = `
+                :root {
+                    --color-primary: ${document.getElementById('color-primary').value};
+                    --color-secondary: ${document.getElementById('color-secondary').value};
+                    --color-bg: ${document.getElementById('color-bg').value};
+                    --color-text: ${document.getElementById('color-text').value};
+                    --font-title: ${document.getElementById('font-title').value};
+                    --font-body: ${document.getElementById('font-body').value};
+                }
+            `;
+
+            // Montagem do HTML completo devidamente formatado para envio ao n8n
+            const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Cardápio</title>
+    <title>Cardápio - ${appState.restaurantName}</title>
     <script src="https://cdn.tailwindcss.com"><\/script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --color-primary: ${document.getElementById('color-primary').value};
-            --color-secondary: ${document.getElementById('color-secondary').value};
-            --color-bg: #ffffff;
-            --color-text: #333333;
-            --font-title: ${document.getElementById('font-title').value};
-            --font-body: 'Montserrat', sans-serif;
-        }
+        ${rootStyles}
         body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
         #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
         .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
+        .l3-card { background-color: rgba(0,0,0,0.02); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
+        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.65rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; }
+        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
         @page { size: A4 portrait; margin: 0mm; }
     </style>
 </head>
 <body>
-    ${document.getElementById('preview-canvas').outerHTML}
+    ${canvasHtml}
 </body>
 </html>`;
 
             try {
-                const response = await fetch(N8N_URL_PDF, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                const response = await fetch(urlGerarPDFServerSide, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        account_id: parseInt(accountId),
-                        html_content: htmlCompleto
+                        account_id: parseInt(globalAccountId, 10) || 3,
+                        restaurant_name: appState.restaurantName,
+                        html_content: fullHtml
                     })
                 });
 
-                if (response.ok) {
-                    alert("📄 PDF gerado e enviado com sucesso no Chatwoot!");
-                } else {
-                    alert("❌ Erro ao gerar o PDF.");
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                alert("✅ PDF gerado com sucesso! Ele foi enviado para a conversa interna do Chatwoot.");
             } catch (err) {
-                alert("❌ Erro de conexão ao enviar para o Webhook do PDF.");
+                console.error("Erro no envio para o n8n:", err);
+                alert("⚠️ Ocorreu uma falha ao enviar o PDF. Verifique se o workflow do n8n está ativo.");
             } finally {
-                btn.innerText = "📄 Gerar e Enviar PDF (Chatwoot)";
-                btn.disabled = false;
+                if (btnDesktop) { btnDesktop.innerHTML = origDesktop; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = origMobile; btnMobile.disabled = false; }
             }
         }
-
-        // Inicializa o preview na carga inicial
-        atualizarPreview();
     </script>
 </body>
 </html>

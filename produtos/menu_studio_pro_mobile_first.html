@@ -655,8 +655,7 @@
                 }
             `;
 
-            // AQUI ESTAVA O BUG NA VERSÃO ANTERIOR:
-            // A tag de fechamento <\/script> deve estar devidamente "escapada" para não quebrar o HTML
+            // Montagem do HTML completo devidamente formatado para envio ao n8n
             const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -685,11 +684,12 @@
 </html>`;
 
             try {
+                // Envio para o Webhook do n8n com a estrutura esperada pelo nó "Converte HTML em Binario"
                 const response = await fetch(urlGerarPDFServerSide, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        account_id: globalAccountId,
+                        account_id: parseInt(globalAccountId, 10) || 3,
                         restaurant_name: appState.restaurantName,
                         html_content: fullHtml
                     })
@@ -697,10 +697,10 @@
 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-                alert("✅ PDF gerado com sucesso! Ele foi enviado para o grupo de cardápios.");
+                alert("✅ PDF gerado com sucesso! Ele foi enviado para a conversa interna do Chatwoot.");
             } catch (err) {
-                console.error("Erro no envio:", err);
-                alert("⚠️ Ocorreu uma falha ao enviar o PDF. Verifique se o workflow do n8n está ativo.");
+                console.error("Erro no envio para o n8n:", err);
+                alert("⚠️ Ocorreu uma falha ao enviar o PDF. Verifique se o workflow do n8n está ativo e se o nó 'Converte HTML em Binario' está configurado para ler '={{ $json.body.html_content }}'.");
             } finally {
                 if (btnDesktop) { btnDesktop.innerHTML = origDesktop; btnDesktop.disabled = false; }
                 if (btnMobile) { btnMobile.innerHTML = origMobile; btnMobile.disabled = false; }

@@ -93,7 +93,7 @@
                     </button>
                     <!-- BOTÃO DESKTOP -->
                     <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
-                        <i class="fa-solid fa-paper-plane"></i> <span>Gerar PDF</span>
+                        <i class="fa-solid fa-paper-plane"></i> <span>Enviar PDF no Chat</span>
                     </button>
                 </div>
             </div>
@@ -217,7 +217,7 @@
             </button>
             <!-- BOTÃO MOBILE -->
             <button id="btn-export-mobile" onclick="exportPDF()" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2">
-                <i class="fa-solid fa-paper-plane"></i> Gerar PDF
+                <i class="fa-solid fa-paper-plane"></i> Enviar PDF
             </button>
         </div>
 
@@ -236,10 +236,8 @@
     </div>
 
     <script>
-        // WEBHOOK DE BUSCA DE PRODUTOS
+        // WEBHOOK DE BUSCA DE PRODUTOS E GERAÇÃO
         const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
-        
-        // WEBHOOK N8N MULTI-TENANT DE GERAÇÃO E ENVIO DE PDF
         const urlGerarPDFServerSide = 'https://n8n.orbbotia.com/webhook/gerador-pdf-impresso';
 
         let globalAccountId = '3';
@@ -295,7 +293,6 @@
             } catch (e) {}
         }
 
-        // HANDSHAKE DUAL-COMPATÍVEL (Atende Desktop Parent e Native Mobile WebView)
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -309,10 +306,7 @@
 
         handshakeInterval = setInterval(() => { 
             if (!globalAccountId) {
-                // Solicitação Web Desktop
                 window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
-                
-                // Solicitação Nativa Mobile WebView
                 if (window.ReactNativeWebView) {
                     window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'chatwoot-dashboard-app:fetch-info' }));
                 }
@@ -628,6 +622,7 @@
                 filteredData.forEach(cat => {
                     html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-3 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>`;
                     cat.itens.forEach(item => { html += `<div class="l3-card avoid-break"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-xs font-title pr-1">${item.nome}</h3><span class="l3-price-badge font-mono">${formatCurrency(item.preco)}</span></div><p class="text-[10px] leading-tight opacity-75">${item.desc}</p></div>`; });
+                    html += `</div>`;
                 });
                 html += `</div>`;
             }
@@ -660,12 +655,14 @@
                 }
             `;
 
+            // AQUI ESTAVA O BUG NA VERSÃO ANTERIOR:
+            // A tag de fechamento <\/script> deve estar devidamente "escapada" para não quebrar o HTML
             const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <title>Cardápio - ${appState.restaurantName}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"><\/script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         ${rootStyles}

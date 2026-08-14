@@ -111,7 +111,7 @@
                     <!-- BOTÃO DESKTOP -->
                     <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
                         <i class="fa-solid fa-file-pdf"></i>
-                        <span>Gerar PDF (Nova Aba)</span>
+                        <span>Gerar PDF</span>
                     </button>
                 </div>
             </div>
@@ -326,7 +326,7 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             
-            <!-- BOTÃO MOBILE (Chama a função N8N Proxy) -->
+            <!-- BOTÃO MOBILE -->
             <button id="btn-export-mobile" onclick="exportPDF()" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2">
                 <i class="fa-solid fa-print"></i> Gerar PDF / Imprimir
             </button>
@@ -747,18 +747,20 @@
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =========================================
-           GERAÇÃO DE PDF COM FORMULÁRIO PROXY (N8N)
+           GERAÇÃO E REDIRECIONAMENTO EXTERNO (NATIVO MOBILE)
            ========================================= */
         function exportPDF() {
+            const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            
             const btnDesktop = document.getElementById('btn-export-desktop');
             const btnMobile = document.getElementById('btn-export-mobile');
             const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
             const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
 
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo...'; btnMobile.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo Navegador...'; btnMobile.disabled = true; }
 
-            // 1. Zera o zoom temporariamente para capturar o layout 1:1 real da folha A4
+            // Zera a escala para copiar o layout A4 exato
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
             const oldTransform = wrapper.style.transform;
@@ -768,7 +770,6 @@
             wrapper.style.transform = 'scale(1)';
             zoomContainer.style.width = '794px';
 
-            // Delay estratégico de 150ms para garantir que o navegador mobile renderizou os elementos no DOM
             setTimeout(() => {
                 const canvasHtml = document.getElementById('preview-canvas').outerHTML;
 
@@ -789,7 +790,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cardápio - ${appState.restaurantName}</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         ${rootStyles}
@@ -816,31 +817,64 @@
 </body>
 </html>`;
 
-                // Submete via Formulário POST em nova aba
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = urlProxyPDF;
-                form.target = '_blank';
+                if (isMobile) {
+                    // MODO MOBILE: Envia os dados via Fetch e abre o link resultante no Navegador Externo
+                    fetch(urlProxyPDF, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ 'html_content': fullHtml })
+                    })
+                    .then(response => response.text())
+                    .then(htmlResponse => {
+                        const blob = new Blob([htmlResponse], { type: 'text/html;charset=utf-8' });
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.rel = 'noopener noreferrer';
+                        a.target = '_system'; // Instrução de abertura no navegador do sistema para WebViews
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
 
-                const inputHtml = document.createElement('input');
-                inputHtml.type = 'hidden';
-                inputHtml.name = 'html_content';
-                inputHtml.value = fullHtml;
+                        restaurarEstado();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        restaurarEstado();
+                        alert("Erro ao enviar dados para impressão.");
+                    });
 
-                form.appendChild(inputHtml);
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
+                } else {
+                    // MODO DESKTOP: Envio padrão
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = urlProxyPDF;
+                    form.target = '_blank';
 
-                // Restaura o zoom original da tela do aplicativo
+                    const inputHtml = document.createElement('input');
+                    inputHtml.type = 'hidden';
+                    inputHtml.name = 'html_content';
+                    inputHtml.value = fullHtml;
+
+                    form.appendChild(inputHtml);
+                    document.body.appendChild(form);
+                    form.submit();
+                    document.body.removeChild(form);
+
+                    restaurarEstado();
+                }
+
+            }, 150);
+
+            function restaurarEstado() {
                 wrapper.style.transform = oldTransform;
                 zoomContainer.style.width = oldWidth;
                 zoomContainer.style.height = oldHeight;
 
                 if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
                 if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-
-            }, 150);
+            }
         }
     </script>
 </body>

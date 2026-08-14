@@ -93,7 +93,7 @@
                     </button>
                     <!-- BOTÃO DESKTOP -->
                     <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
-                        <i class="fa-solid fa-file-pdf"></i> <span>Gerar PDF</span>
+                        <i class="fa-solid fa-paper-plane"></i> <span>Gerar PDF</span>
                     </button>
                 </div>
             </div>
@@ -217,7 +217,7 @@
             </button>
             <!-- BOTÃO MOBILE -->
             <button id="btn-export-mobile" onclick="exportPDF()" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2">
-                <i class="fa-solid fa-file-pdf"></i> Gerar PDF
+                <i class="fa-solid fa-paper-plane"></i> Gerar PDF
             </button>
         </div>
 
@@ -236,11 +236,11 @@
     </div>
 
     <script>
-        // WEBHOOK N8N (Dados)
+        // WEBHOOK DE BUSCA DE PRODUTOS
         const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
         
-        // WEBHOOK N8N (O Espelho do PDF - Renderizador final)
-        const urlProxyPDF = 'https://n8n.orbbotia.com/webhook/gerador-pdf-impresso';
+        // WEBHOOK N8N MULTI-TENANT DE GERAÇÃO E ENVIO DE PDF
+        const urlGerarPDFServerSide = 'https://n8n.orbbotia.com/webhook/gerador-pdf-impresso';
 
         let globalAccountId = '3';
         let handshakeInterval;
@@ -295,6 +295,7 @@
             } catch (e) {}
         }
 
+        // HANDSHAKE DUAL-COMPATÍVEL (Atende Desktop Parent e Native Mobile WebView)
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -306,7 +307,18 @@
             }
         });
 
-        handshakeInterval = setInterval(() => { if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*'); }, 500);
+        handshakeInterval = setInterval(() => { 
+            if (!globalAccountId) {
+                // Solicitação Web Desktop
+                window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+                
+                // Solicitação Nativa Mobile WebView
+                if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'chatwoot-dashboard-app:fetch-info' }));
+                }
+            }
+        }, 500);
+
         setTimeout(() => { if (!globalAccountId) { globalAccountId = '3'; iniciarPagina(); } }, 1200);
 
         function iniciarPagina() {
@@ -616,28 +628,27 @@
                 filteredData.forEach(cat => {
                     html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-3 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>`;
                     cat.itens.forEach(item => { html += `<div class="l3-card avoid-break"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-xs font-title pr-1">${item.nome}</h3><span class="l3-price-badge font-mono">${formatCurrency(item.preco)}</span></div><p class="text-[10px] leading-tight opacity-75">${item.desc}</p></div>`; });
-                    html += `</div>`;
                 });
                 html += `</div>`;
             }
             canvas.innerHTML = html;
         }
 
-        /* =======================================================
-           EXPORTAÇÃO COM FORMULÁRIO PRO N8N (Solução Definitiva Mobile)
-           ======================================================= */
-        function exportPDF() {
-            const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
-            // Cria um clone invisível da folha para limpar a escala
-            const originalCanvas = document.getElementById('preview-canvas');
-            const cloneNode = originalCanvas.cloneNode(true);
-            
-            cloneNode.style.transform = 'none';
-            cloneNode.style.width = '794px';
-            cloneNode.style.margin = '0 auto';
-            cloneNode.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.1)';
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
+        /* =======================================================
+           EXPORTAÇÃO ASSÍNCRONA PARA O N8N (MULTI-TENANT SERVER-SIDE)
+           ======================================================= */
+        async function exportPDF() {
+            const btnDesktop = document.getElementById('btn-export-desktop');
+            const btnMobile = document.getElementById('btn-export-mobile');
+            const origDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const origMobile = btnMobile ? btnMobile.innerHTML : '';
+
+            if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
+
+            const canvasHtml = document.getElementById('preview-canvas').outerHTML;
             const rootStyles = `
                 :root {
                     --color-primary: ${document.getElementById('color-primary').value};
@@ -649,19 +660,17 @@
                 }
             `;
 
-            // HTML que será espelhado no n8n (com os botões de controle)
             const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imprimir Cardápio</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
+    <title>Cardápio - ${appState.restaurantName}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         ${rootStyles}
-        body { background-color: #f1f5f9; padding: 60px 0 20px 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
         #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
         .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
@@ -670,48 +679,35 @@
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.65rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; }
         .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
         .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
-        
-        .top-bar {
-            position: fixed; top: 0; left: 0; right: 0; background: #0f172a; padding: 12px 20px; 
-            display: flex; justify-content: space-between; align-items: center; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn-back { background: #334155; color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; text-decoration: none; }
-        .btn-print { background: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
-        
-        @media print { 
-            @page { size: A4 portrait; margin: 0mm; }
-            body { background-color: white !important; padding: 0 !important; }
-            #preview-canvas { box-shadow: none !important; margin: 0 !important; width: 210mm !important; }
-            .top-bar { display: none !important; } 
-        }
+        @page { size: A4 portrait; margin: 0mm; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <a href="javascript:history.back()" class="btn-back">⬅ Voltar</a>
-        <button onclick="window.print()" class="btn-print">🖨️ Baixar / Imprimir PDF</button>
-    </div>
-    ${cloneNode.outerHTML}
+    ${canvasHtml}
 </body>
 </html>`;
 
-            // O Segredo: Formulário instantâneo com target dinâmico
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = urlProxyPDF;
-            // Se for mobile, usa "_self" para não ser bloqueado pelo WebView do app. Ele navegará a tela atual para o n8n.
-            // Se for desktop, usa "_blank" para abrir numa nova guia tranquilamente.
-            form.target = isMobile ? '_self' : '_blank'; 
+            try {
+                const response = await fetch(urlGerarPDFServerSide, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account_id: globalAccountId,
+                        restaurant_name: appState.restaurantName,
+                        html_content: fullHtml
+                    })
+                });
 
-            const inputHtml = document.createElement('input');
-            inputHtml.type = 'hidden';
-            inputHtml.name = 'html_content';
-            inputHtml.value = fullHtml;
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-            form.appendChild(inputHtml);
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+                alert("✅ PDF gerado com sucesso! Ele foi enviado para o grupo de cardápios.");
+            } catch (err) {
+                console.error("Erro no envio:", err);
+                alert("⚠️ Ocorreu uma falha ao enviar o PDF. Verifique se o workflow do n8n está ativo.");
+            } finally {
+                if (btnDesktop) { btnDesktop.innerHTML = origDesktop; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = origMobile; btnMobile.disabled = false; }
+            }
         }
     </script>
 </body>

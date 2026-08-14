@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Menu Studio Pro — Gerador de Cardápio</title>
+    <title>Imprimir Cardápio — Menu Studio</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -75,14 +74,50 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* REGRAS DE IMPRESSÃO LIMPA */
+        /* =========================================
+           O SEGREDO: MODO IMPRESSÃO (NOVA GUIA)
+           ========================================= */
+        body.print-mode {
+            background-color: white !important;
+            overflow: auto !important;
+            height: auto !important;
+        }
+        body.print-mode #editor-panel,
+        body.print-mode #zoom-controls,
+        body.print-mode .md\:hidden {
+            display: none !important;
+        }
+        body.print-mode #preview-container {
+            position: relative !important;
+            transform: none !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        body.print-mode #zoom-container {
+            width: 100% !important;
+            height: auto !important;
+            transform: none !important;
+            margin: 0 !important;
+        }
+        body.print-mode #canvas-wrapper {
+            position: static !important;
+            transform: none !important;
+            box-shadow: none !important;
+            margin: 0 auto !important;
+        }
+        body.print-mode #preview-canvas {
+            margin: 0 auto !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
         @media print {
             @page { size: A4 portrait; margin: 0mm; }
-            body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: visible !important; }
-            #editor-panel, #zoom-controls, .md\:hidden { display: none !important; }
-            #preview-container { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white !important; padding: 0 !important; transform: none !important; }
-            #zoom-container, #canvas-wrapper { transform: none !important; width: 100% !important; height: auto !important; box-shadow: none !important; margin: 0 !important; }
-            #preview-canvas { width: 210mm !important; box-shadow: none !important; margin: 0 auto !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #btn-impressao-manual { display: none !important; }
         }
     </style>
 </head>
@@ -120,6 +155,7 @@
                     <button onclick="toggleMobilePreview()" title="Ver Pré-visualização" class="md:hidden w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center hover:bg-indigo-100 transition-colors">
                         <i class="fa-solid fa-eye text-sm"></i>
                     </button>
+                    <!-- BOTÃO DESKTOP FICA NORMAL -->
                     <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>Baixar PDF</span>
@@ -351,9 +387,11 @@
             <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto transition-transform active:scale-95">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <button onclick="exportPDF()" id="btn-export-mobile" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
-                <i class="fa-solid fa-download"></i> Gerar PDF
-            </button>
+            
+            <!-- BOTÃO MOBILE DE ESCAPE: ABRE EM NOVA GUIA FORA DO IFRAME -->
+            <a id="btn-export-mobile" href="#" target="_blank" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2 transition-transform active:scale-95">
+                <i class="fa-solid fa-external-link-alt"></i> Imprimir / PDF
+            </a>
         </div>
 
         <!-- CANVAS WRAPPER INTELIGENTE -->
@@ -362,6 +400,12 @@
                 <div id="preview-canvas"></div>
             </div>
         </div>
+        
+        <!-- Botão de emergência que só aparece no Modo Impressão -->
+        <button id="btn-impressao-manual" onclick="window.print()" class="hidden print-btn bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-2xl fixed bottom-6 right-6 z-[9999] hover:bg-indigo-700">
+            🖨️ Salvar / Imprimir
+        </button>
+        
     </main>
 
     <!-- CONTROLES DE ZOOM FLUTUANTES -->
@@ -375,39 +419,6 @@
         <button onclick="setZoom(0.05)" title="Aumentar Zoom" class="w-9 h-9 flex items-center justify-center hover:bg-slate-100/60 rounded-lg text-slate-700 active:scale-95 transition-all">
             <i class="fa-solid fa-plus text-xs"></i>
         </button>
-    </div>
-
-    <!-- MODAL DE IMAGEM IN-APP (Para Mobile Seguro) -->
-    <div id="modal-download" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[100] hidden flex flex-col items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-check-circle text-emerald-500"></i> Cardápio Gerado
-                </h3>
-                <button onclick="fecharModalDownload()" class="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 bg-slate-100 rounded-md">✕</button>
-            </div>
-            
-            <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-start gap-2.5">
-                <i class="fa-solid fa-lightbulb text-indigo-500 mt-0.5"></i>
-                <p class="text-[11px] text-slate-600 leading-relaxed font-medium">
-                    <b>Dica:</b> No celular, pressione e segure a imagem abaixo e escolha <span class="font-bold text-indigo-700">"Salvar em Fotos"</span> ou Compartilhar no WhatsApp!
-                </p>
-            </div>
-            
-            <!-- Caixa da Imagem Renderizada -->
-            <div class="flex-1 overflow-y-auto rounded-xl bg-slate-200 border border-slate-300 p-1 flex items-center justify-center min-h-[260px] relative" id="modal-preview-area">
-                <span class="text-xs text-indigo-600 font-bold animate-pulse">Renderizando imagem...</span>
-            </div>
-
-            <div class="flex gap-2 pt-2">
-                <button onclick="fecharModalDownload()" class="flex-1 py-3 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">
-                    Fechar
-                </button>
-                <a id="btn-modal-baixar-direto" href="#" class="flex-1 py-3 text-xs font-bold text-white bg-indigo-600 rounded-xl text-center hover:bg-indigo-700 shadow-md transition-colors flex items-center justify-center gap-1.5">
-                    <i class="fa-solid fa-download"></i> Baixar Arquivo
-                </a>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -491,7 +502,7 @@
         }
 
         /* =========================================
-           HANDSHAKE E DADOS
+           HANDSHAKE E INICIALIZAÇÃO
            ========================================= */
         window.addEventListener('message', function (event) {
             let eventData = {};
@@ -524,13 +535,27 @@
             if (btnGestao) btnGestao.href = `${urlProdutos}?account_id=${globalAccountId}`;
 
             carregarConfigDoCache();
+
+            // LÓGICA MODO IMPRESSÃO (NOVA GUIA)
+            if (urlParams.get('print_mode') === '1') {
+                document.body.classList.add('print-mode');
+                appState.zoom = 1;
+                document.getElementById('btn-impressao-manual').classList.remove('hidden');
+                
+                carregarProdutosDoBanco().then(() => {
+                    // Espera renderizar tudo perfeitamente e chama a impressora nativa do celular
+                    setTimeout(() => { window.print(); }, 1500);
+                });
+                return;
+            }
+
             resetZoomAdaptativo();
             carregarProdutosDoBanco();
         }
 
         async function carregarProdutosDoBanco() {
             const tbody = document.getElementById('data-table-body');
-            tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
+            if(tbody) tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
 
             try {
                 const endpoint = `${urlProdutos}?account_id=${globalAccountId}`;
@@ -595,7 +620,7 @@
 
             } catch (err) {
                 console.error("Erro crítico na sincronização:", err);
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
+                if(tbody) tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-rose-500 font-bold">⚠️ Erro ao sincronizar.</td></tr>`;
             }
         }
 
@@ -603,6 +628,8 @@
            ZOOM, PANNING E MOBILE
            ========================================= */
         function resetZoomAdaptativo() {
+            if (urlParams.get('print_mode') === '1') return; // Bloqueia zoom em modo impressão
+
             const w = window.innerWidth;
             if (w < 768) {
                 appState.zoom = 0.50;
@@ -680,7 +707,7 @@
         }
 
         /* =========================================
-           DESTAQUES / CARROS-CHEFE E LOGO SMART
+           DESTAQUES E LOGO SMART
            ========================================= */
         function handleSmartLogoUpload(event) {
             const file = event.target.files[0];
@@ -758,6 +785,7 @@
         function renderDestaquesUI() {
             const container = document.getElementById('destaques-list');
             const btnAdd = document.getElementById('btn-add-destaque');
+            if(!container) return;
             container.innerHTML = '';
 
             appState.carrosChefe.forEach((item) => {
@@ -784,7 +812,7 @@
                 container.appendChild(div);
             });
 
-            btnAdd.style.display = appState.carrosChefe.length >= 3 ? 'none' : 'flex';
+            if(btnAdd) btnAdd.style.display = appState.carrosChefe.length >= 3 ? 'none' : 'flex';
         }
 
         function handleDestaqueImgUpload(event, id) {
@@ -822,10 +850,11 @@
         }
 
         /* =========================================
-           RENDERIZAÇÃO DA TABELA
+           RENDERIZAÇÃO
            ========================================= */
         function renderTable() {
             const tbody = document.getElementById('data-table-body');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             if (appState.data.length === 0) {
@@ -886,6 +915,7 @@
             appState.layout = id;
             [1, 2, 3].forEach(i => {
                 const btn = document.getElementById(`btn-layout-${i}`);
+                if(!btn) return;
                 const icon = btn.querySelector('.layout-icon');
                 if(i === id) {
                     btn.className = "w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between transition-all";
@@ -992,98 +1022,64 @@
             }
 
             canvas.innerHTML = html;
-            setTimeout(() => { applyZoom(); }, 50);
+            
+            // Força a atualização do link de exportação Mobile a cada renderização
+            const btnMobile = document.getElementById('btn-export-mobile');
+            if (btnMobile && urlParams.get('print_mode') !== '1') {
+                const urlObj = new URL(window.location.href);
+                urlObj.searchParams.set('print_mode', '1');
+                urlObj.searchParams.set('account_id', globalAccountId);
+                btnMobile.href = urlObj.toString();
+            }
+
+            setTimeout(() => { if(urlParams.get('print_mode') !== '1') applyZoom(); }, 50);
         }
 
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =========================================
-           GERAÇÃO DE PDF SEGURO E MODAL DE IMAGEM
+           GERAÇÃO DE PDF (DESKTOP)
            ========================================= */
-        function fecharModalDownload() {
-            document.getElementById('modal-download').classList.add('hidden');
-        }
-
         function exportPDF() {
-            const isMobile = window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
             const element = document.getElementById('preview-canvas');
             
-            // Backup
             const oldTransform = wrapper.style.transform;
             const oldWidth = zoomContainer.style.width;
             const oldHeight = zoomContainer.style.height;
 
-            // UI Loaders
             const btnDesktop = document.getElementById('btn-export-desktop');
-            const btnMobile = document.getElementById('btn-export-mobile');
             const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
-            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
             
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
 
-            // Prepara a tela (Zera escala)
             wrapper.style.transform = 'scale(1)';
             zoomContainer.style.width = '794px';
             zoomContainer.style.height = `${element.scrollHeight}px`;
 
-            if (isMobile) {
-                // MODO MOBILE: Gera e Exibe a IMAGEM limpa no Modal
-                const previewArea = document.getElementById('modal-preview-area');
-                previewArea.innerHTML = `<span class="text-xs text-indigo-600 font-bold animate-pulse">Renderizando Cardápio...</span>`;
-                document.getElementById('modal-download').classList.remove('hidden');
+            const opt = {
+                margin: 0,
+                filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
-                setTimeout(() => {
-                    // html2canvas é perfeito e seguro para iOS/Android
-                    html2canvas(element, { scale: 2, useCORS: true, logging: false }).then(canvas => {
-                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-                        
-                        // Renderiza a imagem
-                        previewArea.innerHTML = `<img src="${imgData}" class="w-full h-auto object-contain rounded-lg shadow-sm border border-slate-300">`;
-                        
-                        // Arruma link de Download nativo
-                        const btnBaixar = document.getElementById('btn-modal-baixar-direto');
-                        btnBaixar.href = imgData;
-                        btnBaixar.download = `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.jpg`;
-
-                        restaurarBotoes();
-                    }).catch(err => {
-                        restaurarBotoes();
-                        document.getElementById('modal-download').classList.add('hidden');
-                        alert("Não foi possível gerar a imagem no celular: " + err.message);
-                    });
-                }, 150); // Timeout para a tela respirar sem o transform
-
-            } else {
-                // MODO DESKTOP: Gera PDF Originalmente
-                const opt = {
-                    margin: 0,
-                    filename: `Cardapio_${appState.restaurantName.replace(/\s+/g, '_')}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true, windowWidth: 794 },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-                };
-
-                setTimeout(() => {
-                    html2pdf().set(opt).from(element).save().then(() => {
-                        restaurarBotoes();
-                    }).catch(err => {
-                        restaurarBotoes();
-                        alert("Erro ao exportar PDF no Desktop: " + err.message);
-                    });
-                }, 150);
-            }
-
-            function restaurarBotoes() {
-                wrapper.style.transform = oldTransform;
-                zoomContainer.style.width = oldWidth;
-                zoomContainer.style.height = oldHeight;
-                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
-                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
-            }
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save().then(() => {
+                    wrapper.style.transform = oldTransform;
+                    zoomContainer.style.width = oldWidth;
+                    zoomContainer.style.height = oldHeight;
+                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                }).catch(err => {
+                    wrapper.style.transform = oldTransform;
+                    zoomContainer.style.width = oldWidth;
+                    zoomContainer.style.height = oldHeight;
+                    if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                    alert("Erro ao exportar PDF: " + err.message);
+                });
+            }, 500);
         }
     </script>
 </body>

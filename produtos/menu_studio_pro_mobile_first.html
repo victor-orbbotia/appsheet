@@ -108,7 +108,7 @@
                     <button onclick="toggleMobilePreview()" title="Ver Pré-visualização" class="md:hidden w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center hover:bg-indigo-100 transition-colors">
                         <i class="fa-solid fa-eye text-sm"></i>
                     </button>
-                    <!-- BOTÃO DESKTOP (Chama a mesma função via n8n) -->
+                    <!-- BOTÃO DESKTOP -->
                     <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
                         <i class="fa-solid fa-file-pdf"></i>
                         <span>Gerar PDF (Nova Aba)</span>
@@ -317,7 +317,7 @@
         </nav>
     </aside>
 
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO -->
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (Z-40 no mobile para sobrepor o menu) -->
     <main id="preview-container" class="fixed inset-0 md:relative md:flex-1 h-full bg-slate-200/90 overflow-auto block text-center py-6 md:py-10 z-40 md:z-10 transition-transform duration-300 md:translate-x-0 translate-x-full">
 
         <!-- Header de Controle Mobile -->
@@ -332,7 +332,7 @@
             </button>
         </div>
 
-        <!-- CANVAS WRAPPER -->
+        <!-- CANVAS WRAPPER INTELIGENTE -->
         <div id="zoom-container" class="mx-auto text-left relative mt-12 md:mt-0 inline-block bg-transparent" style="width: 397px; height: 500px;">
             <div id="canvas-wrapper" class="origin-top-left absolute top-0 left-0 shadow-2xl bg-white transition-transform duration-200">
                 <div id="preview-canvas"></div>
@@ -357,7 +357,7 @@
         // WEBHOOK N8N (Dados)
         const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
         
-        // WEBHOOK N8N (O Espelho do PDF) - Mude se o link do seu webhook criado for outro
+        // WEBHOOK N8N (O Espelho do PDF)
         const urlProxyPDF = 'https://n8n.orbbotia.com/webhook/gerador-pdf-impresso';
 
         let globalAccountId = '3';
@@ -744,25 +744,34 @@
             canvas.innerHTML = html; setTimeout(() => { applyZoom(); }, 50);
         }
 
+        const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
         /* =========================================
-           O "FORMULÁRIO FANTASMA" COM n8n (MÁGICA MOBILE)
+           GERAÇÃO DE PDF COM FORMULÁRIO PROXY (N8N)
            ========================================= */
         function exportPDF() {
             const btnDesktop = document.getElementById('btn-export-desktop');
             const btnMobile = document.getElementById('btn-export-mobile');
-            
+            const originalHTMLDesktop = btnDesktop ? btnDesktop.innerHTML : '';
+            const originalHTMLMobile = btnMobile ? btnMobile.innerHTML : '';
+
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
-            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo Nova Guia...'; btnMobile.disabled = true; }
+            if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abrindo...'; btnMobile.disabled = true; }
 
-            // Restaura o tamanho (escala 100%) para copiar o HTML certinho
+            // 1. Zera o zoom temporariamente para capturar o layout 1:1 real da folha A4
             const wrapper = document.getElementById('canvas-wrapper');
+            const zoomContainer = document.getElementById('zoom-container');
             const oldTransform = wrapper.style.transform;
-            wrapper.style.transform = 'scale(1)';
+            const oldWidth = zoomContainer.style.width;
+            const oldHeight = zoomContainer.style.height;
 
+            wrapper.style.transform = 'scale(1)';
+            zoomContainer.style.width = '794px';
+
+            // Delay estratégico de 150ms para garantir que o navegador mobile renderizou os elementos no DOM
             setTimeout(() => {
-                // Monta o arquivo HTML para enviar
                 const canvasHtml = document.getElementById('preview-canvas').outerHTML;
-                
+
                 const rootStyles = `
                     :root {
                         --color-primary: ${document.getElementById('color-primary').value};
@@ -774,42 +783,44 @@
                     }
                 `;
 
-                const fullHtml = `
-                <!DOCTYPE html>
-                <html lang="pt-BR">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Cardápio - ${appState.restaurantName}</title>
-                    <script src="https://cdn.tailwindcss.com"><\/script>
-                    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-                    <style>
-                        ${rootStyles}
-                        body { background-color: var(--color-bg); padding: 20px; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
-                        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
-                        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
-                        .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
-                        .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
-                        .l3-card { background-color: rgba(0,0,0,0.02); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
-                        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.65rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; }
-                        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
-                        .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
-                        @page { size: A4 portrait; margin: 0mm; }
-                    </style>
-                </head>
-                <body>
-                    ${canvasHtml}
-                    <script>
-                        setTimeout(() => { window.print(); }, 1500);
-                    <\/script>
-                </body>
-                </html>`;
+                const fullHtml = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio - ${appState.restaurantName}</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        ${rootStyles}
+        body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
+        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
+        .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
+        .l3-card { background-color: rgba(0,0,0,0.02); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
+        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.65rem; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; }
+        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        @page { size: A4 portrait; margin: 0mm; }
+    </style>
+</head>
+<body>
+    ${canvasHtml}
+    <script>
+        window.onload = () => {
+            setTimeout(() => { window.print(); }, 800);
+        };
+    <\/script>
+</body>
+</html>`;
 
-                // CRIA O FORMULÁRIO FANTASMA (Foge das amarras do iFrame)
+                // Submete via Formulário POST em nova aba
                 const form = document.createElement('form');
                 form.method = 'POST';
-                form.action = urlProxyPDF; // O seu Webhook N8N Mirror
-                form.target = '_blank'; // ABRE A NOVA GUIA
+                form.action = urlProxyPDF;
+                form.target = '_blank';
 
                 const inputHtml = document.createElement('input');
                 inputHtml.type = 'hidden';
@@ -818,17 +829,18 @@
 
                 form.appendChild(inputHtml);
                 document.body.appendChild(form);
-                
-                // Envia e Exclui
                 form.submit();
                 document.body.removeChild(form);
 
-                // Restaura Tela e Botões Originais
+                // Restaura o zoom original da tela do aplicativo
                 wrapper.style.transform = oldTransform;
-                if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-file-pdf"></i> Baixar PDF'; btnDesktop.disabled = false; }
-                if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-print"></i> Gerar PDF / Imprimir'; btnMobile.disabled = false; }
+                zoomContainer.style.width = oldWidth;
+                zoomContainer.style.height = oldHeight;
 
-            }, 200);
+                if (btnDesktop) { btnDesktop.innerHTML = originalHTMLDesktop; btnDesktop.disabled = false; }
+                if (btnMobile) { btnMobile.innerHTML = originalHTMLMobile; btnMobile.disabled = false; }
+
+            }, 150);
         }
     </script>
 </body>

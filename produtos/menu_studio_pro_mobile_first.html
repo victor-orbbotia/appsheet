@@ -82,14 +82,27 @@
                 <span id="badge-account" class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border">ID: ...</span>
             </div>
 
-            <!-- NOVOS BOTÕES: SALVAR & SINCRONIZAR ESTADO NO SUPABASE -->
+            <!-- BOTÕES: SALVAR VERSÃO & SINCRONIZAR -->
             <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                 <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar Estado
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Versão
                 </button>
                 <button onclick="sincronizarCardapio()" id="btn-sincronizar-estado" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
                     <i class="fa-solid fa-rotate"></i> Sincronizar
                 </button>
+            </div>
+
+            <!-- HISTÓRICO DE ALTERAÇÕES (DESFAZER/REFAZER) -->
+            <div class="flex items-center justify-between px-1 -mt-1 mb-1">
+                <div class="flex gap-2">
+                    <button id="btn-undo" onclick="undo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors" title="Desfazer">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <button id="btn-redo" onclick="redo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors" title="Refazer">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+                <span id="history-counter" class="text-[10px] text-slate-400 font-medium">0 alterações</span>
             </div>
 
             <div class="flex items-center justify-between gap-2">
@@ -160,7 +173,7 @@
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex justify-between items-center">
                         <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-database text-indigo-500"></i> Produtos</h2>
-                        <button onclick="carregarProdutosDoBanco()" class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 hover:bg-indigo-100 transition-colors">🔄 Sincronizar</button>
+                        <button onclick="carregarProdutosDoBanco(true)" class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100 hover:bg-indigo-100 transition-colors">🔄 Sincronizar</button>
                     </div>
                     <div class="overflow-hidden border border-slate-200 rounded-lg bg-slate-50">
                         <table class="min-w-full text-xs">
@@ -257,75 +270,152 @@
         let isMobilePreviewOpen = false;
         let updateTimeout;
 
+        // Gerenciamento de Estado Integrado com Cores e Fontes
         let appState = {
             layout: 1, zoom: 0.50, restaurantName: "Meu Restaurante",
-            restaurantDescription: "", logoUrl: null, carrosChefe: [], data: []
+            restaurantDescription: "", logoUrl: null, carrosChefe: [], data: [],
+            colorPrimary: "#111827", colorSecondary: "#4f46e5", colorBg: "#FFFFFF", colorText: "#333333",
+            fontTitle: "'Playfair Display', serif", fontBody: "'Lato', sans-serif"
         };
+
+        // VARIÁVEIS DO UNDO/REDO
+        let stateHistory = [];
+        let redoStack = [];
+        const MAX_HISTORY = 20; // Limite seguro de histórico para não deixar o navegador lento
+        let changesCount = 0;   // Contador de alterações
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
         function getCacheKey() { return `menu_studio_config_${globalAccountId}`; }
 
+        /* =======================================================
+           SISTEMA DE DESFAZER / REFAZER (UNDO/REDO)
+           ======================================================= */
+        
+        function saveStateToHistory() {
+            // Salva um clone profundo do appState atual na pilha de histórico
+            stateHistory.push(JSON.stringify(appState));
+            if (stateHistory.length > MAX_HISTORY) {
+                stateHistory.shift(); // Remove a versão mais antiga se ultrapassar o limite
+            }
+            redoStack = []; // Limpa o refazer sempre que uma nova ação acontece
+            changesCount++;
+            updateHistoryUI();
+        }
+
+        function undo() {
+            if (stateHistory.length > 0) {
+                redoStack.push(JSON.stringify(appState));
+                appState = JSON.parse(stateHistory.pop());
+                applyStateToUI();
+                renderPreview();
+                updateHistoryUI();
+                salvarConfigNoCache();
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                stateHistory.push(JSON.stringify(appState));
+                appState = JSON.parse(redoStack.pop());
+                applyStateToUI();
+                renderPreview();
+                updateHistoryUI();
+                salvarConfigNoCache();
+            }
+        }
+
+        function updateHistoryUI() {
+            document.getElementById('btn-undo').disabled = stateHistory.length === 0;
+            document.getElementById('btn-redo').disabled = redoStack.length === 0;
+            document.getElementById('history-counter').innerText = `${changesCount} alteraç${changesCount === 1 ? 'ão' : 'ões'}`;
+        }
+
+        function applyStateToUI() {
+            // Atualiza Componentes de Texto e Arquivo
+            document.getElementById('input-rest-name').value = appState.restaurantName || '';
+            document.getElementById('input-rest-desc').value = appState.restaurantDescription || '';
+            
+            if (appState.logoUrl) {
+                document.getElementById('logo-preview-img').src = appState.logoUrl;
+                document.getElementById('logo-preview-container').classList.remove('hidden');
+                document.getElementById('logo-preview-container').classList.add('flex');
+                document.getElementById('logo-upload-prompt').classList.add('hidden');
+            } else {
+                document.getElementById('logo-preview-container').classList.add('hidden');
+                document.getElementById('logo-preview-container').classList.remove('flex');
+                document.getElementById('logo-upload-prompt').classList.remove('hidden');
+            }
+
+            // Atualiza as Cores e Fontes do DOM
+            applyThemeToDOM();
+            
+            // Atualiza Seleção de Layout
+            [1, 2, 3].forEach(i => {
+                const btn = document.getElementById(`btn-layout-${i}`);
+                if(!btn) return;
+                if(i === appState.layout) { 
+                    btn.className = "w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between transition-all"; 
+                    btn.querySelector('span').className = "text-xs font-bold text-indigo-900"; 
+                } else { 
+                    btn.className = "w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500"; 
+                    btn.querySelector('span').className = "text-xs font-medium"; 
+                }
+            });
+
+            // Atualiza Listas UI
+            renderDestaquesUI();
+            renderTable();
+        }
+
+        function applyThemeToDOM() {
+            const root = document.documentElement;
+            root.style.setProperty('--color-primary', appState.colorPrimary);
+            root.style.setProperty('--color-secondary', appState.colorSecondary);
+            root.style.setProperty('--color-bg', appState.colorBg);
+            root.style.setProperty('--color-text', appState.colorText);
+            root.style.setProperty('--font-title', appState.fontTitle);
+            root.style.setProperty('--font-body', appState.fontBody);
+            
+            document.getElementById('color-primary').value = appState.colorPrimary;
+            document.getElementById('color-secondary').value = appState.colorSecondary;
+            document.getElementById('color-bg').value = appState.colorBg;
+            document.getElementById('color-text').value = appState.colorText;
+            document.getElementById('font-title').value = appState.fontTitle;
+            document.getElementById('font-body').value = appState.fontBody;
+        }
+
+
+        /* =======================================================
+           CACHE MANAGER
+           ======================================================= */
+
         function salvarConfigNoCache() {
-            const configParaSalvar = {
-                restaurantName: appState.restaurantName, restaurantDescription: appState.restaurantDescription,
-                logoUrl: appState.logoUrl, carrosChefe: appState.carrosChefe,
-                colorPrimary: document.getElementById('color-primary').value,
-                colorSecondary: document.getElementById('color-secondary').value,
-                colorBg: document.getElementById('color-bg').value, colorText: document.getElementById('color-text').value,
-                fontTitle: document.getElementById('font-title').value, fontBody: document.getElementById('font-body').value,
-                layout: appState.layout
-            };
-            try { localStorage.setItem(getCacheKey(), JSON.stringify(configParaSalvar)); } catch (e) {}
+            // Salva todo o appState que já contem Layout, Cores, Fontes etc.
+            try { localStorage.setItem(getCacheKey(), JSON.stringify(appState)); } catch (e) {}
         }
 
         function carregarConfigDoCache() {
             try {
                 const salvo = localStorage.getItem(getCacheKey());
-                if (!salvo) return;
-                const config = JSON.parse(salvo);
-
-                if (config.restaurantName) { appState.restaurantName = config.restaurantName; document.getElementById('input-rest-name').value = config.restaurantName; }
-                if (config.restaurantDescription) { appState.restaurantDescription = config.restaurantDescription; document.getElementById('input-rest-desc').value = config.restaurantDescription; }
-                if (config.logoUrl) {
-                    appState.logoUrl = config.logoUrl; document.getElementById('logo-preview-img').src = config.logoUrl;
-                    document.getElementById('logo-preview-container').classList.remove('hidden'); document.getElementById('logo-preview-container').classList.add('flex');
-                    document.getElementById('logo-upload-prompt').classList.add('hidden');
+                if (salvo) {
+                    const config = JSON.parse(salvo);
+                    appState = { ...appState, ...config }; // Mescla com o estado padrão
                 }
-                if (Array.isArray(config.carrosChefe)) { appState.carrosChefe = config.carrosChefe; renderDestaquesUI(); }
-                if (config.colorPrimary) document.getElementById('color-primary').value = config.colorPrimary;
-                if (config.colorSecondary) document.getElementById('color-secondary').value = config.colorSecondary;
-                if (config.colorBg) document.getElementById('color-bg').value = config.colorBg;
-                if (config.colorText) document.getElementById('color-text').value = config.colorText;
-                if (config.fontTitle) document.getElementById('font-title').value = config.fontTitle;
-                if (config.fontBody) document.getElementById('font-body').value = config.fontBody;
-                if (config.layout) setLayout(config.layout);
-                updateTheme();
             } catch (e) {}
+            applyStateToUI();
+            updateHistoryUI();
         }
 
         /* =======================================================
-           NOVA FUNCIONALIDADE: SALVAR ESTADO NO SUPABASE
+           BANCO DE DADOS (SUPABASE & N8N)
            ======================================================= */
+           
         async function salvarEstadoCardapio() {
             const btn = document.getElementById('btn-salvar-estado');
             const origText = btn ? btn.innerHTML : '';
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true; }
-
-            const configParaSalvar = {
-                restaurantName: appState.restaurantName,
-                restaurantDescription: appState.restaurantDescription,
-                logoUrl: appState.logoUrl,
-                carrosChefe: appState.carrosChefe,
-                colorPrimary: document.getElementById('color-primary').value,
-                colorSecondary: document.getElementById('color-secondary').value,
-                colorBg: document.getElementById('color-bg').value,
-                colorText: document.getElementById('color-text').value,
-                fontTitle: document.getElementById('font-title').value,
-                fontBody: document.getElementById('font-body').value,
-                layout: appState.layout
-            };
 
             try {
                 const response = await fetch(urlSalvarCardapio, {
@@ -333,65 +423,46 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         account_id: globalAccountId,
-                        config_state: configParaSalvar
+                        config_state: appState
                     })
                 });
 
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                alert("✅ Estado do cardápio salvo no banco de dados com sucesso!");
+                alert("✅ Estado da versão do cardápio salva no banco de dados com sucesso!");
 
             } catch (err) {
                 console.error("Erro ao salvar:", err);
-                alert("⚠️ Falha ao salvar o estado do cardápio no servidor.");
+                alert("⚠️ Falha ao salvar a versão do cardápio no servidor.");
             } finally {
                 if (btn) { btn.innerHTML = origText; btn.disabled = false; }
             }
         }
 
-        /* =======================================================
-           NOVA FUNCIONALIDADE: SINCRONIZAR ESTADO DO SUPABASE
-           ======================================================= */
         async function sincronizarCardapio() {
             const btn = document.getElementById('btn-sincronizar-estado');
             const origText = btn ? btn.innerHTML : '';
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando...'; btn.disabled = true; }
 
-            // Limpa o cache local
-            try { localStorage.removeItem(getCacheKey()); } catch(e){}
-
             try {
                 const response = await fetch(`${urlObterCardapio}?account_id=${globalAccountId}`);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
                 const config = await response.json();
 
                 if (config && Object.keys(config).length > 0) {
-                    if (config.restaurantName) { appState.restaurantName = config.restaurantName; document.getElementById('input-rest-name').value = config.restaurantName; }
-                    if (config.restaurantDescription) { appState.restaurantDescription = config.restaurantDescription; document.getElementById('input-rest-desc').value = config.restaurantDescription; }
-                    if (config.logoUrl) {
-                        appState.logoUrl = config.logoUrl; document.getElementById('logo-preview-img').src = config.logoUrl;
-                        document.getElementById('logo-preview-container').classList.remove('hidden'); document.getElementById('logo-preview-container').classList.add('flex');
-                        document.getElementById('logo-upload-prompt').classList.add('hidden');
-                    }
-                    if (Array.isArray(config.carrosChefe)) { appState.carrosChefe = config.carrosChefe; renderDestaquesUI(); }
-                    if (config.colorPrimary) document.getElementById('color-primary').value = config.colorPrimary;
-                    if (config.colorSecondary) document.getElementById('color-secondary').value = config.colorSecondary;
-                    if (config.colorBg) document.getElementById('color-bg').value = config.colorBg;
-                    if (config.colorText) document.getElementById('color-text').value = config.colorText;
-                    if (config.fontTitle) document.getElementById('font-title').value = config.fontTitle;
-                    if (config.fontBody) document.getElementById('font-body').value = config.fontBody;
-                    if (config.layout) setLayout(config.layout);
-
-                    updateTheme();
+                    saveStateToHistory(); // Permite desfazer a sincronização!
+                    appState = { ...appState, ...config };
+                    
+                    applyStateToUI();
+                    renderPreview();
                     salvarConfigNoCache();
-                    alert("🔄 Configurações do cardápio restauradas com sucesso!");
+                    alert("🔄 Versão restaurada do servidor com sucesso!");
                 } else {
-                    alert("⚠️ Nenhuma configuração salva encontrada no banco para este ID.");
+                    alert("⚠️ Nenhuma versão salva encontrada no banco para este ID.");
                 }
 
             } catch (err) {
                 console.error("Erro ao sincronizar:", err);
-                alert("❌ Erro ao buscar dados salvos no servidor.");
+                alert("❌ Erro ao buscar versão salva no servidor.");
             } finally {
                 if (btn) { btn.innerHTML = origText; btn.disabled = false; }
             }
@@ -430,10 +501,10 @@
 
             carregarConfigDoCache();
             resetZoomAdaptativo();
-            carregarProdutosDoBanco();
+            carregarProdutosDoBanco(false);
         }
 
-        async function carregarProdutosDoBanco() {
+        async function carregarProdutosDoBanco(isUserAction = true) {
             const tbody = document.getElementById('data-table-body');
             if(tbody) tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-indigo-600 font-bold">⏳ Buscando cardápio...</td></tr>`;
 
@@ -473,6 +544,7 @@
                     } catch (itemErr) {}
                 });
 
+                if(isUserAction) saveStateToHistory(); // Permite desfazer a sincronização de produtos
                 appState.data = Object.keys(agrupado).sort().map(cat => ({ categoria: cat, itens: agrupado[cat] }));
                 renderTable(); renderPreview();
             } catch (err) {
@@ -538,6 +610,7 @@
         function debounceUpdate() {
             clearTimeout(updateTimeout);
             updateTimeout = setTimeout(() => {
+                saveStateToHistory(); // Guarda na memoria antes da mutacao
                 appState.restaurantName = document.getElementById('input-rest-name').value.trim() || "Meu Restaurante";
                 appState.restaurantDescription = document.getElementById('input-rest-desc').value.trim();
                 renderPreview(); salvarConfigNoCache();
@@ -549,6 +622,8 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
+                saveStateToHistory(); // Guarda historico
+                
                 const imgData = e.target.result;
                 appState.logoUrl = imgData;
                 document.getElementById('logo-preview-img').src = imgData;
@@ -567,9 +642,10 @@
                         let hexSecondary = "#4F46E5";
                         if(palette && palette.length > 1) hexSecondary = rgbToHex(palette[1][0], palette[1][1], palette[1][2]);
 
-                        document.getElementById('color-primary').value = hexDominant;
-                        document.getElementById('color-secondary').value = hexSecondary;
-                        updateTheme();
+                        appState.colorPrimary = hexDominant;
+                        appState.colorSecondary = hexSecondary;
+                        applyThemeToDOM();
+                        renderPreview();
                     } catch (err) { renderPreview(); }
                 };
                 salvarConfigNoCache();
@@ -581,11 +657,13 @@
 
         function addDestaque() {
             if (appState.carrosChefe.length >= 3) return alert("Máximo 3 destaques no topo.");
+            saveStateToHistory();
             appState.carrosChefe.push({ id: "c_" + Date.now(), imgBase64: "https://placehold.co/400x300/111827/FFFFFF?text=Adicione+Foto", nome: "Prato", desc: "Descrição", preco: 0 });
             renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
         }
 
         function removeDestaque(id) {
+            saveStateToHistory();
             appState.carrosChefe = appState.carrosChefe.filter(c => c.id !== id);
             renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
         }
@@ -634,6 +712,7 @@
         function updateDestaque(id, field, value) {
             const index = appState.carrosChefe.findIndex(c => c.id === id);
             if (index > -1) {
+                saveStateToHistory(); // Guarda versao antes de atualizar o texto/preco
                 if (field === 'preco') value = parseFloat(value) || 0;
                 appState.carrosChefe[index][field] = value;
                 renderPreview(); salvarConfigNoCache();
@@ -661,30 +740,33 @@
         }
 
         function toggleVisibility(catIdx, itemIdx) {
+            saveStateToHistory(); // Guarda estado antes de remover ou adicionar do PDF
             appState.data[catIdx].itens[itemIdx].visivel = !appState.data[catIdx].itens[itemIdx].visivel;
             renderPreview();
+            salvarConfigNoCache();
         }
 
         function updateTheme() {
-            const root = document.documentElement;
-            root.style.setProperty('--color-primary', document.getElementById('color-primary').value);
-            root.style.setProperty('--color-secondary', document.getElementById('color-secondary').value);
-            root.style.setProperty('--color-bg', document.getElementById('color-bg').value);
-            root.style.setProperty('--color-text', document.getElementById('color-text').value);
-            root.style.setProperty('--font-title', document.getElementById('font-title').value);
-            root.style.setProperty('--font-body', document.getElementById('font-body').value);
-            renderPreview(); salvarConfigNoCache();
+            saveStateToHistory(); // Guarda antes de alterar o visual
+            appState.colorPrimary = document.getElementById('color-primary').value;
+            appState.colorSecondary = document.getElementById('color-secondary').value;
+            appState.colorBg = document.getElementById('color-bg').value;
+            appState.colorText = document.getElementById('color-text').value;
+            appState.fontTitle = document.getElementById('font-title').value;
+            appState.fontBody = document.getElementById('font-body').value;
+            
+            applyThemeToDOM();
+            renderPreview(); 
+            salvarConfigNoCache();
         }
 
         function setLayout(id) {
+            if(appState.layout === id) return;
+            saveStateToHistory();
             appState.layout = id;
-            [1, 2, 3].forEach(i => {
-                const btn = document.getElementById(`btn-layout-${i}`);
-                if(!btn) return;
-                if(i === id) { btn.className = "w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between transition-all"; btn.querySelector('span').className = "text-xs font-bold text-indigo-900"; } 
-                else { btn.className = "w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500"; btn.querySelector('span').className = "text-xs font-medium"; }
-            });
-            renderPreview(); salvarConfigNoCache();
+            applyStateToUI();
+            renderPreview(); 
+            salvarConfigNoCache();
         }
 
         function renderPreview() {
@@ -736,7 +818,7 @@
         const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
         /* =======================================================
-           EXPORTAÇÃO ASSÍNCRONA PARA O N8N (MULTI-TENANT SERVER-SIDE)
+           EXPORTAÇÃO ASSÍNCRONA PARA O N8N
            ======================================================= */
         async function exportPDF() {
             const btnDesktop = document.getElementById('btn-export-desktop');
@@ -750,16 +832,15 @@
             const canvasHtml = document.getElementById('preview-canvas').outerHTML;
             const rootStyles = `
                 :root {
-                    --color-primary: ${document.getElementById('color-primary').value};
-                    --color-secondary: ${document.getElementById('color-secondary').value};
-                    --color-bg: ${document.getElementById('color-bg').value};
-                    --color-text: ${document.getElementById('color-text').value};
-                    --font-title: ${document.getElementById('font-title').value};
-                    --font-body: ${document.getElementById('font-body').value};
+                    --color-primary: ${appState.colorPrimary};
+                    --color-secondary: ${appState.colorSecondary};
+                    --color-bg: ${appState.colorBg};
+                    --color-text: ${appState.colorText};
+                    --font-title: ${appState.fontTitle};
+                    --font-body: ${appState.fontBody};
                 }
             `;
 
-            // Montagem do HTML completo devidamente formatado para envio ao n8n
             const fullHtml = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>

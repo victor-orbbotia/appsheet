@@ -57,7 +57,7 @@
 
         <!-- MÓDULO 1: KANBAN -->
         <a href="kanban-chatwoot/index.html" id="mod-kanban"
-            class="card-modulo hidden block bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
             <div class="text-3xl mb-4">📊</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Funil Kanban</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Gerencie atendimentos, prioridades e acompanhe as vendas
@@ -66,7 +66,7 @@
 
         <!-- MÓDULO 2: PROFISSIONAIS -->
         <a href="profissionais/novo.html" id="mod-profissionais"
-            class="card-modulo hidden block bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
             <div class="text-3xl mb-4">🩺</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou corretores e controle
@@ -75,7 +75,7 @@
 
         <!-- MÓDULO 3: PRODUTOS / CARDÁPIO -->
         <a href="produtos/novo.html" id="mod-produtos"
-            class="card-modulo hidden block bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
             <div class="text-3xl mb-4">🍔</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas
@@ -84,7 +84,7 @@
 
         <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
         <a href="conhecimento/novo.html" id="mod-conhecimento"
-            class="card-modulo hidden block bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
             <div class="text-3xl mb-4">🧠</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras e informações gerais do seu
@@ -93,7 +93,7 @@
 
         <!-- MÓDULO 5: PEDIDOS / DELIVERY -->
         <a href="pedidos/index.html" id="mod-pedidos"
-            class="card-modulo hidden block bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
             <div class="text-3xl mb-4">📦</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de
@@ -129,7 +129,7 @@
         // Modo Teste Local
         setTimeout(() => {
             if (!globalAccountId) {
-                globalAccountId = '2';
+                globalAccountId = '3';
                 buscarConfiguracoesDaEmpresa();
             }
         }, 2000);
@@ -140,17 +140,25 @@
                 // Requisição GET para o n8n passando o Account ID
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
 
-                // Se o n8n falhar, liberamos tudo (apenas para ambiente de desenvolvimento)
                 if (!res.ok) throw new Error("Erro ao buscar configurações");
 
-                const config = await res.json();
+                let rawConfig = await res.json();
+
+                // TRATAMENTO DA RESPOSTA:
+                // Caso o n8n retorne uma Array ex: [{...}]
+                const config = Array.isArray(rawConfig) ? rawConfig[0] : rawConfig;
+
+                // Caso a propriedade 'modulos' seja uma String JSON vinda do banco de dados
+                if (typeof config.modulos === 'string') {
+                    config.modulos = JSON.parse(config.modulos);
+                }
+
                 aplicarModulos(config);
 
             } catch (error) {
                 console.error("Falha ao puxar config, usando fallback padrão.", error);
 
-                // FALLBACK: Como não temos o n8n criado ainda para isso, simulamos a resposta
-                // Altere os trues/falses abaixo para testar visualmente
+                // FALLBACK: Utilizado se a requisição falhar
                 const configFake = {
                     nome_empresa: "Restaurante de Teste (Fallback)",
                     modulos: {
@@ -158,7 +166,7 @@
                         profissionais: true,
                         produtos: true,
                         conhecimento: true,
-                        pedidos: true // <--- habilite por segmento conforme necessário
+                        pedidos: true
                     }
                 };
                 aplicarModulos(configFake);
@@ -170,22 +178,23 @@
             // Atualiza o nome da empresa no topo
             document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta Chatwoot ID: ${globalAccountId}`;
 
-            // Lógica de liberação (Feature Flagging)
-            if (config.modulos.kanban) {
+            // Lógica de exibição com remoção do CSS 'hidden'
+            if (config.modulos && config.modulos.kanban) {
                 document.getElementById('mod-kanban').classList.remove('hidden');
             }
-            if (config.modulos.profissionais) {
+            if (config.modulos && config.modulos.profissionais) {
                 document.getElementById('mod-profissionais').classList.remove('hidden');
             }
-            if (config.modulos.produtos) {
+            if (config.modulos && config.modulos.produtos) {
                 document.getElementById('mod-produtos').classList.remove('hidden');
             }
-            if (config.modulos.conhecimento !== false) {
+            if (config.modulos && config.modulos.conhecimento) {
                 document.getElementById('mod-conhecimento').classList.remove('hidden');
             }
-            if (config.modulos.pedidos) {
+            if (config.modulos && config.modulos.pedidos) {
                 document.getElementById('mod-pedidos').classList.remove('hidden');
             }
+
             // Esconde o ícone de Loading e mostra a Grade
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');

@@ -101,11 +101,12 @@
         async function carregarConfiguracoes() {
             try {
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro ao carregar");
+                if (!res.ok) throw new Error("Erro ao carregar dados do banco");
                 
                 let data = await res.json();
                 if (Array.isArray(data)) data = data[0];
 
+                // Puxa o estado atual do agente vindo do Supabase via n8n
                 agenteAtivoState = data.agente_ativo !== false;
                 atualizarInterfaceToggle();
             } catch (err) {

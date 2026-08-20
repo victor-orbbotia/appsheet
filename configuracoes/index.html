@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações do Sistema</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: system-ui, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-6 space-y-6">
+
+    <!-- Alerta Chatwoot -->
+    <div id="alerta-chatwoot" class="max-w-3xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm">
+        ⏳ Autenticando com o painel Chatwoot...
+    </div>
+
+    <div id="app-container" class="max-w-3xl mx-auto hidden transition-all space-y-6">
+
+        <!-- Header -->
+        <div>
+            <a id="link-voltar-menu" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-4">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Voltar ao Menu Principal
+            </a>
+            <h1 class="text-2xl font-bold text-slate-800">Configurações Gerais</h1>
+            <p class="text-sm text-slate-500">Gerencie a operação dos robôs de IA para a sua conta.</p>
+        </div>
+
+        <!-- Card de Status do Agente -->
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">🤖</span>
+                        <h2 class="text-lg font-bold text-slate-800">Status do Agente IA</h2>
+                    </div>
+                    <p class="text-sm text-slate-500 max-w-md">
+                        Quando desativado, o robô interromperá o atendimento automático em todos os canais do Chatwoot para esta conta.
+                    </p>
+                </div>
+
+                <!-- Botão Toggle (Liga/Desliga) -->
+                <div class="flex flex-col items-end gap-2">
+                    <button id="btnToggleAgente" onclick="alternarAgente()" class="relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-300 transition-colors duration-200 ease-in-out focus:outline-none" role="switch" aria-checked="false">
+                        <span id="toggleCircle" class="pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+                    </button>
+                    <span id="labelStatusAgente" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Carregando...</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const urlConfig = 'https://n8n.orbbotia.com/webhook/empresa-config';
+        const urlAcao = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
+
+        let globalAccountId = null;
+        let handshakeInterval;
+        let agenteAtivoState = true;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+
+        window.addEventListener('message', function (event) {
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id) || globalAccountId;
+                iniciarApp();
+            }
+        });
+
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+        }, 500);
+
+        setTimeout(() => {
+            if (!globalAccountId) { globalAccountId = '3'; iniciarApp(); }
+        }, 1500);
+
+        function iniciarApp() {
+            document.getElementById('alerta-chatwoot').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
+            
+            carregarConfiguracoes();
+        }
+
+        async function carregarConfiguracoes() {
+            try {
+                const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error("Erro ao carregar");
+                
+                let data = await res.json();
+                if (Array.isArray(data)) data = data[0];
+
+                agenteAtivoState = data.agente_ativo !== false;
+                atualizarInterfaceToggle();
+            } catch (err) {
+                console.error("Erro ao puxar dados:", err);
+                atualizarInterfaceToggle();
+            }
+        }
+
+        function atualizarInterfaceToggle() {
+            const btn = document.getElementById('btnToggleAgente');
+            const circle = document.getElementById('toggleCircle');
+            const label = document.getElementById('labelStatusAgente');
+
+            if (agenteAtivoState) {
+                btn.className = "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-emerald-500 transition-colors duration-200 ease-in-out focus:outline-none";
+                circle.className = "pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-6";
+                label.innerText = "Agente Ativo";
+                label.className = "text-xs font-bold text-emerald-600 uppercase tracking-wide";
+            } else {
+                btn.className = "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-rose-500 transition-colors duration-200 ease-in-out focus:outline-none";
+                circle.className = "pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0";
+                label.innerText = "Agente Desligado";
+                label.className = "text-xs font-bold text-rose-600 uppercase tracking-wide";
+            }
+        }
+
+        async function alternarAgente() {
+            const novoEstado = !agenteAtivoState;
+            agenteAtivoState = novoEstado;
+            atualizarInterfaceToggle();
+
+            try {
+                const response = await fetch(urlAcao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account_id: globalAccountId.toString(),
+                        agente_ativo: novoEstado
+                    })
+                });
+
+                if (!response.ok) throw new Error();
+            } catch (err) {
+                alert("Falha ao atualizar status no servidor.");
+                agenteAtivoState = !novoEstado;
+                atualizarInterfaceToggle();
+            }
+        }
+    </script>
+</body>
+
+</html>

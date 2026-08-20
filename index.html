@@ -99,13 +99,14 @@
             <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de
                 comprovantes PIX em tempo real.</p>
         </a>
-        <!-- MÓDULO 6: CONFIGURAÇÕES -->
-<a href="configuracoes/index.html" id="mod-configuracoes"
-    class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
-    <div class="text-3xl mb-4">⚙️</div>
-    <h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2>
-    <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
-</a>
+
+        <!-- MÓDULO 6: CONFIGURAÇÕES DA EMPRESA E IA -->
+        <a href="configuracoes/index.html" id="mod-configuracoes"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
+            <div class="text-3xl mb-4">⚙️</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
+        </a>
 
     </main>
 
@@ -116,6 +117,10 @@
         let globalAccountId = null;
         let handshakeInterval;
 
+        // Captura account_id via URL se fornecido diretamente
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+
         // 1. Handshake com Chatwoot
         window.addEventListener('message', function (event) {
             let eventData = {};
@@ -124,7 +129,7 @@
             if (eventData.event === 'appContext' && eventData.data) {
                 clearInterval(handshakeInterval);
                 const payload = eventData.data;
-                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
                 buscarConfiguracoesDaEmpresa();
             }
         });
@@ -133,7 +138,7 @@
             if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Modo Teste Local
+        // Modo Teste Local / Fallback de tempo
         setTimeout(() => {
             if (!globalAccountId) {
                 globalAccountId = '3';
@@ -144,7 +149,6 @@
         // 2. Busca as Feature Flags no n8n
         async function buscarConfiguracoesDaEmpresa() {
             try {
-                // Requisição GET para o n8n passando o Account ID
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
 
                 if (!res.ok) throw new Error("Erro ao buscar configurações");
@@ -167,25 +171,34 @@
 
                 // FALLBACK: Utilizado se a requisição falhar
                 const configFake = {
-                    nome_empresa: "Restaurante de Teste (Fallback)",
+                    nome_empresa: "Empresa (Fallback)",
                     modulos: {
                         kanban: true,
                         profissionais: true,
                         produtos: true,
                         conhecimento: true,
-                        pedidos: true
+                        pedidos: true,
+                        configuracoes: true
                     }
                 };
                 aplicarModulos(configFake);
             }
         }
 
-        // 3. Exibe ou esconde os botões na tela
+        // 3. Exibe ou esconde os botões na tela e atualiza os links com o Account ID
         function aplicarModulos(config) {
             // Atualiza o nome da empresa no topo
             document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta Chatwoot ID: ${globalAccountId}`;
 
-            // Lógica de exibição com remoção do CSS 'hidden'
+            // Injeta o account_id nos links de destino dos módulos
+            document.getElementById('mod-kanban').href = `kanban-chatwoot/index.html?account_id=${globalAccountId}`;
+            document.getElementById('mod-profissionais').href = `profissionais/novo.html?account_id=${globalAccountId}`;
+            document.getElementById('mod-produtos').href = `produtos/novo.html?account_id=${globalAccountId}`;
+            document.getElementById('mod-conhecimento').href = `conhecimento/novo.html?account_id=${globalAccountId}`;
+            document.getElementById('mod-pedidos').href = `pedidos/index.html?account_id=${globalAccountId}`;
+            document.getElementById('mod-configuracoes').href = `configuracoes/index.html?account_id=${globalAccountId}`;
+
+            // Lógica de exibição com remoção da classe 'hidden'
             if (config.modulos && config.modulos.kanban) {
                 document.getElementById('mod-kanban').classList.remove('hidden');
             }
@@ -200,6 +213,9 @@
             }
             if (config.modulos && config.modulos.pedidos) {
                 document.getElementById('mod-pedidos').classList.remove('hidden');
+            }
+            if (config.modulos && config.modulos.configuracoes !== false) {
+                document.getElementById('mod-configuracoes').classList.remove('hidden');
             }
 
             // Esconde o ícone de Loading e mostra a Grade

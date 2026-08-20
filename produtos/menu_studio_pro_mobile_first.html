@@ -51,10 +51,9 @@
         #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
-        .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
-        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; text-align: right; }
+        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
         .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
         .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
         .hide-scroll::-webkit-scrollbar { display: none; }
@@ -82,7 +81,6 @@
                 <span id="badge-account" class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border">ID: ...</span>
             </div>
 
-            <!-- BOTÕES: SALVAR VERSÃO & SINCRONIZAR -->
             <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                 <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
                     <i class="fa-solid fa-floppy-disk"></i> Salvar Versão
@@ -92,13 +90,12 @@
                 </button>
             </div>
 
-            <!-- HISTÓRICO DE ALTERAÇÕES (DESFAZER/REFAZER) -->
             <div class="flex items-center justify-between px-1 -mt-1 mb-1">
                 <div class="flex gap-2">
-                    <button id="btn-undo" onclick="undo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors" title="Desfazer">
+                    <button id="btn-undo" onclick="undo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-colors" title="Desfazer">
                         <i class="fa-solid fa-rotate-left"></i>
                     </button>
-                    <button id="btn-redo" onclick="redo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition-colors" title="Refazer">
+                    <button id="btn-redo" onclick="redo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-colors" title="Refazer">
                         <i class="fa-solid fa-rotate-right"></i>
                     </button>
                 </div>
@@ -111,10 +108,9 @@
                     <p class="text-[11px] text-slate-400 font-medium">Gerador de Cardápio Impresso (PDF)</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="toggleMobilePreview()" title="Ver Pré-visualização" class="md:hidden w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center hover:bg-indigo-100 transition-colors">
+                    <button onclick="toggleMobilePreview()" class="md:hidden w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center hover:bg-indigo-100 transition-colors">
                         <i class="fa-solid fa-eye text-sm"></i>
                     </button>
-                    <!-- BOTÃO DESKTOP -->
                     <button onclick="exportPDF()" id="btn-export-desktop" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 hidden md:flex">
                         <i class="fa-solid fa-paper-plane"></i> <span>Enviar PDF no Chat</span>
                     </button>
@@ -122,7 +118,6 @@
             </div>
         </header>
 
-        <!-- Conteúdo das Abas -->
         <div class="flex-1 overflow-y-auto p-4 relative bg-slate-50/50 hide-scroll space-y-4">
             <!-- TAB 1: IDENTIDADE -->
             <div id="panel-identidade" class="tab-content fade-in space-y-4 block">
@@ -178,7 +173,7 @@
                     <div class="overflow-hidden border border-slate-200 rounded-lg bg-slate-50">
                         <table class="min-w-full text-xs">
                             <thead class="bg-slate-100 border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px]">
-                                <tr><th class="px-3 py-2 text-left">Item</th><th class="px-3 py-2 text-right">Preço / Opções</th><th class="px-2 py-2 text-center w-8"><i class="fa-solid fa-eye"></i></th></tr>
+                                <tr><th class="px-3 py-2 text-left">Item</th><th class="px-3 py-2 text-right w-20">Preço</th><th class="px-2 py-2 text-center w-8"><i class="fa-solid fa-eye"></i></th></tr>
                             </thead>
                             <tbody id="data-table-body" class="divide-y divide-slate-100 bg-white">
                                 <tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Sincronizando...</td></tr>
@@ -259,7 +254,6 @@
     </div>
 
     <script>
-        // WEBHOOKS DO N8N
         const urlProdutos = 'https://n8n.orbbotia.com/webhook/produtos-dados';
         const urlGerarPDFServerSide = 'https://n8n.orbbotia.com/webhook/gerador-pdf-impresso';
         const urlSalvarCardapio = 'https://n8n.orbbotia.com/webhook/cardapio-salvar';
@@ -270,7 +264,6 @@
         let isMobilePreviewOpen = false;
         let updateTimeout;
 
-        // Gerenciamento de Estado Integrado com Cores e Fontes
         let appState = {
             layout: 1, zoom: 0.50, restaurantName: "Meu Restaurante",
             restaurantDescription: "", logoUrl: null, carrosChefe: [], data: [],
@@ -278,7 +271,6 @@
             fontTitle: "'Playfair Display', serif", fontBody: "'Lato', sans-serif"
         };
 
-        // VARIÁVEIS DO UNDO/REDO
         let stateHistory = [];
         let redoStack = [];
         const MAX_HISTORY = 20; 
@@ -493,10 +485,11 @@
                         let tamanhosArray = null;
                         let precoFinal = parseFloat(p.preco_base) || 0;
 
-                        // Se possui múltiplos tamanhos, capturamos o array inteiro
-                        if (meta && meta.tipo === 'com_tamanhos' && Array.isArray(meta.tamanhos) && meta.tamanhos.length > 0) {
-                            tamanhosArray = meta.tamanhos;
-                            precoFinal = parseFloat(meta.tamanhos[0].preco) || 0; // fallback pra tabela se precisar
+                        // Verifica nova estrutura (variacoes) e a antiga (tamanhos) para compatibilidade
+                        const listaOpcoes = meta?.variacoes || meta?.tamanhos;
+                        if (Array.isArray(listaOpcoes) && listaOpcoes.length > 0) {
+                            tamanhosArray = listaOpcoes;
+                            precoFinal = parseFloat(listaOpcoes[0].preco) || 0; 
                         }
 
                         agrupado[cat].push({
@@ -504,7 +497,7 @@
                             nome: p.nome || 'Sem Nome',
                             desc: p.descricao || '', 
                             preco: precoFinal, 
-                            tamanhos: tamanhosArray, 
+                            variacoes: tamanhosArray, 
                             visivel: true
                         });
                     } catch (itemErr) {}
@@ -682,7 +675,7 @@
             }
         }
 
-        function formatCurrency(val) { return parseFloat(val).toFixed(2); }
+        function formatCurrency(val) { return parseFloat(val || 0).toFixed(2); }
 
         function renderTable() {
             const tbody = document.getElementById('data-table-body');
@@ -693,10 +686,9 @@
             appState.data.forEach((cat, catIndex) => {
                 tbody.innerHTML += `<tr class="bg-slate-100/70"><td colspan="3" class="px-3 py-1.5 text-[10px] font-bold text-slate-700 uppercase">${cat.categoria}</td></tr>`;
                 cat.itens.forEach((item, itemIndex) => {
-                    // Trata as exibições dos preços na tabela
                     let displayPreco = `R$ ${formatCurrency(item.preco)}`;
-                    if(item.tamanhos && item.tamanhos.length > 0) {
-                        displayPreco = item.tamanhos.map(t => `<div class="whitespace-nowrap"><span class="text-[9px] uppercase text-slate-500 mr-1">${t.nome}</span>R$ ${formatCurrency(t.preco)}</div>`).join('');
+                    if(item.variacoes && item.variacoes.length > 0) {
+                        displayPreco = item.variacoes.map(t => `<div class="whitespace-nowrap"><span class="text-[9px] uppercase text-slate-500 mr-1">${t.nome}</span>R$ ${formatCurrency(t.preco)}</div>`).join('');
                     }
 
                     const tr = document.createElement('tr');
@@ -757,13 +749,13 @@
             if (appState.layout === 1) {
                 html += `<div class="max-w-2xl mx-auto space-y-7">`;
                 filteredData.forEach(cat => {
-                    html += `<div class="avoid-break"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-4 border-b pb-1 font-title">${cat.categoria}</h2><div class="space-y-3.5">`;
+                    html += `<div class="avoid-break"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 border-b pb-1 font-title">${cat.categoria}</h2><div class="space-y-4">`;
                     cat.itens.forEach(item => { 
-                        let pDisplay = `R$&nbsp;${formatCurrency(item.preco)}`;
-                        if(item.tamanhos && item.tamanhos.length > 0) {
-                            pDisplay = item.tamanhos.map(t => `<span style="font-size: 0.65rem; font-family: sans-serif; opacity: 0.8; text-transform: uppercase; margin-right: 4px;">${t.nome}</span>R$&nbsp;${formatCurrency(t.preco)}`).join(' &nbsp;&nbsp;&nbsp; ');
+                        let pDisplay = `<span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(item.preco)}</span>`;
+                        if(item.variacoes && item.variacoes.length > 0) {
+                            pDisplay = `<div class="flex flex-col items-end gap-1">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.55rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 8px; font-weight:bold; letter-spacing: 0.5px;">${t.nome}</span><span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
                         }
-                        html += `<div class="avoid-break"><div class="l1-item-row"><span class="font-bold text-base font-title">${item.nome}</span><div class="l1-dots"></div><span class="font-bold font-mono text-sm text-right leading-tight">${pDisplay}</span></div><p class="text-xs italic opacity-75" style="padding-right: 50px;">${item.desc}</p></div>`; 
+                        html += `<div class="avoid-break"><div class="flex items-baseline justify-between mb-1"><h3 class="font-bold text-base font-title m-0 p-0">${item.nome}</h3><div class="l1-dots"></div><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-xs italic opacity-75 max-w-[85%] leading-snug">${item.desc}</p></div>`; 
                     });
                     html += `</div></div>`;
                 });
@@ -773,24 +765,24 @@
                 filteredData.forEach(cat => {
                     html += `<div class="col-span-2 text-center mt-2 mb-1 border-y border-dashed py-1 avoid-break" style="border-color: rgba(0,0,0,0.1);"><h2 class="text-base font-bold uppercase tracking-widest font-title" style="color: var(--color-secondary);">${cat.categoria}</h2></div>`;
                     cat.itens.forEach(item => { 
-                        let pDisplay = `R$&nbsp;${formatCurrency(item.preco)}`;
-                        if(item.tamanhos && item.tamanhos.length > 0) {
-                            pDisplay = item.tamanhos.map(t => `<span style="font-size: 0.6rem; font-family: sans-serif; opacity: 0.8; text-transform: uppercase; margin-right: 3px;">${t.nome}</span>R$&nbsp;${formatCurrency(t.preco)}`).join('<br>');
+                        let pDisplay = `<span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(item.preco)}</span>`;
+                        if(item.variacoes && item.variacoes.length > 0) {
+                            pDisplay = `<div class="flex flex-col items-end gap-0.5 mt-0.5">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 6px; font-weight:bold;">${t.nome}</span><span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
                         }
-                        html += `<div class="avoid-break p-3 rounded-lg shadow-sm border" style="background-color: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05);"><div class="flex justify-between items-start mb-1"><span class="font-bold text-sm font-title pr-2">${item.nome}</span><span class="font-bold font-mono text-xs text-right leading-tight">${pDisplay}</span></div><p class="text-[11px] opacity-80 leading-snug">${item.desc}</p></div>`; 
+                        html += `<div class="avoid-break p-3 rounded-lg shadow-sm border" style="background-color: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05);"><div class="flex justify-between items-start mb-1.5"><h3 class="font-bold text-sm font-title pr-2 m-0 leading-tight">${item.nome}</h3><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-[11px] opacity-80 leading-snug">${item.desc}</p></div>`; 
                     });
                 });
                 html += `</div>`;
             } else if (appState.layout === 3) {
                 html += `<div class="columns-2 gap-6 space-y-6">`;
                 filteredData.forEach(cat => {
-                    html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-3 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>`;
+                    html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-4 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>`;
                     cat.itens.forEach(item => { 
                         let pDisplay = `<span class="l3-price-badge font-mono">R$&nbsp;${formatCurrency(item.preco)}</span>`;
-                        if(item.tamanhos && item.tamanhos.length > 0) {
-                            pDisplay = item.tamanhos.map(t => `<span class="l3-price-badge font-mono"><span style="font-size: 0.5rem; text-transform: uppercase; opacity: 0.8; margin-right: 4px;">${t.nome}</span>R$&nbsp;${formatCurrency(t.preco)}</span>`).join('');
+                        if(item.variacoes && item.variacoes.length > 0) {
+                            pDisplay = `<div class="flex flex-col items-end gap-1 mt-1">` + item.variacoes.map(t => `<div class="l3-price-badge whitespace-nowrap"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.9; text-transform: uppercase; margin-right: 6px;">${t.nome}</span><span class="font-mono">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
                         }
-                        html += `<div class="l3-card avoid-break"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-xs font-title pr-1">${item.nome}</h3><div class="flex flex-col gap-1 items-end">${pDisplay}</div></div><p class="text-[10px] leading-tight opacity-75 mt-1">${item.desc}</p></div>`; 
+                        html += `<div class="l3-card avoid-break"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-sm font-title pr-2 m-0">${item.nome}</h3><div class="flex-shrink-0 ml-2">${pDisplay}</div></div><p class="text-[10px] leading-tight opacity-75 mt-1.5 w-4/5">${item.desc}</p></div>`; 
                     });
                     html += `</div>`;
                 });
@@ -833,10 +825,9 @@
         #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
         #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
         .avoid-break { page-break-inside: avoid; break-inside: avoid; }
-        .l1-item-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.4rem; }
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
-        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.5rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block; }
+        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
         .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
         .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
         @page { size: A4 portrait; margin: 0mm; }

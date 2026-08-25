@@ -181,7 +181,7 @@
 
                 const configFake = {
                     nome_empresa: "Empresa (Fallback)",
-                    segmento: "restaurante",
+                    segmento: segmentoAtual,
                     modulos: {
                         kanban: true,
                         profissionais: false,
@@ -244,8 +244,13 @@
 
                 if (!response.ok) throw new Error();
 
+                // Atualiza o estado local imediatamente
                 segmentoAtual = novoSegmento;
-                await buscarConfiguracoesDaEmpresa();
+                
+                // Aguarda meio segundo para garantir persistência no Supabase e recarrega
+                setTimeout(async () => {
+                    await buscarConfiguracoesDaEmpresa();
+                }, 500);
 
             } catch (err) {
                 alert("Erro ao alterar o perfil do negócio no servidor.");

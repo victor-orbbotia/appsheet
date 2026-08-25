@@ -25,7 +25,7 @@
         
         <!-- BOTÃO VOLTAR -->
         <div>
-            <a href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+            <a id="link-voltar" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -37,7 +37,7 @@
             <div class="flex justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50">
                 <div>
                     <h1 class="text-lg font-semibold text-slate-800">Base de Conhecimento (IA / Agentes)</h1>
-                    <p class="text-xs text-slate-500 mt-1">Preencha com afirmações curtas e diretas sobre o negócio.</p>
+                    <p id="badge-segmento" class="text-xs font-bold text-indigo-600 uppercase tracking-wide mt-1">Segmento: Carregando...</p>
                 </div>
                 <button type="button" id="btnSalvar" onclick="salvarConhecimento()" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
                     Salvar Informações
@@ -60,7 +60,13 @@
         const urlAcao  = 'https://n8n.orbbotia.com/webhook/conhecimento-acao';
         
         let globalAccountId = null;
+        let segmentoAtual = 'institucional'; // Valor padrão de fallback
         let handshakeInterval;
+
+        // PARÂMETROS DA URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
 
         // CONTADOR DE CARACTERES
         const textArea = document.getElementById('texto_base');
@@ -81,7 +87,7 @@
 
             if (eventData.event === 'appContext' && eventData.data) {
                 clearInterval(handshakeInterval);
-                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id);
+                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id) || globalAccountId;
                 iniciarApp();
             }
         });
@@ -100,13 +106,19 @@
         function iniciarApp() {
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
+            
+            // Injeta o account_id e o segmento no link de voltar
+            document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
+            document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
+
             carregarDados();
         }
 
         // PUXAR DADOS (GET)
         async function carregarDados() {
             try {
-                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
+                // Adicionado &segmento na requisição GET
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}&segmento=${segmentoAtual}`);
                 if (res.ok) {
                     const dados = await res.json();
                     if (dados && dados.length > 0) {
@@ -129,6 +141,7 @@
 
             const payload = {
                 account_id: globalAccountId.toString(),
+                segmento: segmentoAtual, // Adicionado segmento no body do POST
                 texto_base: texto
             };
 

@@ -25,17 +25,30 @@
 
 <body class="flex flex-col h-screen p-4 md:p-8">
 
-    <!-- CABEÇALHO -->
+    <!-- CABEÇALHO COM SELETOR DE SEGMENTO -->
     <header
-        class="max-w-5xl mx-auto w-full flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        class="max-w-5xl mx-auto w-full flex flex-wrap gap-4 justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
             <h1 class="text-xl font-bold text-slate-800">Orbbotia Pro <span class="text-indigo-600">Workspace</span>
             </h1>
             <p id="nome-empresa" class="text-sm text-slate-500 font-medium">Carregando dados da empresa...</p>
         </div>
-        <div
-            class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
-            🏢
+
+        <div class="flex items-center gap-3">
+            <!-- SELETOR DE SEGMENTO DA CONTA -->
+            <div class="flex flex-col items-end">
+                <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil do Negócio</label>
+                <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer">
+                    <option value="restaurante">🍔 Restaurante / Delivery</option>
+                    <option value="institucional">🏢 Institucional / Geral</option>
+                    <option value="clinica">🩺 Clínica / Saúde & Beleza</option>
+                </select>
+            </div>
+
+            <div
+                class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shrink-0">
+                🏢
+            </div>
         </div>
     </header>
 
@@ -60,8 +73,7 @@
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
             <div class="text-3xl mb-4">📊</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Funil Kanban</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Gerencie atendimentos, prioridades e acompanhe as vendas
-                em tempo real.</p>
+            <p class="text-sm text-slate-500 leading-relaxed">Gerencie atendimentos, prioridades e acompanhe as conversas em tempo real.</p>
         </a>
 
         <!-- MÓDULO 2: PROFISSIONAIS -->
@@ -69,8 +81,7 @@
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
             <div class="text-3xl mb-4">🩺</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou corretores e controle
-                quem está ativo.</p>
+            <p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou especialistas e controle quem está ativo.</p>
         </a>
 
         <!-- MÓDULO 3: PRODUTOS / CARDÁPIO -->
@@ -78,8 +89,7 @@
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
             <div class="text-3xl mb-4">🍔</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas
-                estruturadas.</p>
+            <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas estruturadas.</p>
         </a>
 
         <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
@@ -87,8 +97,7 @@
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
             <div class="text-3xl mb-4">🧠</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras e informações gerais do seu
-                negócio.</p>
+            <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras, FAQ e informações gerais do seu negócio.</p>
         </a>
 
         <!-- MÓDULO 5: PEDIDOS / DELIVERY -->
@@ -96,8 +105,7 @@
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
             <div class="text-3xl mb-4">📦</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de
-                comprovantes PIX em tempo real.</p>
+            <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de comprovantes PIX em tempo real.</p>
         </a>
 
         <!-- MÓDULO 6: CONFIGURAÇÕES DA EMPRESA E IA -->
@@ -111,11 +119,13 @@
     </main>
 
     <script>
-        // Webhook do n8n que vai dizer quais módulos essa conta possui
+        // Webhooks do n8n
         const urlConfig = 'https://n8n.orbbotia.com/webhook/empresa-config';
+        const urlConfigSalvar = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
 
         let globalAccountId = null;
         let handshakeInterval;
+        let segmentoAtual = 'restaurante';
 
         // Captura account_id via URL se fornecido diretamente
         const urlParams = new URLSearchParams(window.location.search);
@@ -138,7 +148,7 @@
             if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Modo Teste Local / Fallback de tempo
+        // Modo Teste Local
         setTimeout(() => {
             if (!globalAccountId) {
                 globalAccountId = '3';
@@ -146,22 +156,22 @@
             }
         }, 2000);
 
-        // 2. Busca as Feature Flags no n8n
+        // 2. Busca as Feature Flags e o Segmento no n8n
         async function buscarConfiguracoesDaEmpresa() {
             try {
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
-
                 if (!res.ok) throw new Error("Erro ao buscar configurações");
 
                 let rawConfig = await res.json();
-
-                // TRATAMENTO DA RESPOSTA:
-                // Caso o n8n retorne uma Array ex: [{...}]
                 const config = Array.isArray(rawConfig) ? rawConfig[0] : rawConfig;
 
-                // Caso a propriedade 'modulos' seja uma String JSON vinda do banco de dados
                 if (typeof config.modulos === 'string') {
                     config.modulos = JSON.parse(config.modulos);
+                }
+
+                if (config.segmento) {
+                    segmentoAtual = config.segmento;
+                    document.getElementById('seletor-segmento').value = config.segmento;
                 }
 
                 aplicarModulos(config);
@@ -169,12 +179,12 @@
             } catch (error) {
                 console.error("Falha ao puxar config, usando fallback padrão.", error);
 
-                // FALLBACK: Utilizado se a requisição falhar
                 const configFake = {
                     nome_empresa: "Empresa (Fallback)",
+                    segmento: "restaurante",
                     modulos: {
                         kanban: true,
-                        profissionais: true,
+                        profissionais: false,
                         produtos: true,
                         conhecimento: true,
                         pedidos: true,
@@ -185,42 +195,64 @@
             }
         }
 
-        // 3. Exibe ou esconde os botões na tela e atualiza os links com o Account ID
+        // 3. Exibe/oculta os botões e injeta o segmento e account_id nos links
         function aplicarModulos(config) {
-            // Atualiza o nome da empresa no topo
             document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta Chatwoot ID: ${globalAccountId}`;
 
-            // Injeta o account_id nos links de destino dos módulos
-            document.getElementById('mod-kanban').href = `kanban-chatwoot/index.html?account_id=${globalAccountId}`;
-            document.getElementById('mod-profissionais').href = `profissionais/novo.html?account_id=${globalAccountId}`;
-            document.getElementById('mod-produtos').href = `produtos/novo.html?account_id=${globalAccountId}`;
-            document.getElementById('mod-conhecimento').href = `conhecimento/novo.html?account_id=${globalAccountId}`;
-            document.getElementById('mod-pedidos').href = `pedidos/index.html?account_id=${globalAccountId}`;
-            document.getElementById('mod-configuracoes').href = `configuracoes/index.html?account_id=${globalAccountId}`;
+            // Injeta parâmetros nas URLs de destino
+            const params = `account_id=${globalAccountId}&segmento=${segmentoAtual}`;
+            document.getElementById('mod-kanban').href = `kanban-chatwoot/index.html?${params}`;
+            document.getElementById('mod-profissionais').href = `profissionais/novo.html?${params}`;
+            document.getElementById('mod-produtos').href = `produtos/novo.html?${params}`;
+            document.getElementById('mod-conhecimento').href = `conhecimento/novo.html?${params}`;
+            document.getElementById('mod-pedidos').href = `pedidos/index.html?${params}`;
+            document.getElementById('mod-configuracoes').href = `configuracoes/index.html?${params}`;
 
-            // Lógica de exibição com remoção da classe 'hidden'
-            if (config.modulos && config.modulos.kanban) {
-                document.getElementById('mod-kanban').classList.remove('hidden');
-            }
-            if (config.modulos && config.modulos.profissionais) {
-                document.getElementById('mod-profissionais').classList.remove('hidden');
-            }
-            if (config.modulos && config.modulos.produtos) {
-                document.getElementById('mod-produtos').classList.remove('hidden');
-            }
-            if (config.modulos && config.modulos.conhecimento) {
-                document.getElementById('mod-conhecimento').classList.remove('hidden');
-            }
-            if (config.modulos && config.modulos.pedidos) {
-                document.getElementById('mod-pedidos').classList.remove('hidden');
-            }
-            if (config.modulos && config.modulos.configuracoes !== false) {
-                document.getElementById('mod-configuracoes').classList.remove('hidden');
+            // Esconde todos os cards antes de aplicar a nova regra
+            const cards = document.querySelectorAll('.card-modulo');
+            cards.forEach(c => c.classList.add('hidden'));
+
+            // Aplica visibilidade baseada nos módulos retornados
+            if (config.modulos) {
+                if (config.modulos.kanban) document.getElementById('mod-kanban').classList.remove('hidden');
+                if (config.modulos.profissionais) document.getElementById('mod-profissionais').classList.remove('hidden');
+                if (config.modulos.produtos) document.getElementById('mod-produtos').classList.remove('hidden');
+                if (config.modulos.conhecimento) document.getElementById('mod-conhecimento').classList.remove('hidden');
+                if (config.modulos.pedidos) document.getElementById('mod-pedidos').classList.remove('hidden');
+                if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
             }
 
-            // Esconde o ícone de Loading e mostra a Grade
+            // Transiciona da tela de loading para os módulos
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');
+        }
+
+        // 4. Troca o segmento ativo da conta em tempo real
+        async function alterarSegmentoEmpresa(novoSegmento) {
+            document.getElementById('area-modulos').classList.add('hidden');
+            document.getElementById('area-loading').classList.remove('hidden');
+
+            try {
+                const response = await fetch(urlConfigSalvar, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account_id: globalAccountId.toString(),
+                        segmento: novoSegmento
+                    })
+                });
+
+                if (!response.ok) throw new Error();
+
+                segmentoAtual = novoSegmento;
+                await buscarConfiguracoesDaEmpresa();
+
+            } catch (err) {
+                alert("Erro ao alterar o perfil do negócio no servidor.");
+                document.getElementById('seletor-segmento').value = segmentoAtual;
+                document.getElementById('area-loading').classList.add('hidden');
+                document.getElementById('area-modulos').classList.remove('hidden');
+            }
         }
     </script>
 </body>

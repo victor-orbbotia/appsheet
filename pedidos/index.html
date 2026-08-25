@@ -35,14 +35,17 @@
         <!-- Cabeçalho -->
         <div class="flex items-center justify-between gap-3 flex-wrap bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
             <div class="flex items-center gap-3">
-                <a href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+                <a id="link-voltar" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     Menu
                 </a>
                 <span class="text-slate-300">|</span>
-                <h1 class="text-base font-bold text-slate-800">📦 Gestão de Pedidos</h1>
+                <div>
+                    <h1 class="text-base font-bold text-slate-800">📦 Gestão de Pedidos</h1>
+                    <p id="badge-segmento" class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">Segmento: Carregando...</p>
+                </div>
             </div>
 
             <div class="flex items-center gap-2">
@@ -134,8 +137,14 @@
         const urlAcao = 'https://n8n.orbbotia.com/webhook/pedidos-acao';
 
         let globalAccountId = null;
+        let segmentoAtual = 'restaurante'; // Valor padrão
         let handshakeInterval;
         let listaPedidos = [];
+
+        // Captura Parâmetros da URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
 
         // Inicializa data de hoje
         document.getElementById('filtroData').value = new Date().toISOString().split('T')[0];
@@ -156,11 +165,6 @@
         /* =============================================
            INICIALIZAÇÃO & CONEXÃO CHATWOOT
         ============================================= */
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('account_id')) {
-            globalAccountId = urlParams.get('account_id');
-        }
-
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { 
@@ -189,6 +193,8 @@
         function iniciarApp() {
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
+            document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
             carregarPedidos();
         }
 
@@ -245,7 +251,8 @@
             const accountIdFinal = globalAccountId || '3';
 
             try {
-                const endpoint = `${urlDados}?account_id=${accountIdFinal}&data_filtro=${dataSelecionada}`;
+                // Passando account_id, segmento e data_filtro na requisição
+                const endpoint = `${urlDados}?account_id=${accountIdFinal}&segmento=${segmentoAtual}&data_filtro=${dataSelecionada}`;
                 const res = await fetch(endpoint);
                 if (!res.ok) throw new Error('Erro ao buscar pedidos');
                 
@@ -271,9 +278,10 @@
                 document.getElementById(`count-${s}`).textContent = '0';
             });
 
+            // Filtro para eliminar itens inexistentes ou objetos vazios enviados pelo n8n ({})
             const pedidosAtivos = listaPedidos.filter(item => {
                 const p = item.json ? item.json : item;
-                return p.deletado !== true;
+                return p && p.id && p.deletado !== true;
             });
 
             const contagens = Object.fromEntries(colunas.map(s => [s, 0]));
@@ -301,7 +309,7 @@
             colunas.forEach(status => {
                 if (contagens[status] === 0) {
                     document.getElementById(`col-${status}`).innerHTML = `
-                        <div class="flex items-center justify-center py-8 border-2 border-dashed border-slate-200 rounded-xl text-slate-300 text-xs font-medium">
+                        <div class="flex items-center justify-center p-4 border border-dashed border-slate-200 bg-slate-50/50 rounded-xl text-slate-400 text-xs font-medium">
                             Nenhum pedido
                         </div>
                     `;
@@ -380,11 +388,8 @@
            AÇÕES COM GARANTIA DE ENVIO DE CONVERSA_ID
         ============================================= */
         async function moverStatus(id, novoStatus, btn) {
-            // Busca o pedido garantindo compatibilidade com item.json ou item simples
             const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             const p = item ? (item.json ? item.json : item) : {};
-
-            // Resgata o conversa_id sem deixar virar undefined
             const conversaId = p.conversa_id || p.conversaId || null;
 
             const payload = { 
@@ -406,7 +411,6 @@
             if (!confirm('Confirmar cancelamento do pedido?')) return;
             const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             const p = item ? (item.json ? item.json : item) : {};
-
             const conversaId = p.conversa_id || p.conversaId || null;
 
             const payload = { 
@@ -462,4 +466,5 @@
         }
     </script>
 </body>
+
 </html>

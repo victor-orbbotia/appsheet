@@ -54,8 +54,12 @@
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
-        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
-        .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        
+        /* NOVO GRID DE DESTAQUES (Mantém dimensões estritas 16:9 independentemente de quantidade) */
+        .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -154,7 +158,22 @@
                 <div class="bg-slate-900 p-4 rounded-xl shadow-md text-white space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-amber-400"><i class="fa-solid fa-star"></i> Destaques do Chef</h2>
-                        <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">Máx 3</span>
+                        <div class="flex items-center gap-2">
+                            <!-- TOOLTIP ADICIONADO AQUI -->
+                            <div class="group relative flex items-center">
+                                <i class="fa-solid fa-circle-info text-slate-400 hover:text-amber-400 cursor-help transition-colors text-sm"></i>
+                                <div class="absolute right-0 bottom-full mb-2 hidden group-hover:block w-48 bg-slate-800 border border-slate-600 text-white text-[10px] p-2.5 rounded shadow-xl z-50">
+                                    <p class="font-bold text-amber-400 mb-1 border-b border-slate-600 pb-1">Formato da Foto</p>
+                                    <ul class="space-y-1 mt-1 text-slate-200">
+                                        <li><b>Proporção:</b> 16:9 (ou 2:1)</li>
+                                        <li><b>Recomendado:</b> 1200x675px</li>
+                                        <li><b>Mínimo:</b> 800x450px</li>
+                                        <li><b>Arquivo:</b> .WEBP ou .JPG</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">Máx 3</span>
+                        </div>
                     </div>
                     <div id="destaques-list" class="space-y-3"></div>
                     <button onclick="addDestaque()" id="btn-add-destaque" class="w-full mt-2 bg-white/10 hover:bg-white/20 border border-white/20 border-dashed rounded-lg py-2.5 text-xs font-bold transition-colors flex items-center justify-center gap-1.5">
@@ -233,7 +252,6 @@
             <button onclick="toggleMobilePreview()" class="bg-slate-900 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <!-- BOTÃO MOBILE -->
             <button id="btn-export-mobile" onclick="exportPDF()" class="bg-indigo-600 text-white px-4 h-10 rounded-full shadow-lg flex items-center justify-center pointer-events-auto text-xs font-bold gap-2">
                 <i class="fa-solid fa-paper-plane"></i> Enviar PDF
             </button>
@@ -485,7 +503,6 @@
                         let tamanhosArray = null;
                         let precoFinal = parseFloat(p.preco_base) || 0;
 
-                        // Verifica nova estrutura (variacoes) e a antiga (tamanhos) para compatibilidade
                         const listaOpcoes = meta?.variacoes || meta?.tamanhos;
                         if (Array.isArray(listaOpcoes) && listaOpcoes.length > 0) {
                             tamanhosArray = listaOpcoes;
@@ -614,7 +631,7 @@
         function addDestaque() {
             if (appState.carrosChefe.length >= 3) return alert("Máximo 3 destaques no topo.");
             saveStateToHistory();
-            appState.carrosChefe.push({ id: "c_" + Date.now(), imgBase64: "https://placehold.co/400x300/111827/FFFFFF?text=Adicione+Foto", nome: "Prato", desc: "Descrição", preco: 0 });
+            appState.carrosChefe.push({ id: "c_" + Date.now(), imgBase64: "https://placehold.co/1200x675/111827/FFFFFF?text=16:9+Adicione+Foto", nome: "Prato", desc: "Descrição", preco: 0 });
             renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
         }
 
@@ -656,9 +673,9 @@
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    canvas.width = 500; canvas.height = img.height * (500 / img.width);
+                    canvas.width = 1200; canvas.height = img.height * (1200 / img.width);
                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    updateDestaque(id, 'imgBase64', canvas.toDataURL('image/jpeg', 0.8));
+                    updateDestaque(id, 'imgBase64', canvas.toDataURL('image/jpeg', 0.85));
                 }
                 img.src = e.target.result;
             }
@@ -828,8 +845,11 @@
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
-        .destaques-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.85rem; margin-bottom: 1.5rem; }
-        .destaque-card img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        
+        .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        
         @page { size: A4 portrait; margin: 0mm; }
     </style>
 </head>

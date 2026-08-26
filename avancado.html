@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações Avançadas — Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+
+<body class="p-4 md:p-6 min-h-screen flex flex-col">
+
+    <!-- Tela de Carregamento Inicial -->
+    <div id="loading-screen" class="flex-1 flex flex-col items-center justify-center fade-in">
+        <i class="fa-solid fa-shield-halved text-4xl text-slate-300 mb-3 animate-pulse"></i>
+        <p class="text-sm font-bold text-slate-500 uppercase tracking-widest">Verificando Credenciais...</p>
+    </div>
+
+    <!-- Tela de Acesso Negado (Apenas Agentes) -->
+    <div id="denied-screen" class="hidden flex-1 flex flex-col items-center justify-center fade-in text-center px-4">
+        <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mb-4 border border-rose-100">
+            <i class="fa-solid fa-lock text-3xl text-rose-500"></i>
+        </div>
+        <h1 class="text-xl font-bold text-slate-800 mb-2">Acesso Restrito</h1>
+        <p class="text-sm text-slate-500 max-w-md mb-6">Você não tem permissão para visualizar esta página. Apenas usuários com cargo de <b>Administrador</b> podem acessar as configurações avançadas do sistema.</p>
+        <a href="../index.html" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-lg transition-colors shadow-sm">
+            Voltar ao Início
+        </a>
+    </div>
+
+    <!-- Tela Principal (Apenas Administradores) -->
+    <div id="admin-screen" class="hidden max-w-4xl mx-auto w-full fade-in space-y-6">
+        
+        <!-- Header -->
+        <div>
+            <a href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-4">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Voltar ao Menu Principal
+            </a>
+            <div class="flex items-center justify-between bg-slate-900 rounded-xl p-5 md:p-6 text-white shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <h1 class="text-xl font-black uppercase tracking-wider mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-gears text-indigo-400"></i> Avançado
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Controle de sistema e integrações (Nível Admin)</p>
+                </div>
+                <div class="relative z-10 text-right">
+                    <span id="badge-admin-name" class="block text-sm font-bold text-indigo-300">Olá, Admin</span>
+                    <span id="badge-account" class="text-[10px] font-mono text-slate-500">ID: ...</span>
+                </div>
+                <!-- Detalhe visual de fundo -->
+                <i class="fa-solid fa-shield-halved absolute -right-4 -bottom-8 text-8xl opacity-5 text-white pointer-events-none"></i>
+            </div>
+        </div>
+
+        <!-- Grid de Configurações -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- Card 1: Webhooks -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-plug"></i></div>
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Integrações API</h2>
+                </div>
+                <p class="text-xs text-slate-500 mb-4 line-clamp-2">Gerencie chaves de API e conexões externas para este segmento.</p>
+                <button class="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors">
+                    Configurar Chaves
+                </button>
+            </div>
+
+            <!-- Card 2: Zerar Banco de Dados -->
+            <div class="bg-white p-5 rounded-xl border border-rose-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Zona de Perigo</h2>
+                </div>
+                <p class="text-xs text-slate-500 mb-4 line-clamp-2">Limpe o histórico de conversas da IA ou resete os apontamentos do banco de dados.</p>
+                <button onclick="confirmarReset()" class="w-full py-2 bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold rounded-lg transition-colors">
+                    Resetar Histórico
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let globalAccountId = null;
+        let segmentoAtual = 'restaurante'; 
+        let handshakeInterval;
+        let currentUser = null;
+
+        // Captura Parâmetros Iniciais
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
+
+        // Escuta o Chatwoot
+        window.addEventListener('message', function (event) {
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                
+                const payload = eventData.data;
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
+                
+                // Captura o usuário atual
+                if (payload.current_user) {
+                    currentUser = payload.current_user;
+                }
+
+                verificarPermissoes();
+            }
+        });
+
+        // Solicita os dados ao Chatwoot caso demore
+        handshakeInterval = setInterval(() => {
+            window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+        }, 500);
+
+        // Fallback para testes fora do Chatwoot (Remover em produção se desejar restrição total)
+        setTimeout(() => {
+            if (!currentUser) {
+                console.warn("Fora do iframe do Chatwoot. Simulando Admin para testes.");
+                globalAccountId = globalAccountId || '3';
+                currentUser = { name: 'Dev Local', role: 'administrator' };
+                verificarPermissoes();
+            }
+        }, 2000);
+
+        function verificarPermissoes() {
+            document.getElementById('loading-screen').classList.add('hidden');
+
+            // Verifica se a 'role' do usuário é administrador
+            if (currentUser && currentUser.role === 'administrator') {
+                concederAcesso();
+            } else {
+                negarAcesso();
+            }
+        }
+
+        function concederAcesso() {
+            document.getElementById('denied-screen').classList.add('hidden');
+            document.getElementById('admin-screen').classList.remove('hidden');
+            
+            document.getElementById('badge-account').innerText = `Account ID: ${globalAccountId}`;
+            document.getElementById('badge-admin-name').innerText = `Olá, ${currentUser.name.split(' ')[0]}`;
+        }
+
+        function negarAcesso() {
+            document.getElementById('admin-screen').classList.add('hidden');
+            document.getElementById('denied-screen').classList.remove('hidden');
+        }
+
+        function confirmarReset() {
+            const senha = prompt("Atenção! Esta ação é irreversível. Digite 'CONFIRMAR' para continuar:");
+            if (senha === 'CONFIRMAR') {
+                alert("Acione aqui o Webhook do n8n para limpar o banco!");
+                // fetch('url-do-seu-n8n/resetar', { method: 'POST' ... })
+            } else if (senha !== null) {
+                alert("Ação cancelada. Palavra-chave incorreta.");
+            }
+        }
+    </script>
+</body>
+</html>

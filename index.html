@@ -4,66 +4,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Sistema</title>
+    <title>Orbbotia Workspace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f1f5f9; font-family: system-ui, sans-serif; }
-        .card-modulo { transition: all 0.2s ease; }
-        .card-modulo:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body {
+            background-color: #f1f5f9;
+            font-family: system-ui, sans-serif;
+        }
+
+        .card-modulo {
+            transition: all 0.2s ease;
+        }
+
+        .card-modulo:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 
 <body class="flex flex-col h-screen p-4 md:p-8">
 
-    <!-- SUPER RAIO-X: APAGA DEPOIS QUE DESCOBRIRMOS -->
-    <div class="max-w-5xl mx-auto w-full mb-4 bg-slate-900 rounded-lg p-3 border border-slate-700 shadow-xl hidden" id="box-debug">
-        <p class="text-xs font-bold text-emerald-400 mb-1">🔍 DIAGNÓSTICO DO CHATWOOT (Copie o texto abaixo e mande na nossa conversa):</p>
-        <textarea id="super-debug" class="w-full h-24 bg-slate-950 text-emerald-300 font-mono text-[10px] p-2 rounded border border-slate-800 outline-none" readonly>Aguardando...</textarea>
-    </div>
-
-    <!-- CABEÇALHO -->
-    <header id="main-header" class="max-w-5xl mx-auto w-full flex flex-wrap gap-4 justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
-        <div>
-            <h1 class="text-xl font-bold text-slate-800">Orbbotia Pro <span class="text-indigo-600">Workspace</span></h1>
-            <p id="nome-empresa" class="text-sm text-slate-500 font-medium">Carregando dados...</p>
-        </div>
+    <!-- CABEÇALHO ORBBOTIA -->
+    <header id="main-header"
+        class="max-w-5xl mx-auto w-full flex flex-wrap gap-4 justify-between items-center mb-8 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hidden fade-in">
         <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-black shadow-md shadow-indigo-100 shrink-0">
+                🚀
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">
+                    Orbbotia
+                </h1>
+                <p id="nome-empresa" class="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-1">
+                    Carregando empresa...
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- SELETOR DE SEGMENTO DA CONTA -->
             <div class="flex flex-col items-end">
-                <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil</label>
-                <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 outline-none cursor-pointer">
+                <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil do Negócio</label>
+                <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer">
                     <option value="restaurante">🍔 Restaurante / Delivery</option>
                     <option value="institucional">🏢 Institucional / Geral</option>
                     <option value="clinica">🩺 Clínica / Saúde & Beleza</option>
                 </select>
             </div>
-            <div class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shrink-0">🏢</div>
         </div>
     </header>
 
+    <!-- ÁREA DE LOADING -->
     <div id="area-loading" class="flex-grow flex flex-col items-center justify-center space-y-4">
-        <p class="text-sm font-semibold text-slate-500 tracking-wide uppercase">Carregando...</p>
-    </div>
-
-    <div id="area-restrito" class="flex-grow flex flex-col items-center justify-center space-y-4 hidden fade-in text-center px-4">
-        <h2 class="text-xl font-bold text-rose-600">Acesso Restrito</h2>
+        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-sm font-semibold text-slate-500 tracking-wide uppercase">Carregando Workspace...</p>
     </div>
 
     <!-- GRADE DE MÓDULOS -->
-    <main id="area-modulos" class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden fade-in">
-        <a href="kanban-chatwoot/index.html" id="mod-kanban" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300"><h2 class="text-lg font-bold text-slate-800 mb-1">Funil Kanban</h2></a>
-        <a href="profissionais/novo.html" id="mod-profissionais" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300"><h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2></a>
-        <a href="produtos/novo.html" id="mod-produtos" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300"><h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2></a>
-        <a href="conhecimento/novo.html" id="mod-conhecimento" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300"><h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2></a>
-        <a href="pedidos/index.html" id="mod-pedidos" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300"><h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2></a>
-        <a href="configuracoes/index.html" id="mod-configuracoes" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400"><h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2></a>
-        
-        <a href="configuracoes/avancado.html" id="mod-avancado" class="card-modulo hidden bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm hover:border-indigo-500">
-            <h2 class="text-lg font-bold text-indigo-300 mb-1 flex items-center gap-2">Avançado <span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-1.5 py-0.5 rounded font-mono">ADMIN</span></h2>
-            <p class="text-sm text-slate-400 leading-relaxed">Painel de Integração</p>
+    <main id="area-modulos"
+        class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden fade-in">
+
+        <!-- MÓDULO 1: KANBAN -->
+        <a href="kanban-chatwoot/index.html" id="mod-kanban"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
+            <div class="text-3xl mb-4">📊</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Funil Kanban</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Gerencie atendimentos, prioridades e acompanhe as conversas em tempo real.</p>
         </a>
+
+        <!-- MÓDULO 2: PROFISSIONAIS -->
+        <a href="profissionais/novo.html" id="mod-profissionais"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
+            <div class="text-3xl mb-4">🩺</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou especialistas e controle quem está ativo.</p>
+        </a>
+
+        <!-- MÓDULO 3: PRODUTOS / CARDÁPIO -->
+        <a href="produtos/novo.html" id="mod-produtos"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
+            <div class="text-3xl mb-4">🍔</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas estruturadas.</p>
+        </a>
+
+        <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
+        <a href="conhecimento/novo.html" id="mod-conhecimento"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
+            <div class="text-3xl mb-4">🧠</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras, FAQ e informações gerais do seu negócio.</p>
+        </a>
+
+        <!-- MÓDULO 5: PEDIDOS / DELIVERY -->
+        <a href="pedidos/index.html" id="mod-pedidos"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
+            <div class="text-3xl mb-4">📦</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de comprovantes PIX em tempo real.</p>
+        </a>
+
+        <!-- MÓDULO 6: CONFIGURAÇÕES DA EMPRESA -->
+        <a href="configuracoes/index.html" id="mod-configuracoes"
+            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
+            <div class="text-3xl mb-4">⚙️</div>
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2>
+            <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
+        </a>
+
+        <!-- MÓDULO 7: CONFIGURAÇÕES AVANÇADAS -->
+        <a href="configuracoes/avancado.html" id="mod-avancado"
+            class="card-modulo hidden bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm hover:border-indigo-500">
+            <div class="text-3xl mb-4">🛡️</div>
+            <h2 class="text-lg font-bold text-indigo-300 mb-1 flex items-center gap-2">
+                Avançado
+            </h2>
+            <p class="text-sm text-slate-400 leading-relaxed">Chaves de API, reset de banco de dados e funções avançadas.</p>
+        </a>
+
     </main>
 
     <script>
@@ -72,43 +141,40 @@
 
         let globalAccountId = null;
         let handshakeInterval;
-        let authTimeout;
         let segmentoAtual = 'restaurante';
 
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
+
+        // 1. Escuta Handshake do Chatwoot
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
             if (eventData.event === 'appContext' && eventData.data) {
                 clearInterval(handshakeInterval);
-                clearTimeout(authTimeout);
-
                 const payload = eventData.data;
-                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
                 
-                // IMPRIME O PAYLOAD INTEIRO NO RAIO-X
-                document.getElementById('box-debug').classList.remove('hidden');
-                document.getElementById('super-debug').value = JSON.stringify(payload, null, 2);
-
-                if (globalAccountId) {
-                    buscarConfiguracoesDaEmpresa(payload);
-                }
+                buscarConfiguracoesDaEmpresa();
             }
         });
 
         handshakeInterval = setInterval(() => {
-            window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        authTimeout = setTimeout(() => {
+        // Fallback para testes
+        setTimeout(() => {
             if (!globalAccountId) {
-                clearInterval(handshakeInterval);
-                document.getElementById('area-loading').classList.add('hidden');
-                document.getElementById('area-restrito').classList.remove('hidden');
+                globalAccountId = '3';
+                buscarConfiguracoesDaEmpresa();
             }
-        }, 5000);
+        }, 1500);
 
-        async function buscarConfiguracoesDaEmpresa(payloadChatwoot) {
+        // 2. Busca Configurações no n8n
+        async function buscarConfiguracoesDaEmpresa() {
             try {
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error("Erro");
@@ -119,15 +185,25 @@
                 if (typeof config.modulos === 'string') config.modulos = JSON.parse(config.modulos);
                 if (config.segmento) segmentoAtual = config.segmento;
 
-                aplicarModulos(config, payloadChatwoot);
+                aplicarModulos(config);
 
             } catch (error) {
-                // ...
+                const configFake = {
+                    nome_empresa: "Empresa Padrão",
+                    segmento: segmentoAtual,
+                    modulos: {
+                        kanban: false, profissionais: false, produtos: true,
+                        conhecimento: true, pedidos: true, configuracoes: true, avancado: true
+                    }
+                };
+                aplicarModulos(configFake);
             }
         }
 
-        function aplicarModulos(config, payload) {
-            document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta ID: ${globalAccountId}`;
+        // 3. Aplica os módulos na tela
+        function aplicarModulos(config) {
+            // Exibe o Nome da Empresa no cabeçalho
+            document.getElementById('nome-empresa').innerText = config.nome_empresa || `Empresa (ID: ${globalAccountId})`;
             document.getElementById('seletor-segmento').value = segmentoAtual;
 
             const params = `account_id=${globalAccountId}&segmento=${segmentoAtual}`;
@@ -149,19 +225,42 @@
                 if (config.modulos.conhecimento) document.getElementById('mod-conhecimento').classList.remove('hidden');
                 if (config.modulos.pedidos) document.getElementById('mod-pedidos').classList.remove('hidden');
                 if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
+                if (config.modulos.avancado !== false) document.getElementById('mod-avancado').classList.remove('hidden');
             }
-
-            // Exibe para TODO MUNDO provisoriamente só para você não ficar bloqueado enquanto diagnosticamos
-            document.getElementById('mod-avancado').classList.remove('hidden');
 
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('main-header').classList.remove('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');
         }
 
+        // 4. Alterar Segmento
         async function alterarSegmentoEmpresa(novoSegmento) {
-            // ...
+            document.getElementById('area-modulos').classList.add('hidden');
+            document.getElementById('main-header').classList.add('hidden');
+            document.getElementById('area-loading').classList.remove('hidden');
+
+            try {
+                await fetch(urlConfigSalvar, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: globalAccountId.toString(), segmento: novoSegmento })
+                });
+
+                segmentoAtual = novoSegmento;
+                
+                setTimeout(async () => {
+                    await buscarConfiguracoesDaEmpresa();
+                }, 500);
+
+            } catch (err) {
+                alert("Erro ao alterar o perfil do negócio.");
+                document.getElementById('seletor-segmento').value = segmentoAtual;
+                document.getElementById('area-loading').classList.add('hidden');
+                document.getElementById('main-header').classList.remove('hidden');
+                document.getElementById('area-modulos').classList.remove('hidden');
+            }
         }
     </script>
 </body>
+
 </html>

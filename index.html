@@ -152,8 +152,8 @@
                 const payload = eventData.data;
                 globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
                 
-                // Tenta capturar o usuário (algumas versões do Chatwoot usam 'user', outras 'current_user')
-                const user = payload.current_user || payload.user;
+                // Correção: Algumas versões do Chatwoot usam currentAgent em vez de current_user
+                const user = payload.currentAgent || payload.current_user || payload.user;
                 if (user) {
                     currentUser = user;
                 }
@@ -163,15 +163,14 @@
         });
 
         handshakeInterval = setInterval(() => {
-            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Fallback Local (Apenas para testes fora do Chatwoot)
+        // Fallback Local Corrigido (Ativa apenas se NÃO encontrou o usuário pelo Chatwoot)
         setTimeout(() => {
-            if (!globalAccountId) {
-                globalAccountId = '3';
-                // ATENÇÃO: Se for testar restrição no navegador, mude 'administrator' para 'agent' aqui
-                currentUser = currentUser || { name: 'Dev Local', role: 'administrator' };
+            if (!currentUser) {
+                globalAccountId = globalAccountId || '3';
+                currentUser = { name: 'Dev Local', role: 'administrator' };
                 buscarConfiguracoesDaEmpresa();
             }
         }, 2000);
@@ -241,15 +240,14 @@
                 if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
             }
 
-            // SEGURANÇA CORRIGIDA: Se não encontrar a role, o padrão é 'agent' (ACESSO NEGADO)
-            const userRole = (currentUser && currentUser.role) ? currentUser.role : 'agent';
+            // Exibe o Módulo Avançado se o usuário for Administrador
+            // Garantindo toLowerCase para evitar falhas com "Administrator" vs "administrator"
+            const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : 'agent';
             const moduloAvancadoAtivo = config.modulos ? config.modulos.avancado !== false : true;
 
-            // Só remove o 'hidden' se for EXATAMENTE administrador
             if (moduloAvancadoAtivo && (userRole === 'administrator' || userRole === 'admin')) {
                 document.getElementById('mod-avancado').classList.remove('hidden');
             } else {
-                // Força ocultar caso recarregue
                 document.getElementById('mod-avancado').classList.add('hidden');
             }
 

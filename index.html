@@ -21,14 +21,20 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 
 <body class="flex flex-col h-screen p-4 md:p-8">
 
     <!-- CABEÇALHO COM SELETOR DE SEGMENTO -->
-    <header
-        class="max-w-5xl mx-auto w-full flex flex-wrap gap-4 justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+    <header id="main-header"
+        class="max-w-5xl mx-auto w-full flex flex-wrap gap-4 justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-slate-200 hidden">
         <div>
             <h1 class="text-xl font-bold text-slate-800">Orbbotia Pro <span class="text-indigo-600">Workspace</span>
             </h1>
@@ -36,7 +42,6 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <!-- SELETOR DE SEGMENTO DA CONTA -->
             <div class="flex flex-col items-end">
                 <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil do Negócio</label>
                 <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer">
@@ -46,80 +51,73 @@
                 </select>
             </div>
 
-            <div
-                class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shrink-0">
+            <div class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shrink-0">
                 🏢
             </div>
         </div>
     </header>
 
-    <!-- ÁREA DE LOADING -->
+    <!-- ÁREA DE LOADING (Verificando Ambiente) -->
     <div id="area-loading" class="flex-grow flex flex-col items-center justify-center space-y-4">
-        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
+        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p class="text-sm font-semibold text-slate-500 tracking-wide uppercase">Autenticando Módulos...</p>
+        <p class="text-sm font-semibold text-slate-500 tracking-wide uppercase">Autenticando Chatwoot...</p>
+    </div>
+
+    <!-- TELA DE ACESSO NEGADO -->
+    <div id="area-restrito" class="flex-grow flex flex-col items-center justify-center space-y-4 hidden fade-in text-center px-4">
+        <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center border border-rose-200">
+            <i class="fa-solid fa-ban text-3xl text-rose-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800">Acesso Restrito</h2>
+        <p id="msg-restrito" class="text-sm text-slate-500 max-w-md">
+            Este painel só pode ser acessado por dentro da plataforma oficial. O ambiente atual é inválido ou a conexão expirou.
+        </p>
     </div>
 
     <!-- GRADE DE MÓDULOS -->
-    <main id="area-modulos"
-        class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden">
+    <main id="area-modulos" class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden fade-in">
 
-        <!-- MÓDULO 1: KANBAN -->
-        <a href="kanban-chatwoot/index.html" id="mod-kanban"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
+        <a href="kanban-chatwoot/index.html" id="mod-kanban" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
             <div class="text-3xl mb-4">📊</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Funil Kanban</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Gerencie atendimentos, prioridades e acompanhe as conversas em tempo real.</p>
         </a>
 
-        <!-- MÓDULO 2: PROFISSIONAIS -->
-        <a href="profissionais/novo.html" id="mod-profissionais"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
+        <a href="profissionais/novo.html" id="mod-profissionais" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
             <div class="text-3xl mb-4">🩺</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou especialistas e controle quem está ativo.</p>
         </a>
 
-        <!-- MÓDULO 3: PRODUTOS / CARDÁPIO -->
-        <a href="produtos/novo.html" id="mod-produtos"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
+        <a href="produtos/novo.html" id="mod-produtos" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
             <div class="text-3xl mb-4">🍔</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas estruturadas.</p>
         </a>
 
-        <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
-        <a href="conhecimento/novo.html" id="mod-conhecimento"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
+        <a href="conhecimento/novo.html" id="mod-conhecimento" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
             <div class="text-3xl mb-4">🧠</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras, FAQ e informações gerais do seu negócio.</p>
         </a>
 
-        <!-- MÓDULO 5: PEDIDOS / DELIVERY -->
-        <a href="pedidos/index.html" id="mod-pedidos"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
+        <a href="pedidos/index.html" id="mod-pedidos" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
             <div class="text-3xl mb-4">📦</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de comprovantes PIX em tempo real.</p>
         </a>
 
-        <!-- MÓDULO 6: CONFIGURAÇÕES DA EMPRESA -->
-        <a href="configuracoes/index.html" id="mod-configuracoes"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
+        <a href="configuracoes/index.html" id="mod-configuracoes" class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
             <div class="text-3xl mb-4">⚙️</div>
             <h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2>
             <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
         </a>
 
-        <!-- MÓDULO 7: CONFIGURAÇÕES AVANÇADAS (ADMIN) -->
-        <a href="configuracoes/avancado.html" id="mod-avancado"
-            class="card-modulo hidden bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm hover:border-indigo-500">
+        <!-- MÓDULO 7: CONFIGURAÇÕES AVANÇADAS (RESTRITO A ADMIN) -->
+        <a href="configuracoes/avancado.html" id="mod-avancado" class="card-modulo hidden bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm hover:border-indigo-500">
             <div class="text-3xl mb-4">🛡️</div>
             <h2 class="text-lg font-bold text-indigo-300 mb-1 flex items-center gap-2">
                 Avançado <span class="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-1.5 py-0.5 rounded font-mono">ADMIN</span>
@@ -135,47 +133,60 @@
 
         let globalAccountId = null;
         let handshakeInterval;
+        let authTimeout;
         let segmentoAtual = 'restaurante';
         let currentUser = null;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
-        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
-
-        // 1. Escuta Chatwoot
+        // 1. Escuta Rigorosa do Chatwoot
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
             if (eventData.event === 'appContext' && eventData.data) {
+                // Sucesso! Chatwoot respondeu.
                 clearInterval(handshakeInterval);
+                clearTimeout(authTimeout);
+
                 const payload = eventData.data;
-                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
                 
-                // Correção: Algumas versões do Chatwoot usam currentAgent em vez de current_user
+                // Mapeia o usuário dependendo da versão do Chatwoot
                 const user = payload.currentAgent || payload.current_user || payload.user;
                 if (user) {
                     currentUser = user;
                 }
 
-                buscarConfiguracoesDaEmpresa();
+                if (globalAccountId) {
+                    buscarConfiguracoesDaEmpresa();
+                } else {
+                    mostrarAcessoNegado("Não foi possível identificar a credencial da conta.");
+                }
             }
         });
 
+        // 2. Tenta forçar o Chatwoot a enviar o contexto a cada 500ms
         handshakeInterval = setInterval(() => {
             window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Fallback Local Corrigido (Ativa apenas se NÃO encontrou o usuário pelo Chatwoot)
-        setTimeout(() => {
-            if (!currentUser) {
-                globalAccountId = globalAccountId || '3';
-                currentUser = { name: 'Dev Local', role: 'administrator' };
-                buscarConfiguracoesDaEmpresa();
+        // 3. Timeout de Segurança (Bloqueia se abrir fora do Chatwoot após 5 segundos)
+        authTimeout = setTimeout(() => {
+            if (!globalAccountId) {
+                clearInterval(handshakeInterval);
+                mostrarAcessoNegado("Acesso restrito. Este painel deve ser aberto internamente pelo sistema oficial.");
             }
-        }, 2000);
+        }, 5000);
 
-        // 2. Busca Configurações no n8n
+        function mostrarAcessoNegado(mensagem) {
+            document.getElementById('area-loading').classList.add('hidden');
+            document.getElementById('area-modulos').classList.add('hidden');
+            document.getElementById('main-header').classList.add('hidden');
+            
+            document.getElementById('msg-restrito').innerText = mensagem;
+            document.getElementById('area-restrito').classList.remove('hidden');
+        }
+
+        // 4. Busca Configurações no n8n (Só roda se passar na verificação acima)
         async function buscarConfiguracoesDaEmpresa() {
             try {
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
@@ -197,27 +208,21 @@
 
             } catch (error) {
                 console.error("Falha ao puxar config, usando fallback padrão.", error);
-
                 const configFake = {
-                    nome_empresa: "Empresa (Fallback)",
+                    nome_empresa: "Empresa Config",
                     segmento: segmentoAtual,
                     modulos: {
-                        kanban: false,
-                        profissionais: false,
-                        produtos: true,
-                        conhecimento: true,
-                        pedidos: true,
-                        configuracoes: true,
-                        avancado: true
+                        kanban: false, profissionais: false, produtos: true,
+                        conhecimento: true, pedidos: true, configuracoes: true, avancado: false
                     }
                 };
                 aplicarModulos(configFake);
             }
         }
 
-        // 3. Aplica Visibilidade dos Módulos
+        // 5. Aplica Visibilidade dos Módulos
         function aplicarModulos(config) {
-            document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta Chatwoot ID: ${globalAccountId}`;
+            document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta ID: ${globalAccountId}`;
 
             const params = `account_id=${globalAccountId}&segmento=${segmentoAtual}`;
             document.getElementById('mod-kanban').href = `kanban-chatwoot/index.html?${params}`;
@@ -240,24 +245,24 @@
                 if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
             }
 
-            // Exibe o Módulo Avançado se o usuário for Administrador
-            // Garantindo toLowerCase para evitar falhas com "Administrator" vs "administrator"
-            const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : 'agent';
-            const moduloAvancadoAtivo = config.modulos ? config.modulos.avancado !== false : true;
-
-            if (moduloAvancadoAtivo && (userRole === 'administrator' || userRole === 'admin')) {
+            // REGRA DE SEGURANÇA: Exibe Módulo Avançado APENAS se a role for rigorosamente 'administrator'
+            const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : '';
+            if (userRole === 'administrator') {
                 document.getElementById('mod-avancado').classList.remove('hidden');
             } else {
                 document.getElementById('mod-avancado').classList.add('hidden');
             }
 
+            // Exibe a tela
             document.getElementById('area-loading').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');
         }
 
-        // 4. Alterar Segmento
+        // 6. Alterar Segmento
         async function alterarSegmentoEmpresa(novoSegmento) {
             document.getElementById('area-modulos').classList.add('hidden');
+            document.getElementById('main-header').classList.add('hidden');
             document.getElementById('area-loading').classList.remove('hidden');
 
             try {
@@ -279,9 +284,10 @@
                 }, 500);
 
             } catch (err) {
-                alert("Erro ao alterar o perfil do negócio no servidor.");
+                alert("Erro ao alterar o perfil do negócio.");
                 document.getElementById('seletor-segmento').value = segmentoAtual;
                 document.getElementById('area-loading').classList.add('hidden');
+                document.getElementById('main-header').classList.remove('hidden');
                 document.getElementById('area-modulos').classList.remove('hidden');
             }
         }

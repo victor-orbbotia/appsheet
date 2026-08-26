@@ -42,6 +42,13 @@
         </div>
 
         <div class="flex items-center gap-3">
+            
+            <!-- RAIO-X PARA DEBUG (Informa o cargo exato que o Chatwoot enviou) -->
+            <div class="text-right mr-2 bg-rose-50 px-2 py-1 rounded border border-rose-100">
+                <span class="block text-[9px] font-bold text-rose-400 uppercase tracking-widest">Leitura Chatwoot</span>
+                <span id="debug-role" class="text-xs font-mono font-bold text-rose-600">Buscando...</span>
+            </div>
+
             <div class="flex flex-col items-end">
                 <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil do Negócio</label>
                 <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer">
@@ -50,7 +57,7 @@
                     <option value="clinica">🩺 Clínica / Saúde & Beleza</option>
                 </select>
             </div>
-
+            
             <div class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 shrink-0">
                 🏢
             </div>
@@ -116,7 +123,6 @@
             <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
         </a>
 
-        <!-- MÓDULO 7: CONFIGURAÇÕES AVANÇADAS (RESTRITO A ADMIN) -->
         <a href="configuracoes/avancado.html" id="mod-avancado" class="card-modulo hidden bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm hover:border-indigo-500">
             <div class="text-3xl mb-4">🛡️</div>
             <h2 class="text-lg font-bold text-indigo-300 mb-1 flex items-center gap-2">
@@ -137,24 +143,20 @@
         let segmentoAtual = 'restaurante';
         let currentUser = null;
 
-        // 1. Escuta Rigorosa do Chatwoot
+        // 1. Escuta Chatwoot e extrai o objeto User
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
             if (eventData.event === 'appContext' && eventData.data) {
-                // Sucesso! Chatwoot respondeu.
                 clearInterval(handshakeInterval);
                 clearTimeout(authTimeout);
 
                 const payload = eventData.data;
                 globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id);
                 
-                // Mapeia o usuário dependendo da versão do Chatwoot
-                const user = payload.currentAgent || payload.current_user || payload.user;
-                if (user) {
-                    currentUser = user;
-                }
+                // Mapeia todas as possíveis chaves do Chatwoot onde o usuário possa estar
+                currentUser = payload.currentAgent || payload.current_user || payload.user || null;
 
                 if (globalAccountId) {
                     buscarConfiguracoesDaEmpresa();
@@ -164,12 +166,10 @@
             }
         });
 
-        // 2. Tenta forçar o Chatwoot a enviar o contexto a cada 500ms
         handshakeInterval = setInterval(() => {
             window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // 3. Timeout de Segurança (Bloqueia se abrir fora do Chatwoot após 5 segundos)
         authTimeout = setTimeout(() => {
             if (!globalAccountId) {
                 clearInterval(handshakeInterval);
@@ -181,48 +181,37 @@
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('area-modulos').classList.add('hidden');
             document.getElementById('main-header').classList.add('hidden');
-            
             document.getElementById('msg-restrito').innerText = mensagem;
             document.getElementById('area-restrito').classList.remove('hidden');
         }
 
-        // 4. Busca Configurações no n8n (Só roda se passar na verificação acima)
+        // 2. Busca Configurações no n8n
         async function buscarConfiguracoesDaEmpresa() {
             try {
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro ao buscar configurações");
+                if (!res.ok) throw new Error("Erro");
 
                 let rawConfig = await res.json();
                 const config = Array.isArray(rawConfig) ? rawConfig[0] : rawConfig;
 
-                if (typeof config.modulos === 'string') {
-                    config.modulos = JSON.parse(config.modulos);
-                }
-
-                if (config.segmento) {
-                    segmentoAtual = config.segmento;
-                    document.getElementById('seletor-segmento').value = config.segmento;
-                }
+                if (typeof config.modulos === 'string') config.modulos = JSON.parse(config.modulos);
+                if (config.segmento) segmentoAtual = config.segmento;
 
                 aplicarModulos(config);
 
             } catch (error) {
-                console.error("Falha ao puxar config, usando fallback padrão.", error);
-                const configFake = {
-                    nome_empresa: "Empresa Config",
+                aplicarModulos({
+                    nome_empresa: "Empresa",
                     segmento: segmentoAtual,
-                    modulos: {
-                        kanban: false, profissionais: false, produtos: true,
-                        conhecimento: true, pedidos: true, configuracoes: true, avancado: false
-                    }
-                };
-                aplicarModulos(configFake);
+                    modulos: { kanban: false, produtos: true, conhecimento: true, pedidos: true, configuracoes: true, avancado: true }
+                });
             }
         }
 
-        // 5. Aplica Visibilidade dos Módulos
+        // 3. Aplica Visibilidade e Segurança
         function aplicarModulos(config) {
             document.getElementById('nome-empresa').innerText = config.nome_empresa || `Conta ID: ${globalAccountId}`;
+            document.getElementById('seletor-segmento').value = segmentoAtual;
 
             const params = `account_id=${globalAccountId}&segmento=${segmentoAtual}`;
             document.getElementById('mod-kanban').href = `kanban-chatwoot/index.html?${params}`;
@@ -245,47 +234,45 @@
                 if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
             }
 
-            // REGRA DE SEGURANÇA: Exibe Módulo Avançado APENAS se a role for rigorosamente 'administrator'
-            const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : '';
-            if (userRole === 'administrator') {
+            // === O PONTO CRÍTICO: IDENTIFICAÇÃO DO CARGO (ROLE) ===
+            // Força a leitura do cargo e imprime na tela para diagnóstico!
+            let userRole = 'desconhecido';
+            if (currentUser && currentUser.role) {
+                userRole = String(currentUser.role).toLowerCase();
+            }
+            
+            // Imprime na tela o que o Chatwoot informou
+            document.getElementById('debug-role').innerText = userRole;
+
+            const moduloAvancadoAtivo = config.modulos ? config.modulos.avancado !== false : true;
+
+            // Libera apenas se for admin
+            if (moduloAvancadoAtivo && (userRole === 'administrator' || userRole === 'admin')) {
                 document.getElementById('mod-avancado').classList.remove('hidden');
             } else {
                 document.getElementById('mod-avancado').classList.add('hidden');
             }
 
-            // Exibe a tela
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('main-header').classList.remove('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');
         }
 
-        // 6. Alterar Segmento
+        // 4. Alterar Segmento
         async function alterarSegmentoEmpresa(novoSegmento) {
             document.getElementById('area-modulos').classList.add('hidden');
             document.getElementById('main-header').classList.add('hidden');
             document.getElementById('area-loading').classList.remove('hidden');
 
             try {
-                const response = await fetch(urlConfigSalvar, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        account_id: globalAccountId.toString(),
-                        segmento: novoSegmento
-                    })
+                await fetch(urlConfigSalvar, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: globalAccountId.toString(), segmento: novoSegmento })
                 });
-
-                if (!response.ok) throw new Error();
-
                 segmentoAtual = novoSegmento;
-                
-                setTimeout(async () => {
-                    await buscarConfiguracoesDaEmpresa();
-                }, 500);
-
+                setTimeout(async () => { await buscarConfiguracoesDaEmpresa(); }, 500);
             } catch (err) {
                 alert("Erro ao alterar o perfil do negócio.");
-                document.getElementById('seletor-segmento').value = segmentoAtual;
                 document.getElementById('area-loading').classList.add('hidden');
                 document.getElementById('main-header').classList.remove('hidden');
                 document.getElementById('area-modulos').classList.remove('hidden');

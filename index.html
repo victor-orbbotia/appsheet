@@ -152,8 +152,10 @@
                 const payload = eventData.data;
                 globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
                 
-                if (payload.current_user) {
-                    currentUser = payload.current_user;
+                // Tenta capturar o usuário (algumas versões do Chatwoot usam 'user', outras 'current_user')
+                const user = payload.current_user || payload.user;
+                if (user) {
+                    currentUser = user;
                 }
 
                 buscarConfiguracoesDaEmpresa();
@@ -164,10 +166,11 @@
             if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
         }, 500);
 
-        // Fallback Local
+        // Fallback Local (Apenas para testes fora do Chatwoot)
         setTimeout(() => {
             if (!globalAccountId) {
                 globalAccountId = '3';
+                // ATENÇÃO: Se for testar restrição no navegador, mude 'administrator' para 'agent' aqui
                 currentUser = currentUser || { name: 'Dev Local', role: 'administrator' };
                 buscarConfiguracoesDaEmpresa();
             }
@@ -238,12 +241,16 @@
                 if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
             }
 
-            // Exibe o Módulo Avançado se estiver habilitado nos módulos E o usuário for Administrador
-            const userRole = (currentUser && currentUser.role) ? currentUser.role : 'administrator';
+            // SEGURANÇA CORRIGIDA: Se não encontrar a role, o padrão é 'agent' (ACESSO NEGADO)
+            const userRole = (currentUser && currentUser.role) ? currentUser.role : 'agent';
             const moduloAvancadoAtivo = config.modulos ? config.modulos.avancado !== false : true;
 
+            // Só remove o 'hidden' se for EXATAMENTE administrador
             if (moduloAvancadoAtivo && (userRole === 'administrator' || userRole === 'admin')) {
                 document.getElementById('mod-avancado').classList.remove('hidden');
+            } else {
+                // Força ocultar caso recarregue
+                document.getElementById('mod-avancado').classList.add('hidden');
             }
 
             document.getElementById('area-loading').classList.add('hidden');

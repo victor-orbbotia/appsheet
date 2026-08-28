@@ -161,15 +161,16 @@
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
                             <tr>
-                                <th class="px-4 py-3 w-20 text-center">Status</th>
+                                <th class="px-4 py-3 w-16 text-center">Status</th>
                                 <th class="px-4 py-3">Produto</th>
                                 <th class="px-4 py-3">Categoria</th>
                                 <th class="px-4 py-3">Opções e Preços</th>
+                                <th class="px-4 py-3 text-center">Estoque</th>
                                 <th class="px-4 py-3 text-right">Ação</th>
                             </tr>
                         </thead>
                         <tbody id="lista-produtos" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Carregando produtos...</td></tr>
+                            <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400">Carregando produtos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -236,7 +237,7 @@
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
         const urlAcao = 'https://n8n.orbbotia.com/webhook/produtos-acao';
         
-        // ROTAS EMPRESA CONFIG (Usadas para salvar as taxas na aba Entregas)
+        // ROTAS EMPRESA CONFIG
         const urlConfigGet = 'https://n8n.orbbotia.com/webhook/empresa-config';
         const urlConfigPost = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
 
@@ -280,7 +281,6 @@
             document.getElementById('link-menu-studio').href = `./menu_studio_pro_mobile_first.html?account_id=${globalAccountId}`;
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
             
-            // Inicia abas
             carregarLista();
             carregarTaxasEntrega();
             if (document.getElementById('lista-de-variacoes').children.length === 0) adicionarVariacao();
@@ -424,9 +424,8 @@
             }
         }
 
-
         // ==========================================
-        // ABA 1: LÓGICA DE PRODUTOS (MANTIDA IGUAL)
+        // ABA 1: LÓGICA DE PRODUTOS E ESTOQUE
         // ==========================================
         function toggleSection(wrapperId, btn) {
             const wrapper = document.getElementById(wrapperId);
@@ -472,7 +471,7 @@
 
         async function carregarLista() {
             const tbody = document.getElementById('lista-produtos');
-            tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
             try {
                 const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error("Erro");
@@ -483,7 +482,7 @@
                 renderizarFiltros();
                 renderizarTabela();
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
             }
         }
 
@@ -535,7 +534,7 @@
             });
 
             if (listaFiltrada.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhum produto cadastrado nesta visão.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhum produto cadastrado nesta visão.</td></tr>`;
                 return;
             }
 
@@ -545,6 +544,18 @@
 
                 let meta = p.metadata;
                 if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+
+                // Lógica de Estado do Estoque via Metadata
+                let statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
+
+                let badgeEstoque = '';
+                if (statusEstoque === 'disponivel') {
+                    badgeEstoque = `<button onclick="proximoStatusEstoque('${p.id}', 'disponivel', this)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors shadow-sm whitespace-nowrap">✅ Disponível</button>`;
+                } else if (statusEstoque === 'em_falta') {
+                    badgeEstoque = `<button onclick="proximoStatusEstoque('${p.id}', 'em_falta', this)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-colors shadow-sm whitespace-nowrap">⚠️ Em Falta</button>`;
+                } else {
+                    badgeEstoque = `<button onclick="proximoStatusEstoque('${p.id}', 'esgotado', this)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 transition-colors shadow-sm whitespace-nowrap">❌ Esgotado</button>`;
+                }
 
                 let precoDisplay = `<span class="font-mono font-bold text-emerald-700">${formatarMoeda(p.preco_base)}</span>`;
                 const listaOpcoes = meta?.variacoes || meta?.tamanhos;
@@ -563,13 +574,14 @@
                         : '<span class="inline-block w-2.5 h-2.5 bg-slate-400 rounded-full shadow-sm" title="Inativo"></span>'}
                     </td>
                     <td class="px-4 py-3">
-                        <div class="font-bold text-sm ${isAtivo ? 'text-slate-800' : 'text-slate-500 line-through'}">${p.nome}</div>
+                        <div class="font-bold text-sm ${isAtivo && statusEstoque === 'disponivel' ? 'text-slate-800' : 'text-slate-500'}">${p.nome}</div>
                         <div class="text-[11px] ${isAtivo ? 'text-slate-500' : 'text-slate-400'} max-w-[250px] truncate" title="${p.descricao || ''}">${p.descricao || ''}</div>
                     </td>
                     <td class="px-4 py-3">
                         <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-lg border border-indigo-100 uppercase tracking-wide whitespace-nowrap">${p.categoria || 'Sem Categoria'}</span>
                     </td>
                     <td class="px-4 py-3">${precoDisplay}</td>
+                    <td class="px-4 py-3 text-center">${badgeEstoque}</td>
                     <td class="px-4 py-3 text-right">
                         <button onclick="editarProduto('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors border border-indigo-200 shadow-sm">
                             Editar
@@ -578,6 +590,40 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // Alterna dinamicamente entre os 3 estados
+        function proximoStatusEstoque(id, statusAtual, btnElement) {
+            if (!id) return;
+
+            const prodObj = listaAtual.find(i => (i.json || i).id == id);
+            if (!prodObj) return;
+            const p = prodObj.json || prodObj;
+
+            const proximaEtapa = {
+                'disponivel': 'em_falta',
+                'em_falta': 'esgotado',
+                'esgotado': 'disponivel'
+            };
+
+            const novoStatus = proximaEtapa[statusAtual] || 'disponivel';
+
+            let meta = p.metadata || {};
+            if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+
+            meta.status_estoque = novoStatus;
+            meta.esgotado = novoStatus !== 'disponivel';
+
+            enviarAcao({
+                action: 'editar',
+                id: p.id,
+                account_id: globalAccountId.toString(),
+                nome: p.nome,
+                descricao: p.descricao,
+                categoria: p.categoria,
+                preco_base: p.preco_base,
+                metadata: meta
+            }, btnElement, '🔄');
         }
 
         function editarProduto(id) {
@@ -702,9 +748,24 @@
             let precoBase = 0.00;
             let metadata = {};
 
+            // Preserva estado de estoque se estiver editando
+            if (id) {
+                const prodObj = listaAtual.find(i => (i.json || i).id == id);
+                if (prodObj) {
+                    const p = prodObj.json || prodObj;
+                    let metaAntigo = p.metadata;
+                    if (typeof metaAntigo === 'string') { try { metaAntigo = JSON.parse(metaAntigo); } catch(e) { metaAntigo = {}; } }
+                    metadata.status_estoque = metaAntigo?.status_estoque || 'disponivel';
+                    metadata.esgotado = metaAntigo?.esgotado || false;
+                }
+            } else {
+                metadata.status_estoque = 'disponivel';
+                metadata.esgotado = false;
+            }
+
             if (tipo === 'simples') {
                 precoBase = parseFloat(document.getElementById('preco_base').value) || 0.00;
-                metadata = { tipo: 'simples' };
+                metadata.tipo = 'simples';
             } else {
                 const nomes = document.querySelectorAll('.input-variacao-nome');
                 const precos = document.querySelectorAll('.input-variacao-preco');
@@ -719,11 +780,9 @@
                 }
                 if (arrayVariacoes.length === 0) return alert("Adicione pelo menos uma opção de variação de preço!");
                 
-                metadata = { 
-                    tipo: 'com_variacoes', 
-                    variacoes: arrayVariacoes,
-                    tamanhos: arrayVariacoes 
-                };
+                metadata.tipo = 'com_variacoes';
+                metadata.variacoes = arrayVariacoes;
+                metadata.tamanhos = arrayVariacoes;
             }
 
             enviarAcao({

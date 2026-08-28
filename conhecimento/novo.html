@@ -44,11 +44,27 @@
                 </button>
             </div>
 
-            <div class="p-4 md:p-6">
-                <textarea id="texto_base" class="input-field h-64 resize-y" maxlength="3000" placeholder="Ex:&#10;1. Nosso horário de funcionamento é de segunda a sexta, das 08h às 18h.&#10;2. O prazo de entrega padrão é de 45 minutos.&#10;3. Aceitamos PIX, Cartões de Crédito e Dinheiro."></textarea>
-                
-                <div class="flex justify-end mt-2">
-                    <span id="contador" class="text-xs font-medium text-slate-400">0 / 3000 caracteres</span>
+            <div class="p-4 md:p-6 space-y-6">
+                <!-- CAMPO TEXTO BASE -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Instruções da Base</label>
+                    <textarea id="texto_base" class="input-field h-64 resize-y" maxlength="3000" placeholder="Ex:&#10;1. Nosso horário de funcionamento é de segunda a sexta, das 08h às 18h.&#10;2. O prazo de entrega padrão é de 45 minutos.&#10;3. Aceitamos PIX, Cartões de Crédito e Dinheiro."></textarea>
+                    
+                    <div class="flex justify-end mt-2">
+                        <span id="contador" class="text-xs font-medium text-slate-400">0 / 3000 caracteres</span>
+                    </div>
+                </div>
+
+                <!-- NOVO CAMPO TEMPO DE ESPERA -->
+                <div>
+                    <label for="tempo_espera" class="block text-sm font-medium text-slate-700 mb-1 flex items-center">
+                        Tempo de Espera
+                        <span class="ml-2 cursor-help text-blue-500" title="Essa informação é importante pois vai ser repassada para o cliente e para calcular os fluxos automáticos">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                        </span>
+                    </label>
+                    <p class="text-xs text-slate-500 mb-2">Importante: Será repassado ao cliente e usado no cálculo de fluxos automáticos.</p>
+                    <input type="text" id="tempo_espera" class="input-field" placeholder="Ex: 40 a 50 minutos">
                 </div>
             </div>
         </div>
@@ -60,27 +76,24 @@
         const urlAcao  = 'https://n8n.orbbotia.com/webhook/conhecimento-acao';
         
         let globalAccountId = null;
-        let segmentoAtual = 'institucional'; // Valor padrão de fallback
+        let segmentoAtual = 'institucional';
         let handshakeInterval;
 
-        // PARÂMETROS DA URL
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
         if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
 
-        // CONTADOR DE CARACTERES
         const textArea = document.getElementById('texto_base');
+        const tempoEsperaInput = document.getElementById('tempo_espera');
         const contador = document.getElementById('contador');
 
         textArea.addEventListener('input', function() {
             const qtd = this.value.length;
             contador.innerText = `${qtd} / 3000 caracteres`;
-            
             if (qtd >= 2900) contador.classList.replace('text-slate-400', 'text-amber-500');
             else contador.classList.replace('text-amber-500', 'text-slate-400');
         });
 
-        // CHATWOOT INIT
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -107,23 +120,21 @@
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             
-            // Injeta o account_id e o segmento no link de voltar
             document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
             document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
 
             carregarDados();
         }
 
-        // PUXAR DADOS (GET)
         async function carregarDados() {
             try {
-                // Adicionado &segmento na requisição GET
                 const res = await fetch(`${urlDados}?account_id=${globalAccountId}&segmento=${segmentoAtual}`);
                 if (res.ok) {
                     const dados = await res.json();
                     if (dados && dados.length > 0) {
                         textArea.value = dados[0].texto_base || '';
-                        textArea.dispatchEvent(new Event('input')); // Atualiza o contador
+                        tempoEsperaInput.value = dados[0].tempo_espera || ''; // CARREGA NOVO CAMPO
+                        textArea.dispatchEvent(new Event('input')); 
                     }
                 }
             } catch (error) {
@@ -131,18 +142,19 @@
             }
         }
 
-        // SALVAR DADOS (POST)
         async function salvarConhecimento() {
             const btnSalvar = document.getElementById('btnSalvar');
             const texto = textArea.value.trim();
+            const tempoEspera = tempoEsperaInput.value.trim(); // PEGA NOVO CAMPO
             
             btnSalvar.innerText = 'Salvando...';
             btnSalvar.disabled = true;
 
             const payload = {
                 account_id: globalAccountId.toString(),
-                segmento: segmentoAtual, // Adicionado segmento no body do POST
-                texto_base: texto
+                segmento: segmentoAtual,
+                texto_base: texto,
+                tempo_espera: tempoEspera // ENVIA NOVO CAMPO
             };
 
             try {

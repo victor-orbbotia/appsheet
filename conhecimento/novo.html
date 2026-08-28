@@ -13,6 +13,10 @@
             font-size: 0.875rem; line-height: 1.5;
         }
         .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+        /* Remove setinhas do input number */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
     </style>
 </head>
 <body class="p-4 md:p-6 space-y-6">
@@ -55,16 +59,21 @@
                     </div>
                 </div>
 
-                <!-- NOVO CAMPO TEMPO DE ESPERA -->
+                <!-- NOVO CAMPO TEMPO DE ESPERA (NUMÉRICO) -->
                 <div>
                     <label for="tempo_espera" class="block text-sm font-medium text-slate-700 mb-1 flex items-center">
-                        Tempo de Espera
-                        <span class="ml-2 cursor-help text-blue-500" title="Essa informação é importante pois vai ser repassada para o cliente e para calcular os fluxos automáticos">
+                        Tempo de Espera 
+                        <span class="ml-2 cursor-help text-blue-500" title="Essa informação é OBRIGATÓRIA. É repassada ao cliente pela IA e usada para calcular os alertas e fluxos de atraso no sistema.">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
                         </span>
                     </label>
-                    <p class="text-xs text-slate-500 mb-2">Importante: Será repassado ao cliente e usado no cálculo de fluxos automáticos.</p>
-                    <input type="text" id="tempo_espera" class="input-field" placeholder="Ex: 40 a 50 minutos">
+                    <p class="text-xs text-slate-500 mb-2">Importante: Usado para cálculos nos fluxos automáticos.</p>
+                    
+                    <div class="flex items-center space-x-2">
+                        <!-- Type number para aceitar apenas números -->
+                        <input type="number" id="tempo_espera" min="1" step="1" class="input-field !w-24 text-center font-semibold text-slate-700" placeholder="Ex: 45">
+                        <span class="text-sm font-medium text-slate-600">minutos</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -133,7 +142,7 @@
                     const dados = await res.json();
                     if (dados && dados.length > 0) {
                         textArea.value = dados[0].texto_base || '';
-                        tempoEsperaInput.value = dados[0].tempo_espera || ''; // CARREGA NOVO CAMPO
+                        tempoEsperaInput.value = dados[0].tempo_espera || ''; 
                         textArea.dispatchEvent(new Event('input')); 
                     }
                 }
@@ -145,7 +154,10 @@
         async function salvarConhecimento() {
             const btnSalvar = document.getElementById('btnSalvar');
             const texto = textArea.value.trim();
-            const tempoEspera = tempoEsperaInput.value.trim(); // PEGA NOVO CAMPO
+            const tempoEsperaRaw = tempoEsperaInput.value.trim();
+            
+            // Converte para número inteiro para cálculos matemáticos. Se vazio, envia nulo.
+            const tempoEsperaNumber = tempoEsperaRaw ? parseInt(tempoEsperaRaw, 10) : null; 
             
             btnSalvar.innerText = 'Salvando...';
             btnSalvar.disabled = true;
@@ -154,7 +166,7 @@
                 account_id: globalAccountId.toString(),
                 segmento: segmentoAtual,
                 texto_base: texto,
-                tempo_espera: tempoEspera // ENVIA NOVO CAMPO
+                tempo_espera: tempoEsperaNumber // Agora enviamos um número real
             };
 
             try {

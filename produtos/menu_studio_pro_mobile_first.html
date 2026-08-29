@@ -55,7 +55,6 @@
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
         
-        /* NOVO GRID DE DESTAQUES (Mantém dimensões estritas 16:9 independentemente de quantidade) */
         .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
         .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
         .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
@@ -159,7 +158,6 @@
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-amber-400"><i class="fa-solid fa-star"></i> Destaques do Chef</h2>
                         <div class="flex items-center gap-2">
-                            <!-- TOOLTIP ADICIONADO AQUI -->
                             <div class="group relative flex items-center">
                                 <i class="fa-solid fa-circle-info text-slate-400 hover:text-amber-400 cursor-help transition-colors text-sm"></i>
                                 <div class="absolute right-0 bottom-full mb-2 hidden group-hover:block w-48 bg-slate-800 border border-slate-600 text-white text-[10px] p-2.5 rounded shadow-xl z-50">
@@ -182,8 +180,33 @@
                 </div>
             </div>
 
-            <!-- TAB 3: DADOS -->
+            <!-- TAB 3: DADOS COM CONFIGURAÇÕES DE EXIBIÇÃO DE ESTOQUE -->
             <div id="panel-dados" class="tab-content fade-in hidden space-y-4">
+                
+                <!-- REGRAS DE EXIBIÇÃO DE ESTOQUE NO PDF -->
+                <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 shadow-sm space-y-2.5">
+                    <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fa-solid fa-eye text-indigo-600"></i> Exibição no PDF (Estoque)
+                    </h2>
+                    
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-white p-2 rounded-lg border border-indigo-100">
+                            <label class="block font-bold text-amber-800 mb-1">⚠️ Em Falta</label>
+                            <select id="config-exibir-em-falta" onchange="atualizarRegraExibicao('exibirEmFalta', this.value)" class="w-full bg-slate-50 border border-slate-200 rounded p-1 font-medium text-slate-700 outline-none">
+                                <option value="ocultar">🙈 Ocultar do PDF</option>
+                                <option value="mostrar">🏷️ Mostrar [EM FALTA]</option>
+                            </select>
+                        </div>
+                        <div class="bg-white p-2 rounded-lg border border-indigo-100">
+                            <label class="block font-bold text-rose-800 mb-1">❌ Esgotado</label>
+                            <select id="config-exibir-esgotado" onchange="atualizarRegraExibicao('exibirEsgotado', this.value)" class="w-full bg-slate-50 border border-slate-200 rounded p-1 font-medium text-slate-700 outline-none">
+                                <option value="mostrar">🏷️ Mostrar [ESGOTADO]</option>
+                                <option value="ocultar">🙈 Ocultar do PDF</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex justify-between items-center">
                         <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-database text-indigo-500"></i> Produtos</h2>
@@ -286,7 +309,9 @@
             layout: 1, zoom: 0.50, restaurantName: "Meu Restaurante",
             restaurantDescription: "", logoUrl: null, carrosChefe: [], data: [],
             colorPrimary: "#111827", colorSecondary: "#4f46e5", colorBg: "#FFFFFF", colorText: "#333333",
-            fontTitle: "'Playfair Display', serif", fontBody: "'Lato', sans-serif"
+            fontTitle: "'Playfair Display', serif", fontBody: "'Lato', sans-serif",
+            exibirEmFalta: 'ocultar', // 'ocultar' ou 'mostrar'
+            exibirEsgotado: 'mostrar'  // 'mostrar' ou 'ocultar'
         };
 
         let stateHistory = [];
@@ -333,6 +358,13 @@
             document.getElementById('input-rest-name').value = appState.restaurantName || '';
             document.getElementById('input-rest-desc').value = appState.restaurantDescription || '';
 
+            if (document.getElementById('config-exibir-em-falta')) {
+                document.getElementById('config-exibir-em-falta').value = appState.exibirEmFalta || 'ocultar';
+            }
+            if (document.getElementById('config-exibir-esgotado')) {
+                document.getElementById('config-exibir-esgotado').value = appState.exibirEsgotado || 'mostrar';
+            }
+
             if (appState.logoUrl) {
                 document.getElementById('logo-preview-img').src = appState.logoUrl;
                 document.getElementById('logo-preview-container').classList.remove('hidden');
@@ -360,6 +392,13 @@
 
             renderDestaquesUI();
             renderTable();
+        }
+
+        function atualizarRegraExibicao(campo, valor) {
+            saveStateToHistory();
+            appState[campo] = valor;
+            renderPreview();
+            salvarConfigNoCache();
         }
 
         function applyThemeToDOM() {
@@ -509,12 +548,16 @@
                             precoFinal = parseFloat(listaOpcoes[0].preco) || 0; 
                         }
 
+                        // Leitura do Status do Estoque no Metadata
+                        const statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
+
                         agrupado[cat].push({
                             id: p.id || Math.random().toString(), 
                             nome: p.nome || 'Sem Nome',
                             desc: p.descricao || '', 
                             preco: precoFinal, 
                             variacoes: tamanhosArray, 
+                            statusEstoque: statusEstoque,
                             visivel: true
                         });
                     } catch (itemErr) {}
@@ -708,10 +751,21 @@
                         displayPreco = item.variacoes.map(t => `<div class="whitespace-nowrap"><span class="text-[9px] uppercase text-slate-500 mr-1">${t.nome}</span>R$ ${formatCurrency(t.preco)}</div>`).join('');
                     }
 
+                    // Badge de Estoque no Painel Lateral
+                    let badgeEstoque = '';
+                    if (item.statusEstoque === 'em_falta') {
+                        badgeEstoque = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">⚠️ Em Falta</span>`;
+                    } else if (item.statusEstoque === 'esgotado') {
+                        badgeEstoque = `<span class="bg-rose-100 text-rose-800 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">❌ Esgotado</span>`;
+                    }
+
                     const tr = document.createElement('tr');
                     tr.className = `group ${item.visivel ? 'hover:bg-indigo-50/20' : 'bg-slate-50 opacity-40'}`;
                     tr.innerHTML = `
-                        <td class="px-3 py-2"><div class="font-bold text-slate-800 text-xs">${item.nome}</div><div class="text-[10px] text-slate-500 line-clamp-1">${item.desc}</div></td>
+                        <td class="px-3 py-2">
+                            <div class="font-bold text-slate-800 text-xs">${item.nome} ${badgeEstoque}</div>
+                            <div class="text-[10px] text-slate-500 line-clamp-1">${item.desc}</div>
+                        </td>
                         <td class="px-3 py-2 text-right font-mono text-[11px] font-bold text-slate-700 leading-tight">${displayPreco}</td>
                         <td class="px-2 py-2 text-center"><input type="checkbox" class="accent-indigo-600 rounded cursor-pointer" ${item.visivel ? 'checked' : ''} onchange="toggleVisibility(${catIndex}, ${itemIndex})"></td>`;
                     tbody.appendChild(tr);
@@ -744,6 +798,37 @@
             applyStateToUI(); renderPreview(); salvarConfigNoCache();
         }
 
+        // Função auxiliar para decidir se o item deve ir para o PDF e como ele é desenhado
+        function obterLayoutPrecoEStatus(item) {
+            const status = item.statusEstoque || 'disponivel';
+            const regraEmFalta = appState.exibirEmFalta || 'ocultar';
+            const regraEsgotado = appState.exibirEsgotado || 'mostrar';
+
+            // Decisão se deve ou não ir para o PDF
+            if (status === 'em_falta' && regraEmFalta === 'ocultar') return { deveRenderizar: false };
+            if (status === 'esgotado' && regraEsgotado === 'ocultar') return { deveRenderizar: false };
+
+            // Se for para renderizar com tag/riscado
+            if (status === 'em_falta' && regraEmFalta === 'mostrar') {
+                return {
+                    deveRenderizar: true,
+                    isIndisponivel: true,
+                    badgeHtml: `<span class="font-bold text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-300">EM FALTA</span>`
+                };
+            }
+
+            if (status === 'esgotado' && regraEsgotado === 'mostrar') {
+                return {
+                    deveRenderizar: true,
+                    isIndisponivel: true,
+                    badgeHtml: `<span class="font-bold text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded border border-rose-300">ESGOTADO</span>`
+                };
+            }
+
+            // Normal disponível
+            return { deveRenderizar: true, isIndisponivel: false };
+        }
+
         function renderPreview() {
             const canvas = document.getElementById('preview-canvas');
             let html = `<div class="text-center mb-8 avoid-break">`;
@@ -761,47 +846,94 @@
                 html += `</div></div>`;
             }
 
-            const filteredData = appState.data.map(cat => ({ categoria: cat.categoria, itens: cat.itens.filter(i => i.visivel) })).filter(cat => cat.itens.length > 0);
+            // Filtragem inicial dos marcados como visíveis
+            const filteredData = appState.data.map(cat => ({ 
+                categoria: cat.categoria, 
+                itens: cat.itens.filter(i => i.visivel) 
+            })).filter(cat => cat.itens.length > 0);
 
             if (appState.layout === 1) {
                 html += `<div class="max-w-2xl mx-auto space-y-7">`;
                 filteredData.forEach(cat => {
-                    html += `<div class="avoid-break"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 border-b pb-1 font-title">${cat.categoria}</h2><div class="space-y-4">`;
+                    let itensHtml = '';
                     cat.itens.forEach(item => { 
-                        let pDisplay = `<span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(item.preco)}</span>`;
-                        if(item.variacoes && item.variacoes.length > 0) {
+                        const config = obterLayoutPrecoEStatus(item);
+                        if (!config.deveRenderizar) return;
+
+                        let pDisplay = '';
+                        if (config.isIndisponivel) {
+                            pDisplay = config.badgeHtml;
+                        } else if (item.variacoes && item.variacoes.length > 0) {
                             pDisplay = `<div class="flex flex-col items-end gap-1">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.55rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 8px; font-weight:bold; letter-spacing: 0.5px;">${t.nome}</span><span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
+                        } else {
+                            pDisplay = `<span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(item.preco)}</span>`;
                         }
-                        html += `<div class="avoid-break"><div class="flex items-baseline justify-between mb-1"><h3 class="font-bold text-base font-title m-0 p-0">${item.nome}</h3><div class="l1-dots"></div><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-xs italic opacity-75 max-w-[85%] leading-snug">${item.desc}</p></div>`; 
+
+                        const itemStyle = config.isIndisponivel ? 'opacity: 0.5;' : '';
+                        const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
+
+                        itensHtml += `<div class="avoid-break" style="${itemStyle}"><div class="flex items-baseline justify-between mb-1"><h3 class="font-bold text-base font-title m-0 p-0 ${nomeClass}">${item.nome}</h3><div class="l1-dots"></div><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-xs italic opacity-75 max-w-[85%] leading-snug">${item.desc}</p></div>`; 
                     });
-                    html += `</div></div>`;
+
+                    if (itensHtml !== '') {
+                        html += `<div class="avoid-break"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 border-b pb-1 font-title">${cat.categoria}</h2><div class="space-y-4">${itensHtml}</div></div>`;
+                    }
                 });
                 html += `</div>`;
             } else if (appState.layout === 2) {
                 html += `<div class="grid grid-cols-2 gap-x-8 gap-y-6">`;
                 filteredData.forEach(cat => {
-                    html += `<div class="col-span-2 text-center mt-2 mb-1 border-y border-dashed py-1 avoid-break" style="border-color: rgba(0,0,0,0.1);"><h2 class="text-base font-bold uppercase tracking-widest font-title" style="color: var(--color-secondary);">${cat.categoria}</h2></div>`;
+                    let itensHtml = '';
                     cat.itens.forEach(item => { 
-                        let pDisplay = `<span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(item.preco)}</span>`;
-                        if(item.variacoes && item.variacoes.length > 0) {
+                        const config = obterLayoutPrecoEStatus(item);
+                        if (!config.deveRenderizar) return;
+
+                        let pDisplay = '';
+                        if (config.isIndisponivel) {
+                            pDisplay = config.badgeHtml;
+                        } else if (item.variacoes && item.variacoes.length > 0) {
                             pDisplay = `<div class="flex flex-col items-end gap-0.5 mt-0.5">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 6px; font-weight:bold;">${t.nome}</span><span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
+                        } else {
+                            pDisplay = `<span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(item.preco)}</span>`;
                         }
-                        html += `<div class="avoid-break p-3 rounded-lg shadow-sm border" style="background-color: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05);"><div class="flex justify-between items-start mb-1.5"><h3 class="font-bold text-sm font-title pr-2 m-0 leading-tight">${item.nome}</h3><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-[11px] opacity-80 leading-snug">${item.desc}</p></div>`; 
+
+                        const itemStyle = config.isIndisponivel ? 'opacity: 0.55;' : '';
+                        const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
+
+                        itensHtml += `<div class="avoid-break p-3 rounded-lg shadow-sm border" style="background-color: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05); ${itemStyle}"><div class="flex justify-between items-start mb-1.5"><h3 class="font-bold text-sm font-title pr-2 m-0 leading-tight ${nomeClass}">${item.nome}</h3><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-[11px] opacity-80 leading-snug">${item.desc}</p></div>`; 
                     });
+
+                    if (itensHtml !== '') {
+                        html += `<div class="col-span-2 text-center mt-2 mb-1 border-y border-dashed py-1 avoid-break" style="border-color: rgba(0,0,0,0.1);"><h2 class="text-base font-bold uppercase tracking-widest font-title" style="color: var(--color-secondary);">${cat.categoria}</h2></div>${itensHtml}`;
+                    }
                 });
                 html += `</div>`;
             } else if (appState.layout === 3) {
                 html += `<div class="columns-2 gap-6 space-y-6">`;
                 filteredData.forEach(cat => {
-                    html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-4 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>`;
+                    let itensHtml = '';
                     cat.itens.forEach(item => { 
-                        let pDisplay = `<span class="l3-price-badge font-mono">R$&nbsp;${formatCurrency(item.preco)}</span>`;
-                        if(item.variacoes && item.variacoes.length > 0) {
+                        const config = obterLayoutPrecoEStatus(item);
+                        if (!config.deveRenderizar) return;
+
+                        let pDisplay = '';
+                        if (config.isIndisponivel) {
+                            pDisplay = config.badgeHtml;
+                        } else if (item.variacoes && item.variacoes.length > 0) {
                             pDisplay = `<div class="flex flex-col items-end gap-1 mt-1">` + item.variacoes.map(t => `<div class="l3-price-badge whitespace-nowrap"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.9; text-transform: uppercase; margin-right: 6px;">${t.nome}</span><span class="font-mono">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
+                        } else {
+                            pDisplay = `<span class="l3-price-badge font-mono">R$&nbsp;${formatCurrency(item.preco)}</span>`;
                         }
-                        html += `<div class="l3-card avoid-break"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-sm font-title pr-2 m-0">${item.nome}</h3><div class="flex-shrink-0 ml-2">${pDisplay}</div></div><p class="text-[10px] leading-tight opacity-75 mt-1.5 w-4/5">${item.desc}</p></div>`; 
+
+                        const itemStyle = config.isIndisponivel ? 'opacity: 0.55;' : '';
+                        const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
+
+                        itensHtml += `<div class="l3-card avoid-break" style="${itemStyle}"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-sm font-title pr-2 m-0 ${nomeClass}">${item.nome}</h3><div class="flex-shrink-0 ml-2">${pDisplay}</div></div><p class="text-[10px] leading-tight opacity-75 mt-1.5 w-4/5">${item.desc}</p></div>`; 
                     });
-                    html += `</div>`;
+
+                    if (itensHtml !== '') {
+                        html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-4 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>${itensHtml}</div>`;
+                    }
                 });
                 html += `</div>`;
             }

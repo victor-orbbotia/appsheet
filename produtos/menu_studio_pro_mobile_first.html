@@ -131,7 +131,7 @@
                         <div class="relative group cursor-pointer">
                             <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-xl bg-slate-50 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all overflow-hidden cursor-pointer">
                                 <div id="logo-preview-container" class="absolute inset-0 hidden items-center justify-center bg-white p-2">
-                                    <img id="logo-preview-img" class="max-h-full max-w-full object-contain drop-shadow-md">
+                                    <img id="logo-preview-img" class="max-h-full max-w-full object-contain drop-shadow-md" alt="Logo Preview">
                                 </div>
                                 <div id="logo-upload-prompt" class="flex flex-col items-center justify-center py-4">
                                     <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
@@ -489,22 +489,29 @@
         });
 
         handshakeInterval = setInterval(() => { 
-            if (!globalAccountId) {
+            if (globalAccountId === '3') {
                 window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
                 if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'chatwoot-dashboard-app:fetch-info' }));
+            } else {
+                clearInterval(handshakeInterval);
             }
         }, 500);
 
-        setTimeout(() => { if (!globalAccountId) { globalAccountId = '3'; iniciarPagina(); } }, 1200);
+        setTimeout(() => { 
+            if (globalAccountId === '3') { 
+                clearInterval(handshakeInterval);
+                iniciarPagina(); 
+            } 
+        }, 1200);
 
         function iniciarPagina() {
             document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
             const urlMenuPrincipal = new URL('../index.html', window.location.href).href;
             const btnMenu = document.getElementById('btn-voltar-menu');
             if (btnMenu) btnMenu.href = `${urlMenuPrincipal}?account_id=${globalAccountId}`;
-            const urlProdutos = new URL('./novo.html', window.location.href).href;
+            const urlProdutosNav = new URL('./novo.html', window.location.href).href;
             const btnGestao = document.getElementById('btn-voltar-gestao');
-            if (btnGestao) btnGestao.href = `${urlProdutos}?account_id=${globalAccountId}`;
+            if (btnGestao) btnGestao.href = `${urlProdutosNav}?account_id=${globalAccountId}`;
 
             carregarConfigDoCache();
             resetZoomAdaptativo();
@@ -590,6 +597,8 @@
             const wrapper = document.getElementById('canvas-wrapper');
             const zoomContainer = document.getElementById('zoom-container');
             const canvasElement = document.getElementById('preview-canvas');
+
+            if (!wrapper || !zoomContainer || !canvasElement) return;
 
             wrapper.style.transform = `scale(${appState.zoom})`;
             const canvasUnscaledWidth = 794; 
@@ -695,7 +704,7 @@
                 div.innerHTML = `
                     <button onclick="removeDestaque('${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] shadow"><i class="fa-solid fa-xmark"></i></button>
                     <label class="w-16 h-16 bg-black/20 rounded-md overflow-hidden cursor-pointer flex-shrink-0 relative">
-                        <img src="${item.imgBase64}" class="w-full h-full object-cover">
+                        <img src="${item.imgBase64}" class="w-full h-full object-cover" alt="${item.nome}">
                         <input type="file" class="hidden" accept="image/*" onchange="handleDestaqueImgUpload(event, '${item.id}')">
                     </label>
                     <div class="flex-1 space-y-1">
@@ -831,8 +840,10 @@
 
         function renderPreview() {
             const canvas = document.getElementById('preview-canvas');
+            if(!canvas) return;
+
             let html = `<div class="text-center mb-8 avoid-break">`;
-            if (appState.logoUrl) html += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain">`;
+            if (appState.logoUrl) html += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain" alt="Logo">`;
             html += `<h1 class="text-4xl font-bold uppercase tracking-widest mb-2 font-title">${appState.restaurantName}</h1>`;
             if (appState.restaurantDescription) html += `<p class="text-sm italic mb-4 max-w-xl mx-auto" style="opacity: 0.8">${appState.restaurantDescription}</p>`;
             html += `<div style="width: 50px; height: 2.5px; background-color: var(--color-secondary); margin: 0 auto;"></div></div>`;
@@ -841,7 +852,7 @@
             if (destaquesValidos.length > 0) {
                 html += `<div class="avoid-break mb-10"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 font-title" style="color: var(--color-secondary)">— Especialidades —</h2><div class="destaques-grid">`;
                 destaquesValidos.forEach(item => {
-                    html += `<div class="destaque-card text-center"><img src="${item.imgBase64}"><h3 class="font-bold text-base font-title mt-2 leading-tight">${item.nome}</h3><p class="text-[11px] italic mb-1" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
+                    html += `<div class="destaque-card text-center"><img src="${item.imgBase64}" alt="${item.nome}"><h3 class="font-bold text-base font-title mt-2 leading-tight">${item.nome}</h3><p class="text-[11px] italic mb-1" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
                 });
                 html += `</div></div>`;
             }
@@ -938,6 +949,7 @@
                 html += `</div>`;
             }
             canvas.innerHTML = html;
+            applyZoom();
         }
 
         async function exportPDF() {

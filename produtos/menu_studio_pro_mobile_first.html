@@ -433,19 +433,66 @@
             applyStateToUI(); updateHistoryUI();
         }
 
+        function compilarHtmlCompleto() {
+            const canvasHtml = document.getElementById('preview-canvas').outerHTML;
+            const rootStyles = `
+                :root {
+                    --color-primary: ${appState.colorPrimary};
+                    --color-secondary: ${appState.colorSecondary};
+                    --color-bg: ${appState.colorBg};
+                    --color-text: ${appState.colorText};
+                    --font-title: ${appState.fontTitle};
+                    --font-body: ${appState.fontBody};
+                }
+            `;
+
+            return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cardápio - ${appState.restaurantName}</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        ${rootStyles}
+        body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
+        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+        .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
+        .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
+        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
+        .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        @page { size: A4 portrait; margin: 0mm; }
+    </style>
+</head>
+<body>
+    ${canvasHtml}
+</body>
+</html>`;
+        }
+
         async function salvarEstadoCardapio() {
             const btn = document.getElementById('btn-salvar-estado');
             const origText = btn ? btn.innerHTML : '';
             if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; btn.disabled = true; }
 
+            const fullHtml = compilarHtmlCompleto();
+
             try {
                 const response = await fetch(urlSalvarCardapio, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ account_id: globalAccountId, config_state: appState })
+                    body: JSON.stringify({ 
+                        account_id: globalAccountId, 
+                        config_state: appState,
+                        html_renderizado: fullHtml
+                    })
                 });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                alert("✅ Estado da versão do cardápio salva no banco de dados com sucesso!");
+                alert("✅ Estado da versão e HTML do cardápio salvos no banco de dados com sucesso!");
             } catch (err) {
                 alert("⚠️ Falha ao salvar a versão do cardápio no servidor.");
             } finally {
@@ -961,46 +1008,7 @@
             if (btnDesktop) { btnDesktop.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnDesktop.disabled = true; }
             if (btnMobile) { btnMobile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando...'; btnMobile.disabled = true; }
 
-            const canvasHtml = document.getElementById('preview-canvas').outerHTML;
-            const rootStyles = `
-                :root {
-                    --color-primary: ${appState.colorPrimary};
-                    --color-secondary: ${appState.colorSecondary};
-                    --color-bg: ${appState.colorBg};
-                    --color-text: ${appState.colorText};
-                    --font-title: ${appState.fontTitle};
-                    --font-body: ${appState.fontBody};
-                }
-            `;
-
-            const fullHtml = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Cardápio - ${appState.restaurantName}</title>
-    <script src="https://cdn.tailwindcss.com"><\/script>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <style>
-        ${rootStyles}
-        body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
-        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
-        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
-        .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
-        .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
-        .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
-        
-        .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
-        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
-        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
-        
-        @page { size: A4 portrait; margin: 0mm; }
-    </style>
-</head>
-<body>
-    ${canvasHtml}
-</body>
-</html>`;
+            const fullHtml = compilarHtmlCompleto();
 
             try {
                 const response = await fetch(urlGerarPDFServerSide, {

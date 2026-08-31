@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f1f5f9; font-family: system-ui, sans-serif; }
-        .kanban-col { min-width: 272px; max-width: 300px; flex-shrink: 0; }
+        .kanban-col { min-width: 280px; max-width: 320px; flex-shrink: 0; }
         .card-pedido { transition: transform 0.15s ease, box-shadow 0.15s ease; }
         .card-pedido:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
         #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
@@ -21,15 +21,15 @@
 
 <body class="p-4 md:p-5 min-h-screen flex flex-col gap-4">
 
-    <!-- Alerta Chatwoot -->
+    <!-- Alerta de Conexão Chatwoot -->
     <div id="alerta-chatwoot" class="bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm">
         ⏳ Conectando ao painel Chatwoot...
     </div>
 
-    <!-- Toast -->
+    <!-- Toast de Notificações da Tela -->
     <div id="toast" class="hidden fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white"></div>
 
-    <!-- App principal -->
+    <!-- App Principal -->
     <div id="app-container" class="hidden flex flex-col flex-1 gap-4">
 
         <!-- Cabeçalho Principal -->
@@ -39,7 +39,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Menu
+                    Menu Principal
                 </a>
                 <span class="text-slate-300">|</span>
                 <div>
@@ -48,14 +48,16 @@
                 </div>
             </div>
 
-            <!-- Filtros e Buscas -->
+            <!-- Filtros, Busca e Ações -->
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Barra de Pesquisa -->
+                <!-- Campo de Pesquisa Geral (Nome, Telefone, ID Pedido ou ID Conversa) -->
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
                     </div>
-                    <input type="text" id="searchInput" onkeyup="renderizarKanban()" placeholder="Buscar nome, tel, id chat..." class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:border-indigo-500 w-48 transition-all focus:w-56">
+                    <input type="text" id="searchInput" onkeyup="renderizarKanban()" placeholder="Buscar nome, telefone, conversa..." class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:border-indigo-500 w-52 transition-all focus:w-64">
                 </div>
                 
                 <span class="text-slate-200">|</span>
@@ -72,15 +74,15 @@
         <div class="border-b border-slate-200">
             <nav class="-mb-px flex gap-6" aria-label="Tabs">
                 <button onclick="setTab(1)" id="btn-tab-1" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600">
-                    🔥 Ações Pendentes
+                    🔥 Em Aberto / Ações
                 </button>
                 <button onclick="setTab(2)" id="btn-tab-2" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
-                    📂 Finalizados / Aguardando PIX
+                    📂 Aprovados, Cancelados e Pix
                 </button>
             </nav>
         </div>
 
-        <!-- Loading -->
+        <!-- Animação de Carregamento -->
         <div id="area-loading" class="flex flex-col items-center justify-center py-20 gap-3">
             <svg class="animate-spin h-7 w-7 text-indigo-500" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -89,15 +91,15 @@
             <p class="text-sm text-slate-400 font-medium">Carregando pedidos...</p>
         </div>
 
-        <!-- Kanban Board -->
+        <!-- Quadro Kanban de Colunas -->
         <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
             
-            <!-- ====== COLUNAS ABA 1 ====== -->
+            <!-- ====== COLUNAS DA ABA 1 (EM ABERTO / AÇÕES) ====== -->
             <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_entrega">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">💵 Pgt. na Entrega</h2>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">💵 Pagamento na Entrega</h2>
                     </div>
                     <span id="count-pagamento_entrega" class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
                 </div>
@@ -108,7 +110,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Ag. Comprovante</h2>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Validar Comprovante</h2>
                     </div>
                     <span id="count-comprovante_enviado" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
                 </div>
@@ -119,14 +121,14 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛍️ Retirada Balcão</h2>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛍️ Retirada no Balcão</h2>
                     </div>
                     <span id="count-retirada_balcao" class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-200">0</span>
                 </div>
                 <div id="col-retirada_balcao" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
-            <!-- ====== COLUNAS ABA 2 ====== -->
+            <!-- ====== COLUNAS DA ABA 2 (APROVADOS, CANCELADOS E PIX) ====== -->
             <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-confirmado">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -153,7 +155,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
-                        <h2 class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado (Cli)</h2>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado pelo Cliente</h2>
                     </div>
                     <span id="count-cancelado_cliente" class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
                 </div>
@@ -164,7 +166,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm"></span>
-                        <h2 class="text-[11px] font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado (Ate)</h2>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado pelo Atendente</h2>
                     </div>
                     <span id="count-cancelado_atendente" class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
                 </div>
@@ -182,7 +184,7 @@
         let segmentoAtual = 'restaurante'; 
         let handshakeInterval;
         let listaPedidos = [];
-        let currentTab = 1; // 1 = Ações Pendentes, 2 = Histórico
+        let currentTab = 1; // 1 = Em Aberto / Ações, 2 = Finalizados e PIX
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -208,22 +210,103 @@
             renderizarKanban();
         }
 
-        // Mapeamento e Configuração de Status
+        /* =========================================================================
+           CONFIGURAÇÃO DOS STATUS & BOTÕES DAS COLUNAS
+           =========================================================================
+           * Se você criar uma nova etiqueta no Chatwoot / n8n, você deve adicionar
+             o identificador aqui no objeto STATUS_CONFIG indicando a qual Aba pertence.
+        */
         const STATUS_CONFIG = {
-            // TAB 1
-            pagamento_entrega: { label: 'Pagamento na Entrega', proximo: 'confirmado', btnProximoLabel: 'Aprovar / Enviar ✅', btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', podeCancel: true, tab: 1 },
-            comprovante_enviado: { label: 'Aguardando Comprovante', anterior: 'aguardando_pix', btnAnteriorLabel: '← Reenviar PIX', btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600', proximo: 'confirmado', btnProximoLabel: 'Aprovar Pagamento ✅', btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', podeCancel: true, tab: 1 },
-            retirada_balcao: { label: 'Retirada no Balcão', proximo: 'confirmado', btnProximoLabel: 'Entregar / Concluir ✅', btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', podeCancel: true, tab: 1 },
+            // ABA 1: EM ABERTO / AÇÕES
+            pagamento_entrega: { 
+                label: 'Pagamento na Entrega', 
+                proximo: 'confirmado', 
+                btnProximoLabel: 'Aprovar / Enviar ✅', 
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
+                podeCancel: true, 
+                tab: 1 
+            },
+            comprovante_enviado: { 
+                label: 'Aguardando Comprovante', 
+                anterior: 'aguardando_pix', 
+                btnAnteriorLabel: '← Reenviar PIX', 
+                btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600', 
+                proximo: 'confirmado', 
+                btnProximoLabel: 'Aprovar Pagamento ✅', 
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
+                podeCancel: true, 
+                tab: 1 
+            },
+            retirada_balcao: { 
+                label: 'Retirada no Balcão', 
+                proximo: 'confirmado', 
+                btnProximoLabel: 'Entregar / Concluir ✅', 
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
+                podeCancel: true, 
+                tab: 1 
+            },
             
-            // TAB 2
-            aguardando_pix: { label: 'Aguardando PIX', proximo: 'comprovante_enviado', btnProximoLabel: 'Comprovante Recebido ✓', btnProximoCor: 'bg-blue-600 hover:bg-blue-700', podeCancel: true, tab: 2 },
-            confirmado: { label: 'Pedido Aprovado', podeCancel: true /* CANCELAMENTO RETROATIVO HABILITADO */, tab: 2 },
-            cancelado_cliente: { label: 'Cancelado Cliente', podeCancel: false, tab: 2 },
-            cancelado_atendente: { label: 'Cancelado Atendente', podeCancel: false, tab: 2 }
+            // ABA 2: APROVADOS, CANCELADOS E PIX
+            aguardando_pix: { 
+                label: 'Aguardando PIX', 
+                proximo: 'comprovante_enviado', 
+                btnProximoLabel: 'Comprovante Recebido ✓', 
+                btnProximoCor: 'bg-blue-600 hover:bg-blue-700', 
+                podeCancel: true, 
+                tab: 2 
+            },
+            confirmado: { 
+                label: 'Pedido Aprovado', 
+                podeCancel: true, // Habilita o cancelamento retroativo
+                tab: 2 
+            },
+            cancelado_cliente: { 
+                label: 'Cancelado pelo Cliente', 
+                podeCancel: false, 
+                tab: 2 
+            },
+            cancelado_atendente: { 
+                label: 'Cancelado pelo Atendente', 
+                podeCancel: false, 
+                tab: 2 
+            }
         };
 
         const COLUNAS_TODAS = Object.keys(STATUS_CONFIG);
 
+        /* =========================================================================
+           TRADUTOR E MAPEADOR DE COMPATIBILIDADE (RETROCOMPATIBILIDADE)
+           =========================================================================
+           * Esta função lê o status vindo do Banco de Dados / Webhook.
+           * Se o n8n enviar etiquetas velhas (ex: 'cancelado'), ela converte 
+             dinamicamente para a nova etiqueta ('cancelado_atendente').
+           * Quando você atualizar as etiquetas no Chatwoot / n8n para enviar
+             diretamente 'cancelado_cliente' ou 'cancelado_atendente', o 'switch'
+             abaixo manterá o novo valor intacto sem precisar alterar o código!
+        */
+        function normalizarStatus(statusOriginal, formaPagamento) {
+            let status = (statusOriginal || 'aguardando_pix').toLowerCase().trim();
+            const formaPgto = (formaPagamento || '').toLowerCase();
+
+            // Mapeamentos retrocompatíveis
+            if (status === 'cancelado') {
+                return 'cancelado_atendente'; // Traduz cancelado genérico antigo para atendente
+            }
+            if (status === 'aprovado') {
+                return 'confirmado'; // Traduz variações de aprovado para o padrão interno
+            }
+            if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro') || formaPgto.includes('cartão'))) {
+                return 'pagamento_entrega'; // Regra de negócio para pagamentos físicos
+            }
+            if (status === 'balcao' || status === 'retirada') {
+                return 'retirada_balcao';
+            }
+
+            // Se o status já for um dos novos (ex: 'cancelado_cliente'), ele retorna exatamente o que recebeu
+            return STATUS_CONFIG[status] ? status : 'pagamento_entrega';
+        }
+
+        /* Handshake e Conexão Chatwoot */
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -317,23 +400,23 @@
                 if (elCol) elCol.innerHTML = '';
                 if (document.getElementById(`count-${s}`)) document.getElementById(`count-${s}`).textContent = '0';
                 
-                // Exibe a coluna apenas se pertencer à Aba atual
+                // Exibe no DOM somente as colunas pertencentes à aba selecionada
                 if (elKanbanCol) {
                     elKanbanCol.classList.toggle('hidden', STATUS_CONFIG[s].tab !== currentTab);
                 }
             });
 
-            // Aplica filtro e limpa objetos vazios
+            // Filtra e valida a lista de pedidos
             const pedidosAtivos = listaPedidos.filter(item => {
                 const p = item.json ? item.json : item;
                 if (!p || !p.id || p.deletado === true) return false;
 
-                // FILTRO DE BUSCA (Search)
+                // Executa filtro de busca inteligente
                 if (searchQuery) {
-                    const idMatch = (p.id || '').toLowerCase().includes(searchQuery);
-                    const chatMatch = (p.conversa_id || '').toLowerCase().includes(searchQuery);
-                    const nomeMatch = (p.cliente_nome || '').toLowerCase().includes(searchQuery);
-                    const telMatch = (p.cliente_telefone || '').toLowerCase().includes(searchQuery);
+                    const idMatch = String(p.id || '').toLowerCase().includes(searchQuery);
+                    const chatMatch = String(p.conversa_id || '').toLowerCase().includes(searchQuery);
+                    const nomeMatch = String(p.cliente_nome || '').toLowerCase().includes(searchQuery);
+                    const telMatch = String(p.cliente_telefone || '').toLowerCase().includes(searchQuery);
                     
                     if (!idMatch && !chatMatch && !nomeMatch && !telMatch) return false;
                 }
@@ -345,36 +428,28 @@
 
             pedidosAtivos.forEach(pedidoRaw => {
                 const p = pedidoRaw.json ? pedidoRaw.json : pedidoRaw;
-                let status = p.status || 'aguardando_pix';
-                const formaPgto = (p.forma_pagamento || '').toLowerCase();
                 
-                // Tratamento Legado / Regras Fixas
-                if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro') || formaPgto.includes('cartão'))) {
-                    status = 'pagamento_entrega';
-                }
-                
-                // Transforma o cancelado genérico antigo
-                if (status === 'cancelado') status = 'cancelado_atendente';
+                // Traduz e padroniza o status antes de colocar no Kanban
+                const statusFinal = normalizarStatus(p.status, p.forma_pagamento);
 
-                // Caso venha algum status não mapeado, joga em pagamento na entrega
-                if (!STATUS_CONFIG[status]) status = 'pagamento_entrega';
-
-                const coluna = document.getElementById(`col-${status}`);
+                const coluna = document.getElementById(`col-${statusFinal}`);
                 if (!coluna) return;
 
-                contagens[status] = (contagens[status] || 0) + 1;
-                coluna.appendChild(criarCard(p, status));
+                contagens[statusFinal] = (contagens[statusFinal] || 0) + 1;
+                coluna.appendChild(criarCard(p, statusFinal));
             });
 
+            // Atualiza contadores numéricos dos cabeçalhos das colunas
             Object.entries(contagens).forEach(([status, total]) => {
                 if(document.getElementById(`count-${status}`)) document.getElementById(`count-${status}`).textContent = total;
             });
 
+            // Renderiza mensagem de aviso em colunas vazias
             COLUNAS_TODAS.forEach(status => {
                 if (contagens[status] === 0 && document.getElementById(`col-${status}`)) {
                     document.getElementById(`col-${status}`).innerHTML = `
                         <div class="flex items-center justify-center p-4 border border-dashed border-slate-200 bg-slate-50/50 rounded-xl text-slate-400 text-xs font-medium">
-                            Nenhum pedido
+                            Nenhum pedido nesta coluna
                         </div>
                     `;
                 }
@@ -415,16 +490,19 @@
             }
 
             let botoesHtml = '';
-            // Botões de fluxo padrão
-            if (config.anterior) botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.anterior}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnAnteriorCor} transition-colors disabled:opacity-50">${config.btnAnteriorLabel}</button>`;
-            if (config.proximo) botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.proximo}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">${config.btnProximoLabel}</button>`;
+            if (config.anterior) {
+                botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.anterior}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnAnteriorCor} transition-colors disabled:opacity-50">${config.btnAnteriorLabel}</button>`;
+            }
+            if (config.proximo) {
+                botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.proximo}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">${config.btnProximoLabel}</button>`;
+            }
             
-            // Botões de cancelamento bifurcados
+            // Botões de cancelamento bifurcados sem abreviações
             if (config.podeCancel) {
                 botoesHtml += `
                 <div class="w-full flex gap-1.5 mt-1">
-                    <button onclick="cancelarPedido('${p.id}', 'cancelado_cliente', this)" class="flex-1 text-[9px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-1.5 py-1.5 rounded transition-colors disabled:opacity-50">✕ Cancelar (Cli)</button>
-                    <button onclick="cancelarPedido('${p.id}', 'cancelado_atendente', this)" class="flex-1 text-[9px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-1.5 py-1.5 rounded transition-colors disabled:opacity-50">✕ Cancelar (Ate)</button>
+                    <button onclick="cancelarPedido('${p.id}', 'cancelado_cliente', this)" class="flex-1 text-[9px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-1.5 py-1.5 rounded transition-colors disabled:opacity-50">✕ Cancelar Cliente</button>
+                    <button onclick="cancelarPedido('${p.id}', 'cancelado_atendente', this)" class="flex-1 text-[9px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-1.5 py-1.5 rounded transition-colors disabled:opacity-50">✕ Cancelar Atendente</button>
                 </div>`;
             }
 
@@ -465,6 +543,10 @@
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
 
+            /*
+              AQUI É ENVIADO O NOVO STATUS PARA O SEU WEBHOOK N8N
+              A propriedade 'status' levará a chave exata (ex: 'confirmado', 'comprovante_enviado').
+            */
             const payload = { 
                 action: 'status', 
                 account_id: globalAccountId.toString(), 
@@ -476,7 +558,7 @@
             await enviarAcao(payload, btn, () => {
                 atualizarStatusLocal(id, novoStatus);
                 renderizarKanban();
-                mostrarToast(`Movido: ${STATUS_CONFIG[novoStatus]?.label || novoStatus}`, 'success');
+                mostrarToast(`Movido para: ${STATUS_CONFIG[novoStatus]?.label || novoStatus}`, 'success');
             });
         }
 
@@ -486,6 +568,10 @@
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
 
+            /*
+              ENVIO DO CANCELAMENTO
+              Envia 'cancelado_cliente' ou 'cancelado_atendente' para o n8n.
+            */
             const payload = { 
                 action: 'status', 
                 account_id: globalAccountId.toString(), 
@@ -497,7 +583,8 @@
             await enviarAcao(payload, btn, () => {
                 atualizarStatusLocal(id, tipoCancelamento);
                 renderizarKanban();
-                mostrarToast(`Pedido Cancelado (${tipoCancelamento.replace('cancelado_','')})`, 'error');
+                const nomeLabel = tipoCancelamento === 'cancelado_cliente' ? 'pelo Cliente' : 'pelo Atendente';
+                mostrarToast(`Pedido Cancelado ${nomeLabel}`, 'error');
             });
         }
 

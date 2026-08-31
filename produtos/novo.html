@@ -59,7 +59,7 @@
                     🛵 Taxas de Entrega
                 </button>
                 <button id="tab-btn-upsell" onclick="switchTab('upsell')" class="py-2.5 text-sm font-medium text-slate-400 hover:text-slate-700 border-b-2 border-transparent whitespace-nowrap focus:outline-none transition-colors">
-                    🤖 Vendedor Automático (Upsell)
+                    🤖 Sugestões
                 </button>
                 <a id="link-menu-studio" href="./menu_studio_pro_mobile_first.html" class="py-2.5 text-sm font-medium text-slate-400 hover:text-slate-700 border-b-2 border-transparent whitespace-nowrap transition-colors">
                     🎨 Gerador de PDF (Menu Studio)
@@ -234,25 +234,46 @@
         </div>
 
         <!-- ==========================================
-             ABA 3: VENDEDOR AUTOMÁTICO (UPSELL)
+             ABA 3: SUGESTÕES (UPSELL)
              ========================================== -->
         <div id="view-upsell" class="space-y-6 hidden">
             
             <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
-                <div class="p-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center flex-wrap gap-2">
                     <div>
-                        <h2 class="text-md font-bold text-slate-800">🤖 Vendedor Automático (Upsell)</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Aumente seu ticket médio oferecendo itens complementares antes de fechar o pedido.</p>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-md font-bold text-slate-800">🤖 Sugestões Automáticas</h2>
+                            <button type="button" onclick="toggleInstrucoesUpsell()" class="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200 transition-colors">
+                                ℹ️ Como funciona?
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Ofereça bebidas, sobremesas ou acompanhamentos automaticamente no fechamento do pedido.</p>
                     </div>
+                </div>
+
+                <!-- Painel Expansível de Instruções / Tooltip -->
+                <div id="painel-instrucoes-upsell" class="hidden p-4 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 space-y-2">
+                    <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
+                        💡 Regra de Negócio do Agente de Vendas
+                    </div>
+                    <p>1. <strong>Gatilhos:</strong> Quando o cliente seleciona itens das categorias de pratos/comidas e solicita o fechamento do pedido.</p>
+                    <p>2. <strong>Verificação da 1ª Prioridade:</strong> O robô checa se o cliente já pediu algo da 1ª prioridade (Ex: <em>Bebidas</em>). Se não tiver pedido, ele sugere uma opção ativa desta categoria.</p>
+                    <p>3. <strong>Verificação da 2ª Prioridade:</strong> Se o cliente já tiver a 1ª opção no carrinho, o robô passa para a 2ª prioridade (Ex: <em>Sobremesas</em>).</p>
+                    <p class="text-slate-500 italic pt-1">⚠️ <strong>Importante:</strong> A sugestão é feita apenas <u>uma única vez</u> por atendimento para evitar insistências desagradáveis.</p>
                 </div>
 
                 <div class="p-5 md:p-6 space-y-6">
 
+                    <!-- Mensagem de Alerta se não houver categorias válidas -->
+                    <div id="alerta-sem-categorias" class="hidden p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
+                        ⚠️ <strong>Atenção:</strong> Você precisa ter produtos ativos cadastrados em pelo menos uma categoria para configurar o módulo de sugestões.
+                    </div>
+
                     <!-- Chave Ativar/Desativar Feature -->
                     <div class="flex items-center justify-between p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl">
                         <div>
-                            <h3 class="text-sm font-bold text-indigo-900">Ativar Oferta de Produtos no Fechamento</h3>
-                            <p class="text-xs text-indigo-700 mt-0.5">Se ativado, o robô verifica o que falta no carrinho do cliente e faz 1 única sugestão sutil.</p>
+                            <h3 class="text-sm font-bold text-indigo-900">Ativar Sugestões de Vendas</h3>
+                            <p class="text-xs text-indigo-700 mt-0.5">Ativa ou desativa a oferta automática de produtos no fechamento do pedido.</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="upsell_ativo" class="sr-only peer">
@@ -260,45 +281,34 @@
                         </label>
                     </div>
 
-                    <!-- Card Informativo / Instruções Didáticas -->
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
-                        <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
-                            💡 Como funciona a lógica do Vendedor Automático?
-                        </div>
-                        <p>1. <strong>Gatilhos:</strong> Quando o cliente coloca no carrinho uma comida das categorias principais (Ex: <em>Lanches</em> ou <em>Pizzas</em>) e pede para fechar o pedido.</p>
-                        <p>2. <strong>Checagem Inteligente:</strong> O robô checa se o cliente já pediu uma opção da <strong>1ª Prioridade</strong> (Ex: <em>Bebidas</em>). Se ele NÃO pediu, o robô sugere uma bebida.</p>
-                        <p>3. <strong>Segunda Opção:</strong> Se ele já tiver pedido bebida, o robô passa para a <strong>2ª Prioridade</strong> (Ex: <em>Sobremesas</em>) e sugere um doce.</p>
-                        <p class="text-slate-500 italic pt-1">⚠️ <strong>Nota:</strong> A oferta é feita apenas <u>uma única vez</u> por atendimento. Se o cliente tiver todos os itens ou recusar a oferta, o robô encerra sem insistir.</p>
-                    </div>
-
-                    <!-- Formulário de Prioridades -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+                    <!-- Formulário de Seleção de Categorias Reais -->
+                    <div id="form-upsell-campos" class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
                         
                         <div class="md:col-span-3">
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
-                                🍕 Categorias Gatilho (Pratos / Comidas Principais) <span class="text-rose-500">*</span>
+                                🍕 Categorias Gatilho (Pratos Principais) <span class="text-rose-500">*</span>
                             </label>
-                            <input type="text" id="upsell_gatilhos" class="input-field" placeholder="Ex: Lanches, Pizzas, Marmitex, Executivo">
-                            <p class="text-[10px] text-slate-400 mt-1">Digite as categorias separadas por vírgula que disparam a oferta.</p>
+                            <p class="text-[10px] text-slate-400 mb-2">Selecione uma ou mais categorias existentes que acionam o vendedor automático (Segure CTRL para selecionar várias):</p>
+                            <select id="upsell_gatilhos" multiple class="input-field h-28 bg-white" required></select>
                         </div>
 
                         <div class="md:col-span-3 border-t border-slate-100 pt-3">
-                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Fila de Prioridade para Oferta</h3>
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Prioridades de Oferta</h3>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-indigo-700 uppercase tracking-wide mb-1">
                                 🥤 1ª Prioridade de Oferta
                             </label>
-                            <input type="text" id="upsell_prioridade_1" class="input-field bg-indigo-50/30 border-indigo-200" placeholder="Ex: Bebidas">
-                            <p class="text-[10px] text-slate-400 mt-1">Sempre será a primeira opção oferecida se não estiver no carrinho.</p>
+                            <select id="upsell_prioridade_1" class="input-field bg-indigo-50/30 border-indigo-200"></select>
+                            <p class="text-[10px] text-slate-400 mt-1">Primeira opção oferecida caso não esteja no carrinho.</p>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1">
                                 🍰 2ª Prioridade de Oferta
                             </label>
-                            <input type="text" id="upsell_prioridade_2" class="input-field bg-emerald-50/30 border-emerald-200" placeholder="Ex: Sobremesas">
+                            <select id="upsell_prioridade_2" class="input-field bg-emerald-50/30 border-emerald-200"></select>
                             <p class="text-[10px] text-slate-400 mt-1">Oferecida caso o cliente já tenha pedido a 1ª opção.</p>
                         </div>
 
@@ -306,15 +316,15 @@
                             <label class="block text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-1">
                                 🍟 3ª Prioridade (Opcional)
                             </label>
-                            <input type="text" id="upsell_prioridade_3" class="input-field bg-amber-50/30 border-amber-200" placeholder="Ex: Adicionais, Porções">
-                            <p class="text-[10px] text-slate-400 mt-1">Oferecida caso o cliente já tenha pedido a 1ª e a 2ª opção.</p>
+                            <select id="upsell_prioridade_3" class="input-field bg-amber-50/30 border-amber-200"></select>
+                            <p class="text-[10px] text-slate-400 mt-1">Oferecida caso o cliente já tenha a 1ª e a 2ª opção.</p>
                         </div>
 
                     </div>
 
                     <div class="flex justify-end pt-4 border-t border-slate-100">
                         <button type="button" id="btnSalvarUpsell" onclick="salvarConfiguracoesUpsell()" class="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                            💾 Salvar Configurações de Vendas
+                            💾 Salvar Configurações
                         </button>
                     </div>
 
@@ -342,8 +352,9 @@
         let statusAtualEdicao = true;
         let categoriaSelecionadaFiltro = 'Todas';
 
-        // ESTADOS (ENTREGAS)
+        // ESTADOS (ENTREGAS E CONFIGS)
         let listaTaxas = [];
+        let configEmpresaCache = {};
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -391,7 +402,6 @@
             const viewEntregas = document.getElementById('view-entregas');
             const viewUpsell = document.getElementById('view-upsell');
 
-            // Limpa estilos ativos
             [btnProdutos, btnEntregas, btnUpsell].forEach(btn => {
                 btn.className = "py-2.5 text-sm font-medium text-slate-400 hover:text-slate-700 border-b-2 border-transparent whitespace-nowrap focus:outline-none transition-colors";
             });
@@ -406,19 +416,90 @@
             } else if (tabName === 'upsell') {
                 btnUpsell.className = "py-2.5 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 whitespace-nowrap focus:outline-none transition-colors";
                 viewUpsell.classList.remove('hidden');
+                preencherDropdownsUpsell(configEmpresaCache); 
             }
         }
 
+        function toggleInstrucoesUpsell() {
+            document.getElementById('painel-instrucoes-upsell').classList.toggle('hidden');
+        }
+
         // ==========================================
-        // ABA 3: LÓGICA DO VENDEDOR AUTOMÁTICO (UPSELL)
+        // ABA 3: SUGESTÕES (UPSELL)
         // ==========================================
+        function obterCategoriasValidas() {
+            const categorias = new Set();
+            listaAtual.forEach(prod => {
+                const p = prod.json || prod;
+                const isAtivo = p.ativo !== false && p.ativo !== "false";
+                if (p.deletado !== true && isAtivo && p.categoria && p.categoria.trim() !== '') {
+                    categorias.add(p.categoria.trim());
+                }
+            });
+            return Array.from(categorias).sort();
+        }
+
+        function preencherDropdownsUpsell(dadosConfig = {}) {
+            const categoriasValidas = obterCategoriasValidas();
+            const alerta = document.getElementById('alerta-sem-categorias');
+            const btnSalvar = document.getElementById('btnSalvarUpsell');
+
+            if (categoriasValidas.length === 0) {
+                alerta.classList.remove('hidden');
+                btnSalvar.disabled = true;
+                btnSalvar.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            } else {
+                alerta.classList.add('hidden');
+                btnSalvar.disabled = false;
+                btnSalvar.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            const selectGatilhos = document.getElementById('upsell_gatilhos');
+            const selectP1 = document.getElementById('upsell_prioridade_1');
+            const selectP2 = document.getElementById('upsell_prioridade_2');
+            const selectP3 = document.getElementById('upsell_prioridade_3');
+
+            selectGatilhos.innerHTML = '';
+            selectP1.innerHTML = '<option value="">-- Nenhuma --</option>';
+            selectP2.innerHTML = '<option value="">-- Nenhuma --</option>';
+            selectP3.innerHTML = '<option value="">-- Nenhuma --</option>';
+
+            categoriasValidas.forEach(cat => {
+                selectGatilhos.appendChild(new Option(cat, cat));
+                selectP1.appendChild(new Option(cat, cat));
+                selectP2.appendChild(new Option(cat, cat));
+                selectP3.appendChild(new Option(cat, cat));
+            });
+
+            if (dadosConfig.upsell_gatilhos) {
+                const gatilhosSalvos = Array.isArray(dadosConfig.upsell_gatilhos) 
+                    ? dadosConfig.upsell_gatilhos 
+                    : dadosConfig.upsell_gatilhos.split(',').map(s => s.trim());
+                
+                Array.from(selectGatilhos.options).forEach(opt => {
+                    opt.selected = gatilhosSalvos.includes(opt.value);
+                });
+            }
+            if (dadosConfig.upsell_prioridade_1) selectP1.value = dadosConfig.upsell_prioridade_1;
+            if (dadosConfig.upsell_prioridade_2) selectP2.value = dadosConfig.upsell_prioridade_2;
+            if (dadosConfig.upsell_prioridade_3) selectP3.value = dadosConfig.upsell_prioridade_3;
+        }
+
         async function salvarConfiguracoesUpsell() {
             const btn = document.getElementById('btnSalvarUpsell');
             const upsellAtivo = document.getElementById('upsell_ativo').checked;
-            const gatilhos = document.getElementById('upsell_gatilhos').value.trim();
-            const p1 = document.getElementById('upsell_prioridade_1').value.trim();
-            const p2 = document.getElementById('upsell_prioridade_2').value.trim();
-            const p3 = document.getElementById('upsell_prioridade_3').value.trim();
+            
+            const selectGatilhos = document.getElementById('upsell_gatilhos');
+            const gatilhosSelecionados = Array.from(selectGatilhos.selectedOptions).map(opt => opt.value);
+
+            const p1 = document.getElementById('upsell_prioridade_1').value;
+            const p2 = document.getElementById('upsell_prioridade_2').value;
+            const p3 = document.getElementById('upsell_prioridade_3').value;
+
+            if (upsellAtivo && gatilhosSelecionados.length === 0) {
+                return alert("Selecione pelo menos uma categoria gatilho para ativar o recurso!");
+            }
 
             btn.innerText = "⏳ Salvando...";
             btn.disabled = true;
@@ -429,21 +510,32 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         account_id: globalAccountId.toString(),
-                        taxas_entrega: listaTaxas, // Mantém entregas intactas
+                        taxas_entrega: listaTaxas,
                         upsell_ativo: upsellAtivo,
-                        upsell_gatilhos: gatilhos,
+                        upsell_gatilhos: gatilhosSelecionados.join(', '),
                         upsell_prioridade_1: p1,
                         upsell_prioridade_2: p2,
                         upsell_prioridade_3: p3
                     })
                 });
 
-                if (!response.ok) throw new Error();
-                alert("Configurações do Vendedor Automático salvas!");
+                const jsonRes = await response.json().catch(() => ({}));
+
+                if (response.ok || jsonRes.success) {
+                    // Atualiza cache local
+                    configEmpresaCache.upsell_ativo = upsellAtivo;
+                    configEmpresaCache.upsell_gatilhos = gatilhosSelecionados.join(', ');
+                    configEmpresaCache.upsell_prioridade_1 = p1;
+                    configEmpresaCache.upsell_prioridade_2 = p2;
+                    configEmpresaCache.upsell_prioridade_3 = p3;
+                    alert("Configurações de sugestões salvas com sucesso!");
+                } else {
+                    throw new Error();
+                }
             } catch (error) {
                 alert("Erro ao salvar configurações no servidor.");
             } finally {
-                btn.innerText = "💾 Salvar Configurações de Vendas";
+                btn.innerText = "💾 Salvar Configurações";
                 btn.disabled = false;
             }
         }
@@ -461,19 +553,16 @@
                 let data = await res.json();
                 if (Array.isArray(data)) data = data[0];
 
-                // Carrega Taxas
+                configEmpresaCache = data || {};
+
                 listaTaxas = data.taxas_entrega || [];
                 if (typeof listaTaxas === 'string') {
                     try { listaTaxas = JSON.parse(listaTaxas); } catch(e) { listaTaxas = []; }
                 }
                 renderizarTabelaTaxas();
 
-                // Preenche campos do Vendedor Automático (Upsell)
                 document.getElementById('upsell_ativo').checked = data.upsell_ativo === true || data.upsell_ativo === 'true';
-                document.getElementById('upsell_gatilhos').value = data.upsell_gatilhos || '';
-                document.getElementById('upsell_prioridade_1').value = data.upsell_prioridade_1 || '';
-                document.getElementById('upsell_prioridade_2').value = data.upsell_prioridade_2 || '';
-                document.getElementById('upsell_prioridade_3').value = data.upsell_prioridade_3 || '';
+                preencherDropdownsUpsell(data);
 
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar taxas.</td></tr>`;
@@ -629,6 +718,7 @@
                 atualizarDatalistCategorias();
                 renderizarFiltros();
                 renderizarTabela();
+                preencherDropdownsUpsell(configEmpresaCache);
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
             }

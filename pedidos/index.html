@@ -50,7 +50,7 @@
 
             <!-- Filtros, Busca e Ações -->
             <div class="flex flex-wrap items-center gap-2">
-                <!-- Campo de Pesquisa Geral (Nome, Telefone, ID Pedido ou ID Conversa) -->
+                <!-- Campo de Pesquisa Geral -->
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,6 +95,19 @@
         <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
             
             <!-- ====== COLUNAS DA ABA 1 (EM ABERTO / AÇÕES) ====== -->
+            
+            <!-- NOVA COLUNA: EM ABERTO -->
+            <div class="kanban-col flex flex-col gap-3" id="kanban-col-em_aberto">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛒 Em Aberto</h2>
+                    </div>
+                    <span id="count-em_aberto" class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">0</span>
+                </div>
+                <div id="col-em_aberto" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
             <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_entrega">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -184,7 +197,7 @@
         let segmentoAtual = 'restaurante'; 
         let handshakeInterval;
         let listaPedidos = [];
-        let currentTab = 1; // 1 = Em Aberto / Ações, 2 = Finalizados e PIX
+        let currentTab = 1;
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -213,11 +226,14 @@
         /* =========================================================================
            CONFIGURAÇÃO DOS STATUS & BOTÕES DAS COLUNAS
            =========================================================================
-           * Se você criar uma nova etiqueta no Chatwoot / n8n, você deve adicionar
-             o identificador aqui no objeto STATUS_CONFIG indicando a qual Aba pertence.
         */
         const STATUS_CONFIG = {
             // ABA 1: EM ABERTO / AÇÕES
+            em_aberto: { 
+                label: 'Em Aberto', 
+                podeCancel: true, 
+                tab: 1 
+            },
             pagamento_entrega: { 
                 label: 'Pagamento na Entrega', 
                 proximo: 'confirmado', 
@@ -257,7 +273,7 @@
             },
             confirmado: { 
                 label: 'Pedido Aprovado', 
-                podeCancel: true, // Habilita o cancelamento retroativo
+                podeCancel: true, 
                 tab: 2 
             },
             cancelado_cliente: { 
@@ -277,33 +293,29 @@
         /* =========================================================================
            TRADUTOR E MAPEADOR DE COMPATIBILIDADE (RETROCOMPATIBILIDADE)
            =========================================================================
-           * Esta função lê o status vindo do Banco de Dados / Webhook.
-           * Se o n8n enviar etiquetas velhas (ex: 'cancelado'), ela converte 
-             dinamicamente para a nova etiqueta ('cancelado_atendente').
-           * Quando você atualizar as etiquetas no Chatwoot / n8n para enviar
-             diretamente 'cancelado_cliente' ou 'cancelado_atendente', o 'switch'
-             abaixo manterá o novo valor intacto sem precisar alterar o código!
         */
         function normalizarStatus(statusOriginal, formaPagamento) {
-            let status = (statusOriginal || 'aguardando_pix').toLowerCase().trim();
+            let status = (statusOriginal || 'em_aberto').toLowerCase().trim();
             const formaPgto = (formaPagamento || '').toLowerCase();
 
             // Mapeamentos retrocompatíveis
             if (status === 'cancelado') {
-                return 'cancelado_atendente'; // Traduz cancelado genérico antigo para atendente
+                return 'cancelado_atendente';
             }
             if (status === 'aprovado') {
-                return 'confirmado'; // Traduz variações de aprovado para o padrão interno
+                return 'confirmado';
+            }
+            if (status === 'aberto' || status === 'carrinho') {
+                return 'em_aberto';
             }
             if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro') || formaPgto.includes('cartão'))) {
-                return 'pagamento_entrega'; // Regra de negócio para pagamentos físicos
+                return 'pagamento_entrega';
             }
             if (status === 'balcao' || status === 'retirada') {
                 return 'retirada_balcao';
             }
 
-            // Se o status já for um dos novos (ex: 'cancelado_cliente'), ele retorna exatamente o que recebeu
-            return STATUS_CONFIG[status] ? status : 'pagamento_entrega';
+            return STATUS_CONFIG[status] ? status : 'em_aberto';
         }
 
         /* Handshake e Conexão Chatwoot */
@@ -400,18 +412,15 @@
                 if (elCol) elCol.innerHTML = '';
                 if (document.getElementById(`count-${s}`)) document.getElementById(`count-${s}`).textContent = '0';
                 
-                // Exibe no DOM somente as colunas pertencentes à aba selecionada
                 if (elKanbanCol) {
                     elKanbanCol.classList.toggle('hidden', STATUS_CONFIG[s].tab !== currentTab);
                 }
             });
 
-            // Filtra e valida a lista de pedidos
             const pedidosAtivos = listaPedidos.filter(item => {
                 const p = item.json ? item.json : item;
                 if (!p || !p.id || p.deletado === true) return false;
 
-                // Executa filtro de busca inteligente
                 if (searchQuery) {
                     const idMatch = String(p.id || '').toLowerCase().includes(searchQuery);
                     const chatMatch = String(p.conversa_id || '').toLowerCase().includes(searchQuery);
@@ -428,8 +437,6 @@
 
             pedidosAtivos.forEach(pedidoRaw => {
                 const p = pedidoRaw.json ? pedidoRaw.json : pedidoRaw;
-                
-                // Traduz e padroniza o status antes de colocar no Kanban
                 const statusFinal = normalizarStatus(p.status, p.forma_pagamento);
 
                 const coluna = document.getElementById(`col-${statusFinal}`);
@@ -439,12 +446,10 @@
                 coluna.appendChild(criarCard(p, statusFinal));
             });
 
-            // Atualiza contadores numéricos dos cabeçalhos das colunas
             Object.entries(contagens).forEach(([status, total]) => {
                 if(document.getElementById(`count-${status}`)) document.getElementById(`count-${status}`).textContent = total;
             });
 
-            // Renderiza mensagem de aviso em colunas vazias
             COLUNAS_TODAS.forEach(status => {
                 if (contagens[status] === 0 && document.getElementById(`col-${status}`)) {
                     document.getElementById(`col-${status}`).innerHTML = `
@@ -497,7 +502,6 @@
                 botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.proximo}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">${config.btnProximoLabel}</button>`;
             }
             
-            // Botões de cancelamento bifurcados sem abreviações
             if (config.podeCancel) {
                 botoesHtml += `
                 <div class="w-full flex gap-1.5 mt-1">
@@ -543,10 +547,6 @@
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
 
-            /*
-              AQUI É ENVIADO O NOVO STATUS PARA O SEU WEBHOOK N8N
-              A propriedade 'status' levará a chave exata (ex: 'confirmado', 'comprovante_enviado').
-            */
             const payload = { 
                 action: 'status', 
                 account_id: globalAccountId.toString(), 
@@ -568,10 +568,6 @@
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
 
-            /*
-              ENVIO DO CANCELAMENTO
-              Envia 'cancelado_cliente' ou 'cancelado_atendente' para o n8n.
-            */
             const payload = { 
                 action: 'status', 
                 account_id: globalAccountId.toString(), 

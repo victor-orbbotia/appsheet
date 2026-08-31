@@ -61,18 +61,39 @@
         
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Limitações do card do destaque no canvas para quebrar linhas até 3 níveis */
+        .destaque-card-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+        .destaque-card-desc {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
     </style>
 </head>
 
 <body class="flex flex-col md:flex-row h-screen text-slate-800 relative">
 
     <!-- PAINEL LATERAL DE EDIÇÃO -->
-    <aside id="editor-panel" class="w-full md:w-[420px] h-full flex flex-col bg-white border-r border-slate-200 shadow-xl z-20 shrink-0">
+    <aside id="editor-panel" class="w-full md:w-[420px] h-full flex flex-col bg-white border-r border-slate-200 shadow-xl z-20 shrink-0 relative">
 
         <!-- Header -->
         <header class="p-4 border-b border-slate-200 bg-white shrink-0 space-y-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
+                    <!-- Ícone/Botão de Restaurar Versão Anterior no mesmo tom e à frente dos botões -->
+                    <button onclick="sincronizarCardapio()" id="btn-sincronizar-estado" title="Restaurar versão anterior salva" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all disabled:opacity-30 disabled:pointer-events-none pr-1">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </button>
+                    <span class="text-slate-300">|</span>
                     <a id="btn-voltar-menu" href="../index.html" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
                         <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Menu Principal
                     </a>
@@ -84,16 +105,7 @@
                 <span id="badge-account" class="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border">ID: ...</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar Versão
-                </button>
-                <button onclick="sincronizarCardapio()" id="btn-sincronizar-estado" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-2 rounded text-[11px] flex items-center justify-center gap-1 transition shadow-sm">
-                    <i class="fa-solid fa-rotate"></i> Sincronizar
-                </button>
-            </div>
-
-            <div class="flex items-center justify-between px-1 -mt-1 mb-1">
+            <div class="flex items-center justify-between px-1 pt-1 border-t border-slate-100">
                 <div class="flex gap-2">
                     <button id="btn-undo" onclick="undo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-colors" title="Desfazer">
                         <i class="fa-solid fa-rotate-left"></i>
@@ -121,7 +133,7 @@
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-4 relative bg-slate-50/50 hide-scroll space-y-4">
+        <div class="flex-1 overflow-y-auto p-4 pb-16 relative bg-slate-50/50 hide-scroll space-y-4">
             <!-- TAB 1: IDENTIDADE -->
             <div id="panel-identidade" class="tab-content fade-in space-y-4 block">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
@@ -182,8 +194,6 @@
 
             <!-- TAB 3: DADOS COM CONFIGURAÇÕES DE EXIBIÇÃO DE ESTOQUE -->
             <div id="panel-dados" class="tab-content fade-in hidden space-y-4">
-                
-                <!-- REGRAS DE EXIBIÇÃO DE ESTOQUE NO PDF -->
                 <div class="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 shadow-sm space-y-2.5">
                     <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-1.5">
                         <i class="fa-solid fa-eye text-indigo-600"></i> Exibição no PDF (Estoque)
@@ -256,6 +266,13 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- BOTÃO FLUTUANTE DISCRETO PARA SALVAR -->
+        <div class="px-4 py-2 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent shrink-0 z-10">
+            <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98">
+                <i class="fa-regular fa-floppy-disk text-sm"></i> Salvar
+            </button>
         </div>
 
         <nav class="bg-white border-t border-slate-200 p-1.5 shrink-0">
@@ -465,6 +482,8 @@
         .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
         .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
         .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        .destaque-card-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+        .destaque-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
         @page { size: A4 portrait; margin: 0mm; }
     </style>
 </head>
@@ -502,8 +521,7 @@
 
         async function sincronizarCardapio() {
             const btn = document.getElementById('btn-sincronizar-estado');
-            const origText = btn ? btn.innerHTML : '';
-            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Buscando...'; btn.disabled = true; }
+            if (btn) { btn.disabled = true; }
 
             try {
                 const response = await fetch(`${urlObterCardapio}?account_id=${globalAccountId}`);
@@ -520,8 +538,6 @@
                 }
             } catch (err) {
                 alert("❌ Erro ao buscar versão salva no servidor.");
-            } finally {
-                if (btn) { btn.innerHTML = origText; btn.disabled = false; }
             }
         }
 
@@ -730,7 +746,7 @@
         function addDestaque() {
             if (appState.carrosChefe.length >= 3) return alert("Máximo 3 destaques no topo.");
             saveStateToHistory();
-            appState.carrosChefe.push({ id: "c_" + Date.now(), imgBase64: "https://placehold.co/1200x675/111827/FFFFFF?text=16:9+Adicione+Foto", nome: "Prato", desc: "Descrição", preco: 0 });
+            appState.carrosChefe.push({ id: "c_" + Date.now(), imgBase64: "", nome: "Prato", desc: "Descrição", preco: 0 });
             renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
         }
 
@@ -748,10 +764,13 @@
             appState.carrosChefe.forEach((item) => {
                 const div = document.createElement('div');
                 div.className = "bg-white/5 border border-white/10 rounded-lg p-2.5 flex gap-2.5 relative group";
+                
+                const imgMarkup = item.imgBase64 ? `<img src="${item.imgBase64}" class="w-full h-full object-cover" alt="${item.nome}">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs"><i class="fa-solid fa-camera"></i></div>`;
+
                 div.innerHTML = `
                     <button onclick="removeDestaque('${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] shadow"><i class="fa-solid fa-xmark"></i></button>
                     <label class="w-16 h-16 bg-black/20 rounded-md overflow-hidden cursor-pointer flex-shrink-0 relative">
-                        <img src="${item.imgBase64}" class="w-full h-full object-cover" alt="${item.nome}">
+                        ${imgMarkup}
                         <input type="file" class="hidden" accept="image/*" onchange="handleDestaqueImgUpload(event, '${item.id}')">
                     </label>
                     <div class="flex-1 space-y-1">
@@ -899,7 +918,8 @@
             if (destaquesValidos.length > 0) {
                 html += `<div class="avoid-break mb-10"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 font-title" style="color: var(--color-secondary)">— Especialidades —</h2><div class="destaques-grid">`;
                 destaquesValidos.forEach(item => {
-                    html += `<div class="destaque-card text-center"><img src="${item.imgBase64}" alt="${item.nome}"><h3 class="font-bold text-base font-title mt-2 leading-tight">${item.nome}</h3><p class="text-[11px] italic mb-1" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
+                    const imgTag = item.imgBase64 ? `<img src="${item.imgBase64}" alt="${item.nome}">` : '';
+                    html += `<div class="destaque-card text-center">${imgTag}<h3 class="font-bold text-base font-title mt-2 leading-tight destaque-card-title">${item.nome}</h3><p class="text-[11px] italic mb-1 destaque-card-desc" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
                 });
                 html += `</div></div>`;
             }

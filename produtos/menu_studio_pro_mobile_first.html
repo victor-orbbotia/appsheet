@@ -55,9 +55,10 @@
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
         
-        .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
-        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
-        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
+        /* Grid de Destaques com Alinhamento na Base para evitar assimetria */
+        .destaques-grid { display: flex; justify-content: center; items-flex: flex-end; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem; }
         
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -69,6 +70,7 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             word-break: break-word;
+            margin-top: auto;
         }
         .destaque-card-desc {
             display: -webkit-box;
@@ -76,6 +78,7 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             word-break: break-word;
+            margin-bottom: 0.25rem;
         }
     </style>
 </head>
@@ -89,7 +92,6 @@
         <header class="p-4 border-b border-slate-200 bg-white shrink-0 space-y-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <!-- Ícone/Botão de Restaurar Versão Anterior no mesmo tom e à frente dos botões -->
                     <button onclick="sincronizarCardapio()" id="btn-sincronizar-estado" title="Restaurar versão anterior salva" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all disabled:opacity-30 disabled:pointer-events-none pr-1">
                         <i class="fa-solid fa-clock-rotate-left"></i>
                     </button>
@@ -155,11 +157,11 @@
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Nome no Cabeçalho</label>
-                        <input type="text" id="input-rest-name" value="Meu Restaurante" oninput="debounceUpdate()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:border-indigo-500 outline-none">
+                        <input type="text" id="input-rest-name" value="Meu Restaurante" maxlength="40" oninput="debounceUpdate()" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-medium text-slate-800 focus:bg-white focus:border-indigo-500 outline-none">
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Slogan</label>
-                        <textarea id="input-rest-desc" oninput="debounceUpdate()" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:bg-white outline-none" placeholder="Ex: Culinária artesanal"></textarea>
+                        <textarea id="input-rest-desc" oninput="debounceUpdate()" maxlength="120" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:bg-white outline-none" placeholder="Ex: Culinária artesanal"></textarea>
                     </div>
                 </div>
             </div>
@@ -170,11 +172,12 @@
                     <div class="flex items-center justify-between">
                         <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5 text-amber-400"><i class="fa-solid fa-star"></i> Destaques do Chef</h2>
                         <div class="flex items-center gap-2">
+                            <!-- Tooltip Ajustado com z-100 para sobrepor sem esconder -->
                             <div class="group relative flex items-center">
                                 <i class="fa-solid fa-circle-info text-slate-400 hover:text-amber-400 cursor-help transition-colors text-sm"></i>
-                                <div class="absolute right-0 bottom-full mb-2 hidden group-hover:block w-48 bg-slate-800 border border-slate-600 text-white text-[10px] p-2.5 rounded shadow-xl z-50">
+                                <div class="absolute right-0 top-full mt-2 hidden group-hover:block w-52 bg-slate-800 border border-slate-600 text-white text-[10px] p-2.5 rounded shadow-2xl z-[100]">
                                     <p class="font-bold text-amber-400 mb-1 border-b border-slate-600 pb-1">Formato da Foto</p>
-                                    <ul class="space-y-1 mt-1 text-slate-200">
+                                    <ul class="space-y-1 text-slate-200">
                                         <li><b>Proporção:</b> 16:9 (ou 2:1)</li>
                                         <li><b>Recomendado:</b> 1200x675px</li>
                                         <li><b>Mínimo:</b> 800x450px</li>
@@ -327,8 +330,8 @@
             restaurantDescription: "", logoUrl: null, carrosChefe: [], data: [],
             colorPrimary: "#111827", colorSecondary: "#4f46e5", colorBg: "#FFFFFF", colorText: "#333333",
             fontTitle: "'Playfair Display', serif", fontBody: "'Lato', sans-serif",
-            exibirEmFalta: 'ocultar', // 'ocultar' ou 'mostrar'
-            exibirEsgotado: 'mostrar'  // 'mostrar' ou 'ocultar'
+            exibirEmFalta: 'ocultar', 
+            exibirEsgotado: 'mostrar'  
         };
 
         let stateHistory = [];
@@ -479,11 +482,11 @@
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
-        .destaques-grid { display: flex; justify-content: center; gap: 0.85rem; margin-bottom: 1.5rem; }
-        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); } 
-        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); }
-        .destaque-card-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-        .destaque-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem; }
+        .destaque-card-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; margin-top: auto; }
+        .destaque-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; margin-bottom: 0.25rem; }
         @page { size: A4 portrait; margin: 0mm; }
     </style>
 </head>
@@ -618,7 +621,6 @@
                             precoFinal = parseFloat(listaOpcoes[0].preco) || 0; 
                         }
 
-                        // Leitura do Status do Estoque no Metadata
                         const statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
 
                         agrupado[cat].push({
@@ -756,6 +758,12 @@
             renderDestaquesUI(); renderPreview(); salvarConfigNoCache();
         }
 
+        /* Função para remover especificamente a imagem do destaque */
+        function removeDestaqueImg(id) {
+            updateDestaque(id, 'imgBase64', '');
+            renderDestaquesUI();
+        }
+
         function renderDestaquesUI() {
             const container = document.getElementById('destaques-list');
             const btnAdd = document.getElementById('btn-add-destaque');
@@ -765,7 +773,15 @@
                 const div = document.createElement('div');
                 div.className = "bg-white/5 border border-white/10 rounded-lg p-2.5 flex gap-2.5 relative group";
                 
-                const imgMarkup = item.imgBase64 ? `<img src="${item.imgBase64}" class="w-full h-full object-cover" alt="${item.nome}">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs"><i class="fa-solid fa-camera"></i></div>`;
+                /* Adicionado botão para remover imagem no canto da foto */
+                const imgMarkup = item.imgBase64 
+                    ? `<div class="relative w-full h-full group/img">
+                        <img src="${item.imgBase64}" class="w-full h-full object-cover" alt="${item.nome}">
+                        <button type="button" onclick="event.stopPropagation(); removeDestaqueImg('${item.id}')" title="Remover Foto" class="absolute top-0.5 right-0.5 bg-rose-600/90 hover:bg-rose-700 text-white w-4 h-4 rounded flex items-center justify-center text-[8px] transition-opacity opacity-0 group-hover/img:opacity-100 z-10">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                       </div>` 
+                    : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs"><i class="fa-solid fa-camera"></i></div>`;
 
                 div.innerHTML = `
                     <button onclick="removeDestaque('${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] shadow"><i class="fa-solid fa-xmark"></i></button>
@@ -774,8 +790,8 @@
                         <input type="file" class="hidden" accept="image/*" onchange="handleDestaqueImgUpload(event, '${item.id}')">
                     </label>
                     <div class="flex-1 space-y-1">
-                        <input type="text" value="${item.nome}" onchange="updateDestaque('${item.id}', 'nome', this.value)" class="w-full bg-transparent border-b border-white/20 text-xs font-bold text-white outline-none">
-                        <input type="text" value="${item.desc}" onchange="updateDestaque('${item.id}', 'desc', this.value)" class="w-full bg-transparent text-[10px] text-slate-300 outline-none">
+                        <input type="text" value="${item.nome}" maxlength="35" onchange="updateDestaque('${item.id}', 'nome', this.value)" class="w-full bg-transparent border-b border-white/20 text-xs font-bold text-white outline-none">
+                        <input type="text" value="${item.desc}" maxlength="60" onchange="updateDestaque('${item.id}', 'desc', this.value)" class="w-full bg-transparent text-[10px] text-slate-300 outline-none">
                         <div class="flex items-center text-amber-400 font-mono text-xs font-bold"><span class="mr-0.5">R$</span><input type="number" step="0.01" value="${item.preco}" onchange="updateDestaque('${item.id}', 'preco', this.value)" class="w-16 bg-transparent text-white border-b border-white/20 outline-none"></div>
                     </div>`;
                 container.appendChild(div);
@@ -826,7 +842,6 @@
                         displayPreco = item.variacoes.map(t => `<div class="whitespace-nowrap"><span class="text-[9px] uppercase text-slate-500 mr-1">${t.nome}</span>R$ ${formatCurrency(t.preco)}</div>`).join('');
                     }
 
-                    // Badge de Estoque no Painel Lateral
                     let badgeEstoque = '';
                     if (item.statusEstoque === 'em_falta') {
                         badgeEstoque = `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded ml-1">⚠️ Em Falta</span>`;
@@ -873,17 +888,14 @@
             applyStateToUI(); renderPreview(); salvarConfigNoCache();
         }
 
-        // Função auxiliar para decidir se o item deve ir para o PDF e como ele é desenhado
         function obterLayoutPrecoEStatus(item) {
             const status = item.statusEstoque || 'disponivel';
             const regraEmFalta = appState.exibirEmFalta || 'ocultar';
             const regraEsgotado = appState.exibirEsgotado || 'mostrar';
 
-            // Decisão se deve ou não ir para o PDF
             if (status === 'em_falta' && regraEmFalta === 'ocultar') return { deveRenderizar: false };
             if (status === 'esgotado' && regraEsgotado === 'ocultar') return { deveRenderizar: false };
 
-            // Se for para renderizar com tag/riscado
             if (status === 'em_falta' && regraEmFalta === 'mostrar') {
                 return {
                     deveRenderizar: true,
@@ -900,7 +912,6 @@
                 };
             }
 
-            // Normal disponível
             return { deveRenderizar: true, isIndisponivel: false };
         }
 
@@ -919,12 +930,11 @@
                 html += `<div class="avoid-break mb-10"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 font-title" style="color: var(--color-secondary)">— Especialidades —</h2><div class="destaques-grid">`;
                 destaquesValidos.forEach(item => {
                     const imgTag = item.imgBase64 ? `<img src="${item.imgBase64}" alt="${item.nome}">` : '';
-                    html += `<div class="destaque-card text-center">${imgTag}<h3 class="font-bold text-base font-title mt-2 leading-tight destaque-card-title">${item.nome}</h3><p class="text-[11px] italic mb-1 destaque-card-desc" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
+                    html += `<div class="destaque-card text-center">${imgTag}<h3 class="font-bold text-base font-title leading-tight destaque-card-title">${item.nome}</h3><p class="text-[11px] italic destaque-card-desc" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
                 });
                 html += `</div></div>`;
             }
 
-            // Filtragem inicial dos marcados como visíveis
             const filteredData = appState.data.map(cat => ({ 
                 categoria: cat.categoria, 
                 itens: cat.itens.filter(i => i.visivel) 

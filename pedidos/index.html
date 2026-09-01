@@ -98,15 +98,15 @@
         <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
             
             <!-- ====== COLUNAS DA ABA 1 (AÇÕES PRINCIPAIS) ====== -->
-            <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_entrega">
+            <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_na_entrega">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">💵 Pagamento na Entrega</h2>
                     </div>
-                    <span id="count-pagamento_entrega" class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
+                    <span id="count-pagamento_na_entrega" class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
                 </div>
-                <div id="col-pagamento_entrega" class="flex flex-col gap-3 min-h-[120px]"></div>
+                <div id="col-pagamento_na_entrega" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
             <div class="kanban-col flex flex-col gap-3" id="kanban-col-comprovante_enviado">
@@ -131,7 +131,6 @@
                 <div id="col-retirada_balcao" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
-
             <!-- ====== COLUNAS DA ABA 2 (EM ABERTO E AGUARDANDO PIX) ====== -->
             <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-em_aberto">
                 <div class="flex items-center justify-between">
@@ -155,17 +154,16 @@
                 <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
-
             <!-- ====== COLUNAS DA ABA 3 (APROVADOS E CANCELADOS) ====== -->
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-confirmado">
+            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pedido_aprovado">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span>
                         <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">✅ Pedido Aprovado</h2>
                     </div>
-                    <span id="count-confirmado" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
+                    <span id="count-pedido_aprovado" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
                 </div>
-                <div id="col-confirmado" class="flex flex-col gap-3 min-h-[120px]"></div>
+                <div id="col-pedido_aprovado" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
             <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-cancelado_cliente">
@@ -201,7 +199,7 @@
         let segmentoAtual = 'restaurante'; 
         let handshakeInterval;
         let listaPedidos = [];
-        let currentTab = 1; // 1 = Ações Principais | 2 = Em Aberto & PIX | 3 = Finalizados
+        let currentTab = 1;
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -214,7 +212,6 @@
             carregarPedidos();
         }
 
-        // Função responsável por alternar entre as 3 abas visualmente e invocar a renderização
         function setTab(tab) {
             currentTab = tab;
             [1, 2, 3].forEach(t => {
@@ -228,16 +225,12 @@
             renderizarKanban();
         }
 
-        /* =========================================================================
-           CONFIGURAÇÃO DOS STATUS & VINCULAÇÃO DE ABAS
-           =========================================================================
-        */
         const STATUS_CONFIG = {
             // ================== ABA 1: AÇÕES PRINCIPAIS ==================
-            pagamento_entrega: { 
+            pagamento_na_entrega: { 
                 label: 'Pagamento na Entrega', 
-                proximo: 'confirmado', 
-                btnProximoLabel: 'Aprovar / Enviar ✅', 
+                proximo: 'pedido_aprovado', 
+                btnProximoLabel: 'Aprovar e Enviar ✅', 
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
                 podeCancel: true, 
                 tab: 1 
@@ -247,7 +240,7 @@
                 anterior: 'aguardando_pix', 
                 btnAnteriorLabel: '← Reenviar PIX', 
                 btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600', 
-                proximo: 'confirmado', 
+                proximo: 'pedido_aprovado', 
                 btnProximoLabel: 'Aprovar Pagamento ✅', 
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
                 podeCancel: true, 
@@ -255,8 +248,8 @@
             },
             retirada_balcao: { 
                 label: 'Retirada no Balcão', 
-                proximo: 'confirmado', 
-                btnProximoLabel: 'Entregar / Concluir ✅', 
+                proximo: 'pedido_aprovado', 
+                btnProximoLabel: 'Aprovar e Entregar ✅', 
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
                 podeCancel: true, 
                 tab: 1 
@@ -278,7 +271,7 @@
             },
 
             // ================== ABA 3: APROVADOS E CANCELADOS ==================
-            confirmado: { 
+            pedido_aprovado: { 
                 label: 'Pedido Aprovado', 
                 podeCancel: true, 
                 tab: 3 
@@ -297,26 +290,22 @@
 
         const COLUNAS_TODAS = Object.keys(STATUS_CONFIG);
 
-        /* =========================================================================
-           MAPEADOR DE COMPATIBILIDADE (Tradução retroativa)
-           =========================================================================
-        */
         function normalizarStatus(statusOriginal, formaPagamento) {
             let status = (statusOriginal || 'em_aberto').toLowerCase().trim();
             const formaPgto = (formaPagamento || '').toLowerCase();
 
+            if (status === 'confirmado') return 'pedido_aprovado';
+            if (status === 'pagamento_entrega') return 'pagamento_na_entrega';
             if (status === 'cancelado') return 'cancelado_atendente';
-            if (status === 'aprovado') return 'confirmado';
             if (status === 'aberto' || status === 'carrinho') return 'em_aberto';
             if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro') || formaPgto.includes('cartão'))) {
-                return 'pagamento_entrega';
+                return 'pagamento_na_entrega';
             }
             if (status === 'balcao' || status === 'retirada') return 'retirada_balcao';
 
             return STATUS_CONFIG[status] ? status : 'em_aberto';
         }
 
-        /* Handshake Chatwoot */
         window.addEventListener('message', function (event) {
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -410,7 +399,6 @@
                 if (elCol) elCol.innerHTML = '';
                 if (document.getElementById(`count-${s}`)) document.getElementById(`count-${s}`).textContent = '0';
                 
-                // Mostra/Oculta a coluna inteira baseado na aba (currentTab)
                 if (elKanbanCol) {
                     elKanbanCol.classList.toggle('hidden', STATUS_CONFIG[s].tab !== currentTab);
                 }
@@ -468,22 +456,31 @@
             const valor = parseFloat(p.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const dataStr = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-            const formaPgto = (p.forma_pagamento || 'PIX').toUpperCase();
-            let badgePgtoClass = 'bg-slate-100 text-slate-700 border-slate-200';
+            // LÓGICA DA FORMA DE PAGAMENTO: Só renderiza o badge se houver uma forma de pagamento definida!
+            const formaPgtoBruta = (p.forma_pagamento || '').trim();
+            const formaPgto = formaPgtoBruta.toUpperCase();
+            
+            let badgePgtoHtml = '';
             let textColorClass = 'text-slate-700';
 
-            if (formaPgto.includes('PIX')) {
-                badgePgtoClass = 'bg-teal-50 text-teal-700 border-teal-200';
-                textColorClass = 'text-teal-700';
-            } else if (formaPgto.includes('DINHEIRO')) {
-                badgePgtoClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                textColorClass = 'text-emerald-700';
-            } else if (formaPgto.includes('CARTAO') || formaPgto.includes('CARTÃO')) {
-                badgePgtoClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                textColorClass = 'text-indigo-700';
-            } else if (formaPgto.includes('RETIRADA')) {
-                badgePgtoClass = 'bg-orange-50 text-orange-700 border-orange-200';
-                textColorClass = 'text-orange-700';
+            if (formaPgtoBruta) {
+                let badgePgtoClass = 'bg-slate-100 text-slate-700 border-slate-200';
+
+                if (formaPgto.includes('PIX')) {
+                    badgePgtoClass = 'bg-teal-50 text-teal-700 border-teal-200';
+                    textColorClass = 'text-teal-700';
+                } else if (formaPgto.includes('DINHEIRO')) {
+                    badgePgtoClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                    textColorClass = 'text-emerald-700';
+                } else if (formaPgto.includes('CARTAO') || formaPgto.includes('CARTÃO')) {
+                    badgePgtoClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
+                    textColorClass = 'text-indigo-700';
+                } else if (formaPgto.includes('RETIRADA')) {
+                    badgePgtoClass = 'bg-orange-50 text-orange-700 border-orange-200';
+                    textColorClass = 'text-orange-700';
+                }
+
+                badgePgtoHtml = `<span class="text-[9px] font-bold border px-2 py-0.5 rounded-md uppercase tracking-wider ${badgePgtoClass}">💳 ${formaPgto}</span>`;
             }
 
             let itensHtml = '';
@@ -516,7 +513,7 @@
             card.innerHTML = `
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <p class="text-sm font-bold text-slate-800 leading-snug">${p.cliente_nome || 'Cliente'} <span class="text-[9px] font-normal text-slate-400">#${p.id || ''}</span></p>
+                        <p class="text-sm font-bold text-slate-800 leading-snug">${p.cliente_nome || 'Cliente'}</p>
                         <span class="text-[10px] text-slate-500 font-mono">${p.cliente_telefone || ''}</span>
                     </div>
                     <button onclick="abrirChat('${p.conversa_id}')" title="Ir para o Chat" class="flex items-center gap-1 text-xs font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors shrink-0">
@@ -525,9 +522,7 @@
                 </div>
 
                 <div class="flex items-center gap-1.5">
-                    <span class="text-[9px] font-bold border px-2 py-0.5 rounded-md uppercase tracking-wider ${badgePgtoClass}">
-                        💳 ${formaPgto}
-                    </span>
+                    ${badgePgtoHtml}
                     <span class="text-[11px] font-extrabold ${textColorClass}">${valor}</span>
                 </div>
 

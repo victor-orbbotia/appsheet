@@ -70,14 +70,17 @@
             </div>
         </div>
 
-        <!-- Abas de Navegação Reorganizadas -->
+        <!-- 3 ABAS DE NAVEGAÇÃO -->
         <div class="border-b border-slate-200">
-            <nav class="-mb-px flex gap-6" aria-label="Tabs">
-                <button onclick="setTab(1)" id="btn-tab-1" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600">
-                    🛒 Em Aberto & Aguardando PIX
+            <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Tabs">
+                <button onclick="setTab(1)" id="btn-tab-1" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600 transition-colors">
+                    🚀 Ações Principais
                 </button>
-                <button onclick="setTab(2)" id="btn-tab-2" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
-                    📂 Ações de Entrega, Aprovados e Cancelados
+                <button onclick="setTab(2)" id="btn-tab-2" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors">
+                    ⏳ Em Aberto & PIX
+                </button>
+                <button onclick="setTab(3)" id="btn-tab-3" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors">
+                    📂 Aprovados & Cancelados
                 </button>
             </nav>
         </div>
@@ -94,31 +97,8 @@
         <!-- Quadro Kanban de Colunas -->
         <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
             
-            <!-- ====== COLUNAS DA ABA 1 (EM ABERTO E AGUARDANDO PIX) ====== -->
-            <div class="kanban-col flex flex-col gap-3" id="kanban-col-em_aberto">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛒 Em Aberto</h2>
-                    </div>
-                    <span id="count-em_aberto" class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">0</span>
-                </div>
-                <div id="col-em_aberto" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <div class="kanban-col flex flex-col gap-3" id="kanban-col-aguardando_pix">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🕐 Aguardando PIX</h2>
-                    </div>
-                    <span id="count-aguardando_pix" class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
-                </div>
-                <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <!-- ====== COLUNAS DA ABA 2 (AÇÕES, APROVADOS E CANCELADOS) ====== -->
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pagamento_entrega">
+            <!-- ====== COLUNAS DA ABA 1 (AÇÕES PRINCIPAIS) ====== -->
+            <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_entrega">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span>
@@ -129,7 +109,7 @@
                 <div id="col-pagamento_entrega" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-comprovante_enviado">
+            <div class="kanban-col flex flex-col gap-3" id="kanban-col-comprovante_enviado">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm"></span>
@@ -140,7 +120,7 @@
                 <div id="col-comprovante_enviado" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-retirada_balcao">
+            <div class="kanban-col flex flex-col gap-3" id="kanban-col-retirada_balcao">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm"></span>
@@ -151,6 +131,32 @@
                 <div id="col-retirada_balcao" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
+
+            <!-- ====== COLUNAS DA ABA 2 (EM ABERTO E AGUARDANDO PIX) ====== -->
+            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-em_aberto">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛒 Em Aberto</h2>
+                    </div>
+                    <span id="count-em_aberto" class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">0</span>
+                </div>
+                <div id="col-em_aberto" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
+            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-aguardando_pix">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></span>
+                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🕐 Aguardando PIX</h2>
+                    </div>
+                    <span id="count-aguardando_pix" class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
+                </div>
+                <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
+            </div>
+
+
+            <!-- ====== COLUNAS DA ABA 3 (APROVADOS E CANCELADOS) ====== -->
             <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-confirmado">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -195,7 +201,7 @@
         let segmentoAtual = 'restaurante'; 
         let handshakeInterval;
         let listaPedidos = [];
-        let currentTab = 1;
+        let currentTab = 1; // 1 = Ações Principais | 2 = Em Aberto & PIX | 3 = Finalizados
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -208,16 +214,17 @@
             carregarPedidos();
         }
 
+        // Função responsável por alternar entre as 3 abas visualmente e invocar a renderização
         function setTab(tab) {
             currentTab = tab;
-            document.getElementById('btn-tab-1').className = tab === 1 
-                ? "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600" 
-                : "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300";
-                
-            document.getElementById('btn-tab-2').className = tab === 2 
-                ? "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600" 
-                : "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300";
-            
+            [1, 2, 3].forEach(t => {
+                const btn = document.getElementById(`btn-tab-${t}`);
+                if (t === tab) {
+                    btn.className = "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600 transition-colors";
+                } else {
+                    btn.className = "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors";
+                }
+            });
             renderizarKanban();
         }
 
@@ -226,29 +233,14 @@
            =========================================================================
         */
         const STATUS_CONFIG = {
-            // ABA 1: EM ABERTO & AGUARDANDO PIX
-            em_aberto: { 
-                label: 'Em Aberto', 
-                podeCancel: true, 
-                tab: 1 
-            },
-            aguardando_pix: { 
-                label: 'Aguardando PIX', 
-                proximo: 'comprovante_enviado', 
-                btnProximoLabel: 'Comprovante Recebido ✓', 
-                btnProximoCor: 'bg-blue-600 hover:bg-blue-700', 
-                podeCancel: true, 
-                tab: 1 
-            },
-
-            // ABA 2: AÇÕES DE ENTREGA, APROVADOS E CANCELADOS
+            // ================== ABA 1: AÇÕES PRINCIPAIS ==================
             pagamento_entrega: { 
                 label: 'Pagamento na Entrega', 
                 proximo: 'confirmado', 
                 btnProximoLabel: 'Aprovar / Enviar ✅', 
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
                 podeCancel: true, 
-                tab: 2 
+                tab: 1 
             },
             comprovante_enviado: { 
                 label: 'Aguardando Comprovante', 
@@ -259,7 +251,7 @@
                 btnProximoLabel: 'Aprovar Pagamento ✅', 
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
                 podeCancel: true, 
-                tab: 2 
+                tab: 1 
             },
             retirada_balcao: { 
                 label: 'Retirada no Balcão', 
@@ -267,29 +259,46 @@
                 btnProximoLabel: 'Entregar / Concluir ✅', 
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
                 podeCancel: true, 
+                tab: 1 
+            },
+
+            // ================== ABA 2: EM ABERTO E AGUARDANDO PIX ==================
+            em_aberto: { 
+                label: 'Em Aberto', 
+                podeCancel: true, 
                 tab: 2 
             },
+            aguardando_pix: { 
+                label: 'Aguardando PIX', 
+                proximo: 'comprovante_enviado', 
+                btnProximoLabel: 'Comprovante Recebido ✓', 
+                btnProximoCor: 'bg-blue-600 hover:bg-blue-700', 
+                podeCancel: true, 
+                tab: 2 
+            },
+
+            // ================== ABA 3: APROVADOS E CANCELADOS ==================
             confirmado: { 
                 label: 'Pedido Aprovado', 
                 podeCancel: true, 
-                tab: 2 
+                tab: 3 
             },
             cancelado_cliente: { 
                 label: 'Cancelado pelo Cliente', 
                 podeCancel: false, 
-                tab: 2 
+                tab: 3 
             },
             cancelado_atendente: { 
                 label: 'Cancelado pelo Atendente', 
                 podeCancel: false, 
-                tab: 2 
+                tab: 3 
             }
         };
 
         const COLUNAS_TODAS = Object.keys(STATUS_CONFIG);
 
         /* =========================================================================
-           MAPEADOR DE COMPATIBILIDADE DE ETIQUETA 'em_aberto'
+           MAPEADOR DE COMPATIBILIDADE (Tradução retroativa)
            =========================================================================
         */
         function normalizarStatus(statusOriginal, formaPagamento) {
@@ -401,6 +410,7 @@
                 if (elCol) elCol.innerHTML = '';
                 if (document.getElementById(`count-${s}`)) document.getElementById(`count-${s}`).textContent = '0';
                 
+                // Mostra/Oculta a coluna inteira baseado na aba (currentTab)
                 if (elKanbanCol) {
                     elKanbanCol.classList.toggle('hidden', STATUS_CONFIG[s].tab !== currentTab);
                 }

@@ -25,10 +25,6 @@
             --app-bg: #f8fafc;
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
-
         body {
             background-color: var(--app-bg);
             font-family: system-ui, -apple-system, sans-serif;
@@ -40,24 +36,51 @@
         .fade-in { animation: fadeIn 0.25s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Preview Canvas modificado para acomodar múltiplas páginas */
+        /* Canvas folha A4 Pura com espaçamento seguro */
         #preview-canvas {
             color: var(--color-text);
             font-family: var(--font-body);
-            width: 794px;
+            width: 794px; /* A4 a 96DPI */
+            min-height: 1123px;
             margin: 0 auto;
-            background-color: transparent; /* O fundo branco irá para as páginas individuais */
+            padding: 18mm 14mm;
+            box-sizing: border-box;
+            background-color: var(--color-bg);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        .font-title { font-family: var(--font-title); color: var(--color-primary); }
+        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.5rem; }
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
         
+        /* Grid de Destaques com Alinhamento na Base para evitar assimetria */
+        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem; }
+        
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Limitações do card do destaque no canvas para quebrar linhas até 3 níveis */
+        .destaque-card-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            margin-top: auto;
+        }
+        .destaque-card-desc {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+            margin-bottom: 0.25rem;
+        }
     </style>
 </head>
 
@@ -70,7 +93,10 @@
         <header class="p-4 border-b border-slate-200 bg-white shrink-0 space-y-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <!-- Botão de Sincronizar foi removido conforme solicitado -->
+                    <button onclick="sincronizarCardapio()" id="btn-sincronizar-estado" title="Restaurar versão anterior salva" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-all disabled:opacity-30 disabled:pointer-events-none pr-1">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </button>
+                    <span class="text-slate-300">|</span>
                     <a id="btn-voltar-menu" href="../index.html" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors">
                         <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Menu Principal
                     </a>
@@ -196,7 +222,7 @@
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                     <div class="flex justify-between items-center">
-                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-database text-indigo-500"></i> Produtos Ativos</h2>
+                        <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i class="fa-solid fa-database text-indigo-500"></i> Produtos</h2>
                     </div>
                     <div class="overflow-hidden border border-slate-200 rounded-lg bg-slate-50">
                         <table class="min-w-full text-xs">
@@ -248,6 +274,7 @@
             </div>
         </div>
 
+        <!-- BOTÃO FLUTUANTE DISCRETO PARA SALVAR -->
         <div class="px-4 py-2 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent shrink-0 z-10">
             <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98">
                 <i class="fa-regular fa-floppy-disk text-sm"></i> Salvar
@@ -431,7 +458,7 @@
         }
 
         function compilarHtmlCompleto() {
-            const pages = Array.from(document.querySelectorAll('.pdf-page')).map(page => page.outerHTML).join('');
+            const canvasHtml = document.getElementById('preview-canvas').outerHTML;
             const rootStyles = `
                 :root {
                     --color-primary: ${appState.colorPrimary};
@@ -452,33 +479,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         ${rootStyles}
-        *, *::before, *::after { box-sizing: border-box; }
         body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        
-        /* === REGRA PARA O PDF === */
-        @page { size: A4 portrait; margin: 0; }
-        
-        .pdf-page { 
-            width: 794px;
-            height: 1123px;
-            padding: 15mm;
-            margin: 0 auto;
-            position: relative;
-            background-color: var(--color-bg); 
-            page-break-after: always;
-            box-shadow: none !important; 
-            overflow: hidden;
-            box-sizing: border-box;
-        }
-
-        .font-title { font-family: var(--font-title); color: var(--color-primary); }
+        #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
+        #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.5rem; }
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
+        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; } 
+        .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem; }
+        .destaque-card-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; margin-top: auto; }
+        .destaque-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; margin-bottom: 0.25rem; }
+        @page { size: A4 portrait; margin: 12mm 0mm; }
     </style>
 </head>
 <body>
-    ${pages}
+    ${canvasHtml}
 </body>
 </html>`;
         }
@@ -506,6 +523,28 @@
                 alert("⚠️ Falha ao salvar a versão do cardápio no servidor.");
             } finally {
                 if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+            }
+        }
+
+        async function sincronizarCardapio() {
+            const btn = document.getElementById('btn-sincronizar-estado');
+            if (btn) { btn.disabled = true; }
+
+            try {
+                const response = await fetch(`${urlObterCardapio}?account_id=${globalAccountId}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const config = await response.json();
+
+                if (config && Object.keys(config).length > 0) {
+                    saveStateToHistory(); 
+                    appState = { ...appState, ...config };
+                    applyStateToUI(); renderPreview(); salvarConfigNoCache();
+                    alert("🔄 Versão restaurada do servidor com sucesso!");
+                } else {
+                    alert("⚠️ Nenhuma versão salva encontrada no banco para este ID.");
+                }
+            } catch (err) {
+                alert("❌ Erro ao buscar versão salva no servidor.");
             }
         }
 
@@ -546,7 +585,7 @@
 
             carregarConfigDoCache();
             resetZoomAdaptativo();
-            carregarProdutosDoBanco(false); // Sincroniza logo ao iniciar conforme pedido
+            carregarProdutosDoBanco(false);
         }
 
         async function carregarProdutosDoBanco(isUserAction = true) {
@@ -569,7 +608,7 @@
                         const p = (prod && prod.json) ? prod.json : prod;
                         if (!p || typeof p !== 'object') return;
                         if (p.deletado === true || p.deletado === "true") return;
-                        if (p.ativo === false || p.ativo === "false") return; // Ignora inativos diretamente
+                        if (p.ativo === false || p.ativo === "false") return; // Sincronização direta com banco
 
                         const cat = (p.categoria && String(p.categoria).trim() !== '') ? String(p.categoria).trim() : 'Outros';
                         if (!agrupado[cat]) agrupado[cat] = [];
@@ -594,7 +633,8 @@
                             desc: p.descricao || '', 
                             preco: precoFinal, 
                             variacoes: tamanhosArray, 
-                            statusEstoque: statusEstoque
+                            statusEstoque: statusEstoque,
+                            visivel: true
                         });
                     } catch (itemErr) {}
                 });
@@ -609,7 +649,7 @@
 
         async function desativarProdutoRapido(id, btnElement) {
             const txtOriginal = btnElement.innerText;
-            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btnElement.innerHTML = '⏳';
             btnElement.disabled = true;
 
             try {
@@ -625,19 +665,15 @@
                 });
 
                 if (response.ok) {
-                    appState.data.forEach(cat => {
-                        cat.itens = cat.itens.filter(i => i.id !== id);
-                    });
-                    appState.data = appState.data.filter(cat => cat.itens.length > 0);
-                    saveStateToHistory();
-                    renderTable();
-                    renderPreview();
-                    salvarConfigNoCache();
+                    btnElement.innerText = '✓';
+                    setTimeout(() => {
+                        carregarProdutosDoBanco(true);
+                    }, 500);
                 } else {
                     throw new Error();
                 }
             } catch (error) {
-                alert("Erro ao desativar produto no banco.");
+                alert("Erro ao desativar o produto no banco de dados.");
                 btnElement.innerText = txtOriginal;
                 btnElement.disabled = false;
             }
@@ -830,7 +866,7 @@
             const tbody = document.getElementById('data-table-body');
             if(!tbody) return;
             tbody.innerHTML = '';
-            if (appState.data.length === 0) return tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Nenhum produto sincronizado.</td></tr>`;
+            if (appState.data.length === 0) return tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Nenhum produto cadastrado/ativo.</td></tr>`;
 
             appState.data.forEach((cat) => {
                 tbody.innerHTML += `<tr class="bg-slate-100/70"><td colspan="3" class="px-3 py-1.5 text-[10px] font-bold text-slate-700 uppercase">${cat.categoria}</td></tr>`;
@@ -856,7 +892,7 @@
                         </td>
                         <td class="px-3 py-2 text-right font-mono text-[11px] font-bold text-slate-700 leading-tight">${displayPreco}</td>
                         <td class="px-2 py-2 text-center">
-                            <button onclick="desativarProdutoRapido('${item.id}', this)" class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 hover:bg-rose-100 transition-colors shadow-sm">
+                            <button onclick="desativarProdutoRapido('${item.id}', this)" title="Desativar Produto no Banco" class="text-[10px] text-rose-600 font-bold bg-rose-50 px-2 py-1 rounded border border-rose-200 hover:bg-rose-100 transition-colors shadow-sm whitespace-nowrap">
                                 Desativar
                             </button>
                         </td>`;
@@ -911,158 +947,117 @@
             return { deveRenderizar: true, isIndisponivel: false };
         }
 
-        function buildElementsArray() {
-            const elements = [];
-            
-            // Header Element
-            let headerHtml = `<div class="text-center mb-8 w-full" style="page-break-inside: avoid;">`;
-            if (appState.logoUrl) headerHtml += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain" alt="Logo">`;
-            headerHtml += `<h1 class="text-4xl font-bold uppercase tracking-widest mb-2 font-title" style="color: var(--color-primary); font-family: var(--font-title);">${appState.restaurantName}</h1>`;
-            if (appState.restaurantDescription) headerHtml += `<p class="text-sm italic mb-4 max-w-xl mx-auto" style="opacity: 0.8; color: var(--color-text); font-family: var(--font-body);">${appState.restaurantDescription}</p>`;
-            headerHtml += `<div style="width: 50px; height: 2.5px; background-color: var(--color-secondary); margin: 0 auto;"></div></div>`;
-            elements.push(headerHtml);
-
-            // Especialidades
-            const destaquesValidos = appState.carrosChefe.filter(c => c.nome.trim() !== "");
-            if (destaquesValidos.length > 0) {
-                let destHtml = `<div class="mb-10 w-full" style="page-break-inside: avoid;"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 font-title" style="color: var(--color-secondary); font-family: var(--font-title);">— Especialidades —</h2><div style="display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem;">`;
-                destaquesValidos.forEach(item => {
-                    const imgTag = item.imgBase64 ? `<img src="${item.imgBase64}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem;" alt="${item.nome}">` : '';
-                    destHtml += `<div style="flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; text-align: center; color: var(--color-text); font-family: var(--font-body);">${imgTag}<h3 class="font-bold text-base font-title leading-tight" style="color: var(--color-primary); font-family: var(--font-title); word-break: break-word;">${item.nome}</h3><p class="text-[11px] italic mb-1" style="opacity: 0.75; word-break: break-word;">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary);">R$ ${formatCurrency(item.preco)}</span></div>`;
-                });
-                destHtml += `</div></div>`;
-                elements.push(destHtml);
-            }
-
-            // Categorias e Itens
-            const filteredData = appState.data.map(cat => ({
-                categoria: cat.categoria,
-                itens: cat.itens 
-            })).filter(cat => cat.itens.length > 0);
-
-            filteredData.forEach(cat => {
-                // Clear Float helper for grid layouts
-                if(appState.layout === 2 || appState.layout === 3) {
-                    elements.push(`<div style="clear: both; width: 100%; height: 1px;"></div>`);
-                }
-
-                // Categoria Title
-                if (appState.layout === 1) {
-                    elements.push(`<div class="w-full mt-4" style="page-break-inside: avoid;"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 border-b pb-1 font-title" style="color: var(--color-primary); font-family: var(--font-title);">${cat.categoria}</h2></div>`);
-                } else if (appState.layout === 2) {
-                    elements.push(`<div class="w-full text-center mt-4 mb-3 border-y border-dashed py-1" style="page-break-inside: avoid; border-color: rgba(0,0,0,0.1);"><h2 class="text-base font-bold uppercase tracking-widest font-title" style="color: var(--color-secondary); font-family: var(--font-title);">${cat.categoria}</h2></div>`);
-                } else if (appState.layout === 3) {
-                    elements.push(`<div class="w-full mt-4" style="page-break-inside: avoid;"><h2 class="text-xl font-black uppercase mb-4 font-title border-b-2 inline-block" style="border-color: var(--color-secondary); color: var(--color-primary); font-family: var(--font-title);">${cat.categoria}</h2></div>`);
-                }
-
-                // Itens
-                cat.itens.forEach(item => {
-                    const config = obterLayoutPrecoEStatus(item);
-                    if (!config.deveRenderizar) return;
-
-                    let pDisplay = '';
-                    if (config.isIndisponivel) pDisplay = config.badgeHtml;
-                    else if (item.variacoes && item.variacoes.length > 0) {
-                        if(appState.layout === 3) {
-                            pDisplay = `<div class="flex flex-col items-end gap-1 mt-1">` + item.variacoes.map(t => `<div class="l3-price-badge whitespace-nowrap" style="background-color: var(--color-primary); color: var(--color-bg);"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.9; text-transform: uppercase; margin-right: 6px;">${t.nome}</span><span class="font-mono">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
-                        } else {
-                            pDisplay = `<div class="flex flex-col items-end gap-1">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.55rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 8px; font-weight:bold; letter-spacing: 0.5px;">${t.nome}</span><span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
-                        }
-                    } else {
-                        if(appState.layout === 3) pDisplay = `<span class="l3-price-badge font-mono" style="background-color: var(--color-primary); color: var(--color-bg);">R$&nbsp;${formatCurrency(item.preco)}</span>`;
-                        else pDisplay = `<span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(item.preco)}</span>`;
-                    }
-
-                    const itemStyle = config.isIndisponivel ? 'opacity: 0.5;' : '';
-                    const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
-
-                    if (appState.layout === 1) {
-                        elements.push(`<div class="w-full mb-5" style="page-break-inside: avoid; color: var(--color-text); font-family: var(--font-body); ${itemStyle}"><div class="flex items-baseline justify-between mb-1"><h3 class="font-bold text-base font-title m-0 p-0 ${nomeClass}" style="color: var(--color-primary); font-family: var(--font-title);">${item.nome}</h3><div class="l1-dots"></div><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-xs italic opacity-75 max-w-[85%] leading-snug">${item.desc}</p></div>`);
-                    } else if (appState.layout === 2) {
-                        elements.push(`<div class="float-left p-3 rounded-lg shadow-sm border" style="width: calc(50% - 1rem); margin: 0.5rem; background-color: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05); color: var(--color-text); font-family: var(--font-body); page-break-inside: avoid; box-sizing: border-box; ${itemStyle}"><div class="flex justify-between items-start mb-1.5"><h3 class="font-bold text-sm font-title pr-2 m-0 leading-tight ${nomeClass}" style="color: var(--color-primary); font-family: var(--font-title);">${item.nome}</h3><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-[11px] opacity-80 leading-snug">${item.desc}</p></div>`);
-                    } else if (appState.layout === 3) {
-                        elements.push(`<div class="l3-card float-left" style="width: calc(50% - 1rem); margin: 0.5rem; color: var(--color-text); font-family: var(--font-body); page-break-inside: avoid; box-sizing: border-box; border-left: 4px solid var(--color-secondary); background-color: rgba(0,0,0,0.03); ${itemStyle}"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-sm font-title pr-2 m-0 ${nomeClass}" style="color: var(--color-primary); font-family: var(--font-title);">${item.nome}</h3><div class="flex-shrink-0 ml-2">${pDisplay}</div></div><p class="text-[10px] leading-tight opacity-75 mt-1.5 w-4/5">${item.desc}</p></div>`);
-                    }
-                });
-            });
-            
-            if(appState.layout === 2 || appState.layout === 3) {
-                elements.push(`<div style="clear: both; width: 100%; height: 1px;"></div>`);
-            }
-
-            return elements;
-        }
-
         function renderPreview() {
             const canvas = document.getElementById('preview-canvas');
             if(!canvas) return;
 
-            const elements = buildElementsArray();
+            let html = `<div class="text-center mb-8 avoid-break">`;
+            if (appState.logoUrl) html += `<img src="${appState.logoUrl}" class="max-h-20 mx-auto mb-4 object-contain" alt="Logo">`;
+            html += `<h1 class="text-4xl font-bold uppercase tracking-widest mb-2 font-title">${appState.restaurantName}</h1>`;
+            if (appState.restaurantDescription) html += `<p class="text-sm italic mb-4 max-w-xl mx-auto" style="opacity: 0.8">${appState.restaurantDescription}</p>`;
+            html += `<div style="width: 50px; height: 2.5px; background-color: var(--color-secondary); margin: 0 auto;"></div></div>`;
 
-            // Container Temporário para medir altura com as margens reais da página
-            const tempContainer = document.createElement('div');
-            tempContainer.style.width = '794px';
-            tempContainer.style.padding = '15mm'; 
-            tempContainer.style.position = 'absolute';
-            tempContainer.style.visibility = 'hidden';
-            // Aplicamos os estilos raízes localmente para a medição exata
-            tempContainer.style.setProperty('--color-primary', appState.colorPrimary);
-            tempContainer.style.setProperty('--color-secondary', appState.colorSecondary);
-            tempContainer.style.setProperty('--color-bg', appState.colorBg);
-            tempContainer.style.setProperty('--color-text', appState.colorText);
-            tempContainer.style.setProperty('--font-title', appState.fontTitle);
-            tempContainer.style.setProperty('--font-body', appState.fontBody);
-            
-            document.body.appendChild(tempContainer);
+            const destaquesValidos = appState.carrosChefe.filter(c => c.nome.trim() !== "");
+            if (destaquesValidos.length > 0) {
+                html += `<div class="avoid-break mb-10"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 font-title" style="color: var(--color-secondary)">— Especialidades —</h2><div class="destaques-grid">`;
+                destaquesValidos.forEach(item => {
+                    const imgTag = item.imgBase64 ? `<img src="${item.imgBase64}" alt="${item.nome}">` : '';
+                    html += `<div class="destaque-card text-center">${imgTag}<h3 class="font-bold text-base font-title leading-tight destaque-card-title">${item.nome}</h3><p class="text-[11px] italic destaque-card-desc" style="opacity: 0.75">${item.desc}</p><span class="font-bold font-mono text-sm" style="color: var(--color-primary)">R$ ${formatCurrency(item.preco)}</span></div>`;
+                });
+                html += `</div></div>`;
+            }
 
-            const pagesHtml = [];
-            let currentPageHtml = '';
-            // 1123px (A4)
-            const MAX_HEIGHT = 1123; 
+            const filteredData = appState.data.map(cat => ({ 
+                categoria: cat.categoria, 
+                itens: cat.itens.filter(i => i.visivel) 
+            })).filter(cat => cat.itens.length > 0);
 
-            elements.forEach(htmlString => {
-                tempContainer.innerHTML = currentPageHtml + htmlString;
-                
-                // Medir a altura do container (scrollHeight inclui padding)
-                if (tempContainer.scrollHeight > MAX_HEIGHT && currentPageHtml !== '') {
-                    // Passou do limite, salva página atual e inicia a próxima
-                    pagesHtml.push(currentPageHtml);
-                    currentPageHtml = htmlString;
-                } else {
-                    currentPageHtml += htmlString;
-                }
-            });
-            
-            if (currentPageHtml !== '') pagesHtml.push(currentPageHtml);
-            document.body.removeChild(tempContainer);
+            if (appState.layout === 1) {
+                html += `<div class="max-w-2xl mx-auto space-y-7">`;
+                filteredData.forEach(cat => {
+                    let itensHtml = '';
+                    cat.itens.forEach(item => { 
+                        const config = obterLayoutPrecoEStatus(item);
+                        if (!config.deveRenderizar) return;
 
-            // Agora Renderizamos na tela com Paginação Realística
-            canvas.innerHTML = '';
-            
-            pagesHtml.forEach((pageHtml, index) => {
-                const pageDiv = document.createElement('div');
-                pageDiv.className = 'pdf-page';
-                pageDiv.style.width = '794px';
-                pageDiv.style.height = '1123px';
-                pageDiv.style.padding = '15mm';
-                pageDiv.style.margin = '0 auto 20px auto';
-                pageDiv.style.backgroundColor = 'var(--color-bg)';
-                pageDiv.style.boxShadow = '0 10px 30px -5px rgba(0,0,0,0.15)';
-                pageDiv.style.position = 'relative';
-                pageDiv.style.overflow = 'hidden';
-                pageDiv.style.boxSizing = 'border-box';
-                
-                // Espaço de Cabeçalho e Rodapé Customizado
-                const rodapéHtml = `
-                    <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm; text-align: center; font-size: 10px; font-family: var(--font-body); color: var(--color-primary); border-top: 1px solid rgba(0,0,0,0.1); padding-top: 4mm; opacity: 0.8;">
-                        Página ${index + 1} de ${pagesHtml.length} — ${appState.restaurantName}
-                    </div>`;
-                
-                // O wrapper interno garante que a altura seja exata
-                pageDiv.innerHTML = `<div style="height: 100%; width: 100%;">${pageHtml}</div>` + rodapéHtml;
-                canvas.appendChild(pageDiv);
-            });
+                        let pDisplay = '';
+                        if (config.isIndisponivel) {
+                            pDisplay = config.badgeHtml;
+                        } else if (item.variacoes && item.variacoes.length > 0) {
+                            pDisplay = `<div class="flex flex-col items-end gap-1">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.55rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 8px; font-weight:bold; letter-spacing: 0.5px;">${t.nome}</span><span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
+                        } else {
+                            pDisplay = `<span class="font-bold font-mono text-sm">R$&nbsp;${formatCurrency(item.preco)}</span>`;
+                        }
 
+                        const itemStyle = config.isIndisponivel ? 'opacity: 0.5;' : '';
+                        const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
+
+                        itensHtml += `<div class="avoid-break" style="${itemStyle}"><div class="flex items-baseline justify-between mb-1"><h3 class="font-bold text-base font-title m-0 p-0 ${nomeClass}">${item.nome}</h3><div class="l1-dots"></div><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-xs italic opacity-75 max-w-[85%] leading-snug">${item.desc}</p></div>`; 
+                    });
+
+                    if (itensHtml !== '') {
+                        html += `<div class="avoid-break"><h2 class="text-xl font-bold uppercase tracking-widest text-center mb-5 border-b pb-1 font-title">${cat.categoria}</h2><div class="space-y-4">${itensHtml}</div></div>`;
+                    }
+                });
+                html += `</div>`;
+            } else if (appState.layout === 2) {
+                html += `<div class="grid grid-cols-2 gap-x-8 gap-y-6">`;
+                filteredData.forEach(cat => {
+                    let itensHtml = '';
+                    cat.itens.forEach(item => { 
+                        const config = obterLayoutPrecoEStatus(item);
+                        if (!config.deveRenderizar) return;
+
+                        let pDisplay = '';
+                        if (config.isIndisponivel) {
+                            pDisplay = config.badgeHtml;
+                        } else if (item.variacoes && item.variacoes.length > 0) {
+                            pDisplay = `<div class="flex flex-col items-end gap-0.5 mt-0.5">` + item.variacoes.map(t => `<div class="whitespace-nowrap"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.7; text-transform: uppercase; margin-right: 6px; font-weight:bold;">${t.nome}</span><span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
+                        } else {
+                            pDisplay = `<span class="font-bold font-mono text-xs">R$&nbsp;${formatCurrency(item.preco)}</span>`;
+                        }
+
+                        const itemStyle = config.isIndisponivel ? 'opacity: 0.55;' : '';
+                        const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
+
+                        itensHtml += `<div class="avoid-break p-3 rounded-lg shadow-sm border" style="background-color: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05); ${itemStyle}"><div class="flex justify-between items-start mb-1.5"><h3 class="font-bold text-sm font-title pr-2 m-0 leading-tight ${nomeClass}">${item.nome}</h3><div class="flex-shrink-0 ml-2 text-right">${pDisplay}</div></div><p class="text-[11px] opacity-80 leading-snug">${item.desc}</p></div>`; 
+                    });
+
+                    if (itensHtml !== '') {
+                        html += `<div class="col-span-2 text-center mt-2 mb-1 border-y border-dashed py-1 avoid-break" style="border-color: rgba(0,0,0,0.1);"><h2 class="text-base font-bold uppercase tracking-widest font-title" style="color: var(--color-secondary);">${cat.categoria}</h2></div>${itensHtml}`;
+                    }
+                });
+                html += `</div>`;
+            } else if (appState.layout === 3) {
+                html += `<div class="columns-2 gap-6 space-y-6">`;
+                filteredData.forEach(cat => {
+                    let itensHtml = '';
+                    cat.itens.forEach(item => { 
+                        const config = obterLayoutPrecoEStatus(item);
+                        if (!config.deveRenderizar) return;
+
+                        let pDisplay = '';
+                        if (config.isIndisponivel) {
+                            pDisplay = config.badgeHtml;
+                        } else if (item.variacoes && item.variacoes.length > 0) {
+                            pDisplay = `<div class="flex flex-col items-end gap-1 mt-1">` + item.variacoes.map(t => `<div class="l3-price-badge whitespace-nowrap"><span style="font-size: 0.5rem; font-family: sans-serif; opacity: 0.9; text-transform: uppercase; margin-right: 6px;">${t.nome}</span><span class="font-mono">R$&nbsp;${formatCurrency(t.preco)}</span></div>`).join('') + `</div>`;
+                        } else {
+                            pDisplay = `<span class="l3-price-badge font-mono">R$&nbsp;${formatCurrency(item.preco)}</span>`;
+                        }
+
+                        const itemStyle = config.isIndisponivel ? 'opacity: 0.55;' : '';
+                        const nomeClass = config.isIndisponivel ? 'line-through text-slate-400' : '';
+
+                        itensHtml += `<div class="l3-card avoid-break" style="${itemStyle}"><div class="flex justify-between items-start mb-1"><h3 class="font-bold text-sm font-title pr-2 m-0 ${nomeClass}">${item.nome}</h3><div class="flex-shrink-0 ml-2">${pDisplay}</div></div><p class="text-[10px] leading-tight opacity-75 mt-1.5 w-4/5">${item.desc}</p></div>`; 
+                    });
+
+                    if (itensHtml !== '') {
+                        html += `<div class="avoid-break break-inside-avoid"><h2 class="text-xl font-black uppercase mb-4 font-title border-b-2 inline-block" style="border-color: var(--color-secondary)">${cat.categoria}</h2>${itensHtml}</div>`;
+                    }
+                });
+                html += `</div>`;
+            }
+            canvas.innerHTML = html;
             applyZoom();
         }
 

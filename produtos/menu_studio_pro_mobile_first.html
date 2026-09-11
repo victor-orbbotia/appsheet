@@ -36,14 +36,14 @@
         .fade-in { animation: fadeIn 0.25s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Canvas folha A4 Pura com espaçamento seguro */
+        /* Canvas A4 Rigido e Padronizado */
         #preview-canvas {
             color: var(--color-text);
             font-family: var(--font-body);
-            width: 794px; /* A4 a 96DPI */
+            width: 794px; /* A4 exato a 96DPI */
             min-height: 1123px;
             margin: 0 auto;
-            padding: 18mm 14mm;
+            padding: 20mm 16mm; /* Margens de impressao reais */
             box-sizing: border-box;
             background-color: var(--color-bg);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
@@ -51,20 +51,26 @@
 
         #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .avoid-break { page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.5rem; }
+        
+        /* Previne cortes no meio dos elementos */
+        .avoid-break { 
+            page-break-inside: avoid; 
+            break-inside: avoid; 
+            margin-bottom: 1rem; 
+            display: block;
+        }
+
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
         
-        /* Grid de Destaques com Alinhamento na Base para evitar assimetria */
-        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 2rem; }
         .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; } 
         .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem; }
         
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Limitações do card do destaque no canvas para quebrar linhas até 3 níveis */
         .destaque-card-title {
             display: -webkit-box;
             -webkit-line-clamp: 3;
@@ -274,7 +280,6 @@
             </div>
         </div>
 
-        <!-- BOTÃO FLUTUANTE DISCRETO PARA SALVAR -->
         <div class="px-4 py-2 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent shrink-0 z-10">
             <button onclick="salvarEstadoCardapio()" id="btn-salvar-estado" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98">
                 <i class="fa-regular fa-floppy-disk text-sm"></i> Salvar
@@ -480,18 +485,21 @@
     <style>
         ${rootStyles}
         body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        
+        /* Garantia de margens uniformes no gerador PDF Gotenberg */
+        @page { size: A4 portrait; margin: 12mm 0mm; }
+
         #preview-canvas { width: 794px; min-height: 1123px; padding: 18mm 14mm; margin: 0 auto; box-sizing: border-box; background-color: var(--color-bg); color: var(--color-text); }
         #preview-canvas .font-title { font-family: var(--font-title); color: var(--color-primary); }
-        .avoid-break { page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.5rem; }
+        .avoid-break { page-break-inside: avoid; break-inside: avoid; margin-bottom: 0.8rem; }
         .l1-dots { flex-grow: 1; border-bottom: 2px dotted rgba(0,0,0,0.18); margin: 0 0.8rem; position: relative; top: -3px; }
         .l3-card { background-color: rgba(0,0,0,0.03); border-left: 4px solid var(--color-secondary); padding: 0.85rem; border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.85rem; }
         .l3-price-badge { background-color: var(--color-primary); color: var(--color-bg); padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: bold; font-size: 0.75rem; display: inline-block;}
-        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 1.5rem; }
+        .destaques-grid { display: flex; justify-content: center; align-items: flex-end; gap: 0.85rem; margin-bottom: 2rem; }
         .destaque-card { flex: 1; max-width: calc(33.333% - 0.56rem); display: flex; flex-direction: column; justify-content: flex-end; } 
         .destaque-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 2px solid var(--color-secondary); margin-bottom: 0.5rem; }
         .destaque-card-title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; margin-top: auto; }
         .destaque-card-desc { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; margin-bottom: 0.25rem; }
-        @page { size: A4 portrait; margin: 12mm 0mm; }
     </style>
 </head>
 <body>
@@ -608,7 +616,7 @@
                         const p = (prod && prod.json) ? prod.json : prod;
                         if (!p || typeof p !== 'object') return;
                         if (p.deletado === true || p.deletado === "true") return;
-                        if (p.ativo === false || p.ativo === "false") return; // Sincronização direta com banco
+                        if (p.ativo === false || p.ativo === "false") return;
 
                         const cat = (p.categoria && String(p.categoria).trim() !== '') ? String(p.categoria).trim() : 'Outros';
                         if (!agrupado[cat]) agrupado[cat] = [];

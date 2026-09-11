@@ -151,11 +151,20 @@
 
             <!-- BLOCO 2: LISTA DE PRODUTOS -->
             <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col">
-                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-wrap gap-3">
                     <h2 class="text-md font-bold text-slate-800">Itens Cadastrados</h2>
-                    <button onclick="carregarLista()" class="flex items-center text-[11px] font-bold text-slate-500 hover:text-indigo-600 px-3 py-1.5 border border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-colors shadow-sm">
-                        🔄 Sincronizar
-                    </button>
+                    
+                    <div class="flex items-center gap-4">
+                        <!-- FILTRO: MOSTRAR/OCULTAR DESATIVADOS -->
+                        <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer select-none">
+                            <input type="checkbox" id="check-mostrar-desativados" onchange="renderizarTabela()" class="accent-indigo-600 rounded cursor-pointer w-4 h-4">
+                            Mostrar desativados
+                        </label>
+
+                        <button onclick="carregarLista()" class="flex items-center text-[11px] font-bold text-slate-500 hover:text-indigo-600 px-3 py-1.5 border border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-colors shadow-sm">
+                            🔄 Sincronizar
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="filtro-categorias-container" class="flex gap-2 overflow-x-auto px-4 py-3 bg-white border-b border-slate-100 hide-scroll"></div>
@@ -522,7 +531,6 @@
                 const jsonRes = await response.json().catch(() => ({}));
 
                 if (response.ok || jsonRes.success) {
-                    // Atualiza cache local
                     configEmpresaCache.upsell_ativo = upsellAtivo;
                     configEmpresaCache.upsell_gatilhos = gatilhosSelecionados.join(', ');
                     configEmpresaCache.upsell_prioridade_1 = p1;
@@ -764,9 +772,16 @@
             const tbody = document.getElementById('lista-produtos');
             tbody.innerHTML = '';
 
+            const mostrarDesativados = document.getElementById('check-mostrar-desativados').checked;
+
             const listaFiltrada = listaAtual.filter(item => {
                 const p = item.json || item;
                 if (p.deletado === true) return false;
+                
+                // Filtro para ocultar/mostrar desativados (padrão: ocultar desativados)
+                const isAtivo = p.ativo !== false && p.ativo !== "false";
+                if (!mostrarDesativados && !isAtivo) return false;
+
                 if (categoriaSelecionadaFiltro !== 'Todas' && p.categoria !== categoriaSelecionadaFiltro) return false;
                 return true;
             });

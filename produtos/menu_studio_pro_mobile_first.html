@@ -569,7 +569,7 @@
                         const p = (prod && prod.json) ? prod.json : prod;
                         if (!p || typeof p !== 'object') return;
                         if (p.deletado === true || p.deletado === "true") return;
-                        if (p.ativo === false || p.ativo === "false") return; // Ignora inativos
+                        if (p.ativo === false || p.ativo === "false") return; // Ignora inativos diretamente
 
                         const cat = (p.categoria && String(p.categoria).trim() !== '') ? String(p.categoria).trim() : 'Outros';
                         if (!agrupado[cat]) agrupado[cat] = [];
@@ -1053,13 +1053,13 @@
                 pageDiv.style.boxSizing = 'border-box';
                 
                 // Espaço de Cabeçalho e Rodapé Customizado
-                const rodapéHtml = \`
+                const rodapéHtml = `
                     <div style="position: absolute; bottom: 10mm; left: 15mm; right: 15mm; text-align: center; font-size: 10px; font-family: var(--font-body); color: var(--color-primary); border-top: 1px solid rgba(0,0,0,0.1); padding-top: 4mm; opacity: 0.8;">
-                        Página \${index + 1} de \${pagesHtml.length} — \${appState.restaurantName}
-                    </div>\`;
+                        Página ${index + 1} de ${pagesHtml.length} — ${appState.restaurantName}
+                    </div>`;
                 
                 // O wrapper interno garante que a altura seja exata
-                pageDiv.innerHTML = \`<div style="height: 100%; width: 100%;">\${pageHtml}</div>\` + rodapéHtml;
+                pageDiv.innerHTML = `<div style="height: 100%; width: 100%;">${pageHtml}</div>` + rodapéHtml;
                 canvas.appendChild(pageDiv);
             });
 
@@ -1088,7 +1088,7 @@
                     })
                 });
 
-                if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 alert("✅ PDF gerado com sucesso! Ele foi enviado para a conversa interna do Chatwoot.");
             } catch (err) {
                 alert("⚠️ Ocorreu uma falha ao enviar o PDF. Verifique se o workflow do n8n está ativo.");

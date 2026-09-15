@@ -73,12 +73,17 @@
             </div>
 
             <div class="flex items-center justify-between px-1 pt-1 border-t border-slate-100">
-                <div class="flex gap-2">
+                <div class="flex items-center gap-2">
                     <button id="btn-undo" onclick="undo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-colors" title="Desfazer">
                         <i class="fa-solid fa-rotate-left"></i>
                     </button>
                     <button id="btn-redo" onclick="redo()" disabled class="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-30 transition-colors" title="Refazer">
                         <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <span class="text-slate-200">|</span>
+                    <!-- BOTÃO RESTAURADO AQUI -->
+                    <button id="btn-sincronizar-estado" onclick="sincronizarCardapio()" class="p-1 text-slate-400 hover:text-indigo-600 transition-colors" title="Restaurar Cardápio Salvo do Servidor">
+                        <i class="fa-solid fa-cloud-arrow-down text-xs"></i>
                     </button>
                 </div>
                 <span id="history-counter" class="text-[10px] text-slate-400 font-medium">0 alterações</span>
@@ -512,6 +517,8 @@
                 }
             } catch (err) {
                 alert("❌ Erro ao buscar versão salva no servidor.");
+            } finally {
+                if (btn) { btn.disabled = false; }
             }
         }
 
@@ -945,11 +952,11 @@
 
             filteredData.forEach(cat => {
                 if (appState.layout === 1) {
-                    elements.push(`<div style="width: 100%; display: inline-block; margin-top: 1rem;"><h2 style="font-size: 1.25rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.25rem; color: var(--color-primary); font-family: var(--font-title);">${cat.categoria}</h2></div>`);
+                    elements.push(`<div data-category-title="true" style="width: 100%; display: inline-block; margin-top: 1rem;"><h2 style="font-size: 1.25rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 0.25rem; color: var(--color-primary); font-family: var(--font-title);">${cat.categoria}</h2></div>`);
                 } else if (appState.layout === 2) {
-                    elements.push(`<div style="width: 100%; display: inline-block; text-align: center; margin-top: 1rem; margin-bottom: 0.75rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 0.25rem 0;"><h2 style="font-size: 1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-secondary); font-family: var(--font-title); margin: 0;">${cat.categoria}</h2></div>`);
+                    elements.push(`<div data-category-title="true" style="width: 100%; display: inline-block; text-align: center; margin-top: 1rem; margin-bottom: 0.75rem; border-top: 1px dashed rgba(0,0,0,0.1); border-bottom: 1px dashed rgba(0,0,0,0.1); padding: 0.25rem 0;"><h2 style="font-size: 1rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-secondary); font-family: var(--font-title); margin: 0;">${cat.categoria}</h2></div>`);
                 } else if (appState.layout === 3) {
-                    elements.push(`<div style="width: 100%; display: inline-block; margin-top: 1rem; margin-bottom: 1rem;"><h2 style="font-size: 1.25rem; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid var(--color-secondary); display: inline-block; color: var(--color-primary); font-family: var(--font-title); padding-bottom: 0.2rem; margin: 0;">${cat.categoria}</h2></div>`);
+                    elements.push(`<div data-category-title="true" style="width: 100%; display: inline-block; margin-top: 1rem; margin-bottom: 1rem;"><h2 style="font-size: 1.25rem; font-weight: 900; text-transform: uppercase; border-bottom: 2px solid var(--color-secondary); display: inline-block; color: var(--color-primary); font-family: var(--font-title); padding-bottom: 0.2rem; margin: 0;">${cat.categoria}</h2></div>`);
                 }
 
                 // --- ITENS ---
@@ -1058,17 +1065,37 @@
 
                 if (!node) return;
 
-                currentPage.querySelector('.page-content').appendChild(node);
+                const pageContent = currentPage.querySelector('.page-content');
+                pageContent.appendChild(node);
 
-                if (currentPage.querySelector('.page-content').scrollHeight > MAX_CONTENT_HEIGHT) {
-                    if (currentPage.querySelector('.page-content').children.length > 1) {
-                        currentPage.querySelector('.page-content').removeChild(node);
+                if (pageContent.scrollHeight > MAX_CONTENT_HEIGHT) {
+                    if (pageContent.children.length > 1) {
+                        // Array de nós que precisam ser movidos para a nova página
+                        let nodesToMove = [node];
+                        
+                        // Verifica se o nó atual NÃO é uma categoria, mas o nó anterior ERA uma categoria.
+                        // Se sim, temos que mover o título da categoria junto com este primeiro item!
+                        const isCategory = node.hasAttribute('data-category-title');
+                        const previousNode = node.previousSibling;
+                        
+                        if (!isCategory && previousNode && previousNode.hasAttribute('data-category-title')) {
+                            nodesToMove.unshift(previousNode); // Adiciona o título no início da fila de mudança
+                        }
+
+                        // Remove os nós da página atual que "estouraram" ou ficaram órfãos
+                        nodesToMove.forEach(n => pageContent.removeChild(n));
+                        
+                        // Salva a página atual
                         pages.push(currentPage);
                         
+                        // Cria uma nova página
                         currentPage = createEmptyPage();
                         tempWrapper.innerHTML = ''; 
                         tempWrapper.appendChild(currentPage);
-                        currentPage.querySelector('.page-content').appendChild(node);
+                        
+                        // Adiciona os nós removidos na nova página
+                        const newPageContent = currentPage.querySelector('.page-content');
+                        nodesToMove.forEach(n => newPageContent.appendChild(n));
                     }
                 }
             });

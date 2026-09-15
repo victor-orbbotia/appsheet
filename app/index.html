@@ -12,6 +12,7 @@
             --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px; --radius: 8px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
         body { background-color: var(--bg-color); color: var(--text-main); overscroll-behavior-y: none; }
         #app { max-width: 480px; margin: 0 auto; position: relative; min-height: 100vh; background-color: var(--bg-color); border-left: 1px solid var(--border); border-right: 1px solid var(--border); overflow-x: hidden; padding-bottom: 100px; }
         h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: var(--space-1); }
@@ -25,10 +26,12 @@
         
         .sticky-tabs { position: sticky; top: 0; background-color: rgba(13, 17, 23, 0.95); backdrop-filter: blur(8px); z-index: 10; display: flex; overflow-x: auto; gap: var(--space-3); padding: var(--space-2); border-bottom: 1px solid var(--border); scrollbar-width: none; }
         .sticky-tabs::-webkit-scrollbar { display: none; }
-        .tab { font-size: 16px; font-weight: 600; color: var(--text-muted); white-space: nowrap; padding-bottom: var(--space-1); border-bottom: 2px solid transparent; }
+        .tab { font-size: 16px; font-weight: 600; color: var(--text-muted); white-space: nowrap; padding-bottom: var(--space-1); border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.2s; }
         .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
         
         .menu-list { padding: var(--space-2); display: flex; flex-direction: column; gap: var(--space-2); }
+        .category-header { margin-top: var(--space-4); margin-bottom: var(--space-1); padding-top: 60px; margin-top: -60px; color: #fff; font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: var(--space-1); }
+        
         .menu-cell { display: flex; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; }
         .menu-info { flex: 1; }
         .menu-info p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: var(--space-1) 0; font-size: 14px; }
@@ -41,7 +44,8 @@
         .checkbox-row:last-child { border-bottom: none; }
         .checkbox-row label { display: flex; align-items: center; gap: var(--space-1); width: 100%; }
         input[type="checkbox"], input[type="radio"] { accent-color: var(--primary); width: 18px; height: 18px; }
-        input[type="text"], input[type="tel"] { width: 100%; padding: 12px; background: var(--bg-color); border: 1px solid var(--border); color: white; border-radius: var(--radius); margin-bottom: var(--space-2); font-size: 16px; }
+        input[type="text"], input[type="tel"], select { width: 100%; padding: 12px; background: var(--bg-color); border: 1px solid var(--border); color: white; border-radius: var(--radius); margin-bottom: var(--space-2); font-size: 16px; outline: none; }
+        select { appearance: none; }
         
         .sticky-action-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(22, 27, 34, 0.95); backdrop-filter: blur(8px); padding: var(--space-2); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); z-index: 50; gap: var(--space-2); transition: transform 0.3s ease; padding-bottom: max(var(--space-2), env(safe-area-inset-bottom)); }
         .sticky-action-bar.hidden { transform: translate(-50%, 100%); }
@@ -54,14 +58,12 @@
         .stepper button { background: transparent; border: none; color: white; padding: 12px 16px; font-size: 18px; }
         .stepper span { font-weight: bold; padding: 0 var(--space-1); width: 24px; text-align: center; }
         
-        /* Modais atualizados para UX de celular */
         .modal { position: fixed; top: 0; left: 50%; transform: translate(-50%, 100%); width: 100%; max-width: 480px; height: 100dvh; background: var(--bg-color); z-index: 100; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
         .modal.open { transform: translate(-50%, 0); }
         .modal-header { padding: var(--space-2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--surface); }
         .modal-close { background: none; border: none; color: var(--text-main); font-size: 24px; cursor: pointer; }
         .modal-content { flex: 1; overflow-y: auto; padding: var(--space-2); }
         
-        /* Rodapé fixo perfeito para os modais */
         .modal-footer { padding: var(--space-2); border-top: 1px solid var(--border); background: rgba(22, 27, 34, 0.95); display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); padding-bottom: max(var(--space-2), env(safe-area-inset-bottom)); }
         
         .hide { display: none !important; }
@@ -79,13 +81,13 @@
         </div>
     </header>
 
-    <nav class="sticky-tabs"><div class="tab active">Todos os Itens</div></nav>
+    <nav class="sticky-tabs" id="category-tabs"></nav>
 
     <section class="menu-list" id="dynamic-menu">
         <div class="loading-state"><p>Carregando cardápio...</p></div>
     </section>
 
-    <!-- BARRA INFERIOR DE CARRINHO (Flutuante na página principal) -->
+    <!-- BARRA INFERIOR DE CARRINHO -->
     <div id="main-cart-bar" class="sticky-action-bar hidden">
         <div>
             <h3 id="cart-summary-text">0 Itens</h3>
@@ -126,7 +128,7 @@
                 <h3>Sua Sacola</h3>
                 <div id="cart-items-list" style="margin-bottom: var(--space-2); border-bottom: 1px solid var(--border); padding-bottom: var(--space-2);"></div>
                 <div style="display:flex; justify-content:space-between;">
-                    <p>Subtotal</p>
+                    <p>Subtotal Produtos</p>
                     <h3 id="checkout-subtotal">R$ 0,00</h3>
                 </div>
             </div>
@@ -138,17 +140,20 @@
 
             <div class="options-group">
                 <h3>Modalidade</h3>
-                <div class="checkbox-row"><label><input type="radio" name="modalidade" value="entrega" checked onchange="toggleAddress(true)"> Entrega</label></div>
-                <div class="checkbox-row"><label><input type="radio" name="modalidade" value="retirada" onchange="toggleAddress(false)"> Retirada no Balcão</label></div>
+                <div class="checkbox-row"><label><input type="radio" name="modalidade" value="entrega" checked onchange="toggleDeliveryFields(true)"> Entrega</label></div>
+                <div class="checkbox-row"><label><input type="radio" name="modalidade" value="retirada" onchange="toggleDeliveryFields(false)"> Retirada no Balcão</label></div>
             </div>
 
             <div id="address-section" class="options-group">
                 <h3>Endereço de Entrega</h3>
-                <input type="text" id="input-rua" placeholder="Rua e Bairro">
+                <select id="input-bairro" onchange="updateCheckoutTotal()">
+                    <option value="">Selecione o Bairro...</option>
+                </select>
+                <input type="text" id="input-rua" placeholder="Rua / Avenida">
                 <input type="text" id="input-numero" placeholder="Número / Complemento">
             </div>
 
-            <div class="options-group">
+            <div id="payment-section" class="options-group">
                 <h3>Forma de Pagamento</h3>
                 <div class="checkbox-row"><label><input type="radio" name="pagamento" value="pix" checked> PIX</label></div>
                 <div class="checkbox-row"><label><input type="radio" name="pagamento" value="cartao"> Cartão na Entrega</label></div>
@@ -156,13 +161,13 @@
             </div>
 
             <div class="options-group">
-                <h3>Observações Gerais do Pedido</h3>
+                <h3>Observações Gerais</h3>
                 <input type="text" id="input-obs" placeholder="Ex: Preciso de troco para R$ 50">
             </div>
         </div>
         
         <div class="modal-footer">
-            <div><p class="caption">Total</p><h3 id="checkout-total">R$ 0,00</h3></div>
+            <div><p class="caption">Total <span id="taxa-info" style="font-size:12px;"></span></p><h3 id="checkout-total">R$ 0,00</h3></div>
             <button id="btn-submit" class="btn-primary" onclick="submitWebhook()">Enviar p/ WhatsApp</button>
         </div>
     </div>
@@ -179,6 +184,7 @@
     const CONVERSATION_ID = urlParams.get('conv') || ''; 
 
     let dbProdutos = [];
+    let dbTaxas = [];
     let cart = [];
     let currentItemConfig = { nome: '', basePrice: 0, qty: 1, itemObs: '' };
 
@@ -196,35 +202,90 @@
             
             dbProdutos = data.produtos || [];
             
+            // Ajuste seguro para as taxas caso venham como string JSON do Supabase
+            if (typeof data.taxas_entrega === 'string') {
+                try { dbTaxas = JSON.parse(data.taxas_entrega); } catch(e) { dbTaxas = []; }
+            } else {
+                dbTaxas = data.taxas_entrega || [];
+            }
+            
             if (data.carrinho_atual && Array.isArray(data.carrinho_atual) && data.carrinho_atual.length > 0) {
-                cart = data.carrinho_atual;
+                // Filtra a taxa de entrega para não duplicar, pois será recalculada
+                cart = data.carrinho_atual.filter(i => i.nome !== 'Taxa de Entrega');
                 updateMainCartBar();
             }
 
             renderMenu();
+            populateBairros();
             syncBadges();
+            setupScrollObserver();
         } catch (error) {
             document.getElementById('dynamic-menu').innerHTML = `<div class="loading-state"><p style="color:var(--danger)">Erro ao carregar cardápio.</p></div>`;
         }
     }
 
     function renderMenu() {
+        const tabsContainer = document.getElementById('category-tabs');
         const menuContainer = document.getElementById('dynamic-menu');
+        tabsContainer.innerHTML = '';
         menuContainer.innerHTML = '';
+        
         if(dbProdutos.length === 0) { menuContainer.innerHTML = `<div class="loading-state"><p>Cardápio vazio no momento.</p></div>`; return; }
 
-        dbProdutos.forEach(p => {
-            const precoExibicao = Number(p.preco_base) || 0;
-            menuContainer.innerHTML += `
-                <div class="menu-cell" onclick="openItemModal('${p.nome}', ${precoExibicao}, '${p.descricao || ''}')" data-item="${p.nome}">
-                    <div class="menu-info">
-                        <div class="item-added-badge">✔ No Carrinho</div>
-                        <h3>${p.nome}</h3>
-                        <p>${p.descricao || ''}</p>
-                        <div class="menu-price">R$ ${precoExibicao.toFixed(2).replace('.', ',')}</div>
-                    </div>
-                </div>`;
+        // Extrai categorias únicas
+        const categorias = [...new Set(dbProdutos.map(p => p.categoria || 'Outros'))];
+
+        categorias.forEach((cat, index) => {
+            const catId = `cat-${cat.replace(/\s+/g, '-').toLowerCase()}`;
+            
+            // Cria aba de navegação
+            tabsContainer.innerHTML += `<div class="tab ${index === 0 ? 'active' : ''}" data-target="${catId}" onclick="scrollToCategory('${catId}')">${cat}</div>`;
+            
+            // Cria sessão de produtos
+            menuContainer.innerHTML += `<div id="${catId}" class="category-header">${cat}</div>`;
+            
+            const produtosDaCategoria = dbProdutos.filter(p => (p.categoria || 'Outros') === cat);
+            produtosDaCategoria.forEach(p => {
+                const precoExibicao = Number(p.preco_base) || 0;
+                menuContainer.innerHTML += `
+                    <div class="menu-cell" onclick="openItemModal('${p.nome}', ${precoExibicao}, '${p.descricao || ''}')" data-item="${p.nome}">
+                        <div class="menu-info">
+                            <div class="item-added-badge">✔ No Carrinho</div>
+                            <h3>${p.nome}</h3>
+                            <p>${p.descricao || ''}</p>
+                            <div class="menu-price">R$ ${precoExibicao.toFixed(2).replace('.', ',')}</div>
+                        </div>
+                    </div>`;
+            });
         });
+    }
+
+    function populateBairros() {
+        const select = document.getElementById('input-bairro');
+        dbTaxas.forEach(taxa => {
+            select.innerHTML += `<option value="${taxa.bairro}">${taxa.bairro} (R$ ${Number(taxa.valor).toFixed(2).replace('.', ',')})</option>`;
+        });
+    }
+
+    function scrollToCategory(id) {
+        document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Observa o scroll para trocar a cor da Aba de categoria no topo
+    function setupScrollObserver() {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    const activeTab = document.querySelector(`.tab[data-target="${entry.target.id}"]`);
+                    if(activeTab) {
+                        activeTab.classList.add('active');
+                        activeTab.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+                    }
+                }
+            });
+        }, { rootMargin: '-30% 0px -70% 0px' });
+        document.querySelectorAll('.category-header').forEach(el => observer.observe(el));
     }
 
     function syncBadges() {
@@ -268,15 +329,17 @@
         document.getElementById('cart-summary-text').innerText = `${cart.reduce((s, i) => s + i.quantidade, 0)} Itens`;
         document.getElementById('cart-summary-total').innerText = `R$ ${cart.reduce((s, i) => s + (i.preco * i.quantidade), 0).toFixed(2).replace('.', ',')}`;
         bar.classList.remove('hidden');
+        updateCheckoutTotal();
     }
 
     function openCartModal() {
         const listDiv = document.getElementById('cart-items-list');
         listDiv.innerHTML = '';
-        let totalValue = 0;
+        let subtotal = 0;
+        
         cart.forEach((item, index) => {
             let itemTotal = item.preco * item.quantidade;
-            totalValue += itemTotal;
+            subtotal += itemTotal;
             listDiv.innerHTML += `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div style="flex:1;">
@@ -287,9 +350,31 @@
                 </div>
             `;
         });
-        document.getElementById('checkout-subtotal').innerText = `R$ ${totalValue.toFixed(2).replace('.', ',')}`;
-        document.getElementById('checkout-total').innerText = `R$ ${totalValue.toFixed(2).replace('.', ',')}`;
+        
+        document.getElementById('checkout-subtotal').innerText = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
+        updateCheckoutTotal();
         document.getElementById('cart-modal').classList.add('open');
+    }
+
+    function updateCheckoutTotal() {
+        const isDelivery = document.querySelector('input[name="modalidade"]:checked').value === 'entrega';
+        const subtotal = cart.reduce((s, i) => s + (i.preco * i.quantidade), 0);
+        let taxaValor = 0;
+        let taxaInfo = '';
+
+        if (isDelivery) {
+            const selectBairro = document.getElementById('input-bairro').value;
+            const bairroObj = dbTaxas.find(t => t.bairro === selectBairro);
+            if (bairroObj) {
+                taxaValor = Number(bairroObj.valor) || 0;
+                taxaInfo = `(+ R$ ${taxaValor.toFixed(2).replace('.', ',')} entrega)`;
+            } else if (selectBairro === "") {
+                taxaInfo = `(Selecione o Bairro)`;
+            }
+        }
+
+        document.getElementById('taxa-info').innerText = taxaInfo;
+        document.getElementById('checkout-total').innerText = `R$ ${(subtotal + taxaValor).toFixed(2).replace('.', ',')}`;
     }
 
     function removeFromCart(index) {
@@ -302,33 +387,60 @@
     }
 
     function closeCartModal() { document.getElementById('cart-modal').classList.remove('open'); }
-    function toggleAddress(show) { document.getElementById('address-section').classList[show ? 'remove' : 'add']('hide'); }
+    
+    function toggleDeliveryFields(isDelivery) { 
+        document.getElementById('address-section').classList[isDelivery ? 'remove' : 'add']('hide'); 
+        document.getElementById('payment-section').classList[isDelivery ? 'remove' : 'add']('hide');
+        updateCheckoutTotal();
+    }
 
     async function submitWebhook() {
         const modalidade = document.querySelector('input[name="modalidade"]:checked').value;
-        const pagamento = document.querySelector('input[name="pagamento"]:checked').value;
-        const rua = document.getElementById('input-rua').value;
-        const num = document.getElementById('input-numero').value;
-        const obs = document.getElementById('input-obs').value;
         const telefoneEditado = document.getElementById('input-telefone').value;
+        const obs = document.getElementById('input-obs').value;
 
         if (!telefoneEditado) { alert("O número de WhatsApp é obrigatório."); return; }
-        if (modalidade === 'entrega' && rua.trim() === '') { alert("Preencha a Rua e o Bairro para entrega."); return; }
 
-        let enderecoFinal = modalidade === 'retirada' ? 'Retirada no Local' : `${rua}, ${num}`;
-        let pgtoFinal = modalidade === 'retirada' ? 'retirada' : pagamento;
-        const totalValue = cart.reduce((sum, item) => sum + (item.preco * item.quantidade), 0);
+        let cartParaEnviar = [...cart];
+        let enderecoFinal = '';
+        let pgtoFinal = 'retirada';
+        let totalFinal = cart.reduce((s, i) => s + (i.preco * i.quantidade), 0);
+
+        if (modalidade === 'retirada') {
+            enderecoFinal = 'Retirada no Local';
+            if (obs.trim() !== '') {
+                // Junta a observação real com o status de retirada
+                enderecoFinal = `Retirada no Local`;
+            }
+        } else {
+            const bairro = document.getElementById('input-bairro').value;
+            const rua = document.getElementById('input-rua').value;
+            const num = document.getElementById('input-numero').value;
+            
+            if (!bairro) { alert("Selecione um bairro na lista para entrega."); return; }
+            if (rua.trim() === '') { alert("Preencha a Rua para entrega."); return; }
+
+            enderecoFinal = `${rua}, ${num} - ${bairro}`;
+            pgtoFinal = document.querySelector('input[name="pagamento"]:checked').value;
+
+            // Injeta a taxa de entrega igual ao padrão da Inteligência Artificial
+            const bairroObj = dbTaxas.find(t => t.bairro === bairro);
+            if (bairroObj && bairroObj.valor > 0) {
+                cartParaEnviar.push({ nome: 'Taxa de Entrega', quantidade: 1, preco: Number(bairroObj.valor) });
+                totalFinal += Number(bairroObj.valor);
+            }
+        }
 
         const payload = {
             account_id: ACCOUNT_ID,
             cliente_telefone: telefoneEditado, 
             cliente_nome: CLIENTE_NOME,
             conversation_id: CONVERSATION_ID,
-            itens: cart,
-            valor_total: totalValue,
+            itens: cartParaEnviar,
+            valor_total: totalFinal,
             endereco: enderecoFinal,
             forma_pagamento: pgtoFinal,
-            observacoes: obs
+            observacoes: modalidade === 'retirada' ? (obs ? 'retirada, ' + obs : 'retirada') : obs
         };
 
         const btnSubmit = document.getElementById('btn-submit');

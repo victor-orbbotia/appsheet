@@ -187,6 +187,7 @@
     let dbTaxas = [];
     let cart = [];
     let currentItemConfig = { nome: '', basePrice: 0, qty: 1, itemObs: '' };
+    let isManualScrolling = false;
 
     async function initWebApp() {
         document.getElementById('input-telefone').value = CLIENTE_TEL;
@@ -202,7 +203,6 @@
             
             dbProdutos = data.produtos || [];
             
-            // Ajuste seguro para as taxas caso venham como string JSON do Supabase
             if (typeof data.taxas_entrega === 'string') {
                 try { dbTaxas = JSON.parse(data.taxas_entrega); } catch(e) { dbTaxas = []; }
             } else {
@@ -210,7 +210,6 @@
             }
             
             if (data.carrinho_atual && Array.isArray(data.carrinho_atual) && data.carrinho_atual.length > 0) {
-                // Filtra a taxa de entrega para não duplicar, pois será recalculada
                 cart = data.carrinho_atual.filter(i => i.nome !== 'Taxa de Entrega');
                 updateMainCartBar();
             }
@@ -232,16 +231,12 @@
         
         if(dbProdutos.length === 0) { menuContainer.innerHTML = `<div class="loading-state"><p>Cardápio vazio no momento.</p></div>`; return; }
 
-        // Extrai categorias únicas
         const categorias = [...new Set(dbProdutos.map(p => p.categoria || 'Outros'))];
 
         categorias.forEach((cat, index) => {
             const catId = `cat-${cat.replace(/\s+/g, '-').toLowerCase()}`;
             
-            // Cria aba de navegação
             tabsContainer.innerHTML += `<div class="tab ${index === 0 ? 'active' : ''}" data-target="${catId}" onclick="scrollToCategory('${catId}')">${cat}</div>`;
-            
-            // Cria sessão de produtos
             menuContainer.innerHTML += `<div id="${catId}" class="category-header">${cat}</div>`;
             
             const produtosDaCategoria = dbProdutos.filter(p => (p.categoria || 'Outros') === cat);
@@ -268,23 +263,38 @@
     }
 
     function scrollToCategory(id) {
-        document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        const targetEl = document.getElementById(id);
+        if (!targetEl) return;
+
+        isManualScrolling = true;
+
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        const activeTab = document.querySelector(`.tab[data-target="${id}"]`);
+        if (activeTab) activeTab.classList.add('active');
+
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+
+        setTimeout(() => {
+            isManualScrolling = false;
+        }, 500);
     }
 
-    // Observa o scroll para trocar a cor da Aba de categoria no topo
     function setupScrollObserver() {
         const observer = new IntersectionObserver(entries => {
+            if (isManualScrolling) return;
+
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                     const activeTab = document.querySelector(`.tab[data-target="${entry.target.id}"]`);
-                    if(activeTab) {
+                    if (activeTab) {
                         activeTab.classList.add('active');
-                        activeTab.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+                        activeTab.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'auto' });
                     }
                 }
             });
-        }, { rootMargin: '-30% 0px -70% 0px' });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+
         document.querySelectorAll('.category-header').forEach(el => observer.observe(el));
     }
 
@@ -408,10 +418,6 @@
 
         if (modalidade === 'retirada') {
             enderecoFinal = 'Retirada no Local';
-            if (obs.trim() !== '') {
-                // Junta a observação real com o status de retirada
-                enderecoFinal = `Retirada no Local`;
-            }
         } else {
             const bairro = document.getElementById('input-bairro').value;
             const rua = document.getElementById('input-rua').value;
@@ -423,7 +429,6 @@
             enderecoFinal = `${rua}, ${num} - ${bairro}`;
             pgtoFinal = document.querySelector('input[name="pagamento"]:checked').value;
 
-            // Injeta a taxa de entrega igual ao padrão da Inteligência Artificial
             const bairroObj = dbTaxas.find(t => t.bairro === bairro);
             if (bairroObj && bairroObj.valor > 0) {
                 cartParaEnviar.push({ nome: 'Taxa de Entrega', quantidade: 1, preco: Number(bairroObj.valor) });

@@ -12,7 +12,6 @@
             --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px; --radius: 8px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        html { scroll-behavior: smooth; }
         body { background-color: var(--bg-color); color: var(--text-main); overscroll-behavior-y: none; }
         #app { max-width: 480px; margin: 0 auto; position: relative; min-height: 100vh; background-color: var(--bg-color); border-left: 1px solid var(--border); border-right: 1px solid var(--border); overflow-x: hidden; padding-bottom: 100px; }
         h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: var(--space-1); }
@@ -30,7 +29,7 @@
         .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
         
         .menu-list { padding: var(--space-2); display: flex; flex-direction: column; gap: var(--space-2); }
-        .category-header { margin-top: var(--space-4); margin-bottom: var(--space-1); padding-top: 60px; margin-top: -60px; color: #fff; font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: var(--space-1); }
+        .category-header { margin-top: var(--space-4); margin-bottom: var(--space-1); color: #fff; font-size: 22px; font-weight: bold; border-bottom: 1px solid var(--border); padding-bottom: var(--space-1); }
         
         .menu-cell { display: flex; justify-content: space-between; gap: var(--space-2); padding: var(--space-2); background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; }
         .menu-info { flex: 1; }
@@ -187,7 +186,10 @@
     let dbTaxas = [];
     let cart = [];
     let currentItemConfig = { nome: '', basePrice: 0, qty: 1, itemObs: '' };
+    
+    // Variáveis de controle de scroll
     let isManualScrolling = false;
+    let scrollTimeout = null;
 
     async function initWebApp() {
         document.getElementById('input-telefone').value = CLIENTE_TEL;
@@ -262,21 +264,43 @@
         });
     }
 
+    // NOVA FUNÇÃO: Move o menu horizontalmente sem afetar a rolagem da página inteira
+    function centerHorizontalTab(tab) {
+        const container = document.getElementById('category-tabs');
+        const scrollPos = tab.offsetLeft - (container.clientWidth / 2) + (tab.clientWidth / 2);
+        container.scrollTo({ left: scrollPos, behavior: 'smooth' });
+    }
+
+    // NOVA FUNÇÃO: Rola a tela até a categoria ajustando o cabeçalho fixo
     function scrollToCategory(id) {
         const targetEl = document.getElementById(id);
         if (!targetEl) return;
 
         isManualScrolling = true;
+        clearTimeout(scrollTimeout);
 
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         const activeTab = document.querySelector(`.tab[data-target="${id}"]`);
-        if (activeTab) activeTab.classList.add('active');
+        
+        if (activeTab) {
+            activeTab.classList.add('active');
+            centerHorizontalTab(activeTab);
+        }
 
-        targetEl.scrollIntoView({ behavior: 'smooth' });
+        // Calcula a posição do item menos 70px (espaço da barra de menu)
+        const headerOffset = 70;
+        const elementPosition = targetEl.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-        setTimeout(() => {
+        window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+        });
+
+        // Espera a animação de rolagem terminar para liberar o observador
+        scrollTimeout = setTimeout(() => {
             isManualScrolling = false;
-        }, 500);
+        }, 1000); 
     }
 
     function setupScrollObserver() {
@@ -289,11 +313,11 @@
                     const activeTab = document.querySelector(`.tab[data-target="${entry.target.id}"]`);
                     if (activeTab) {
                         activeTab.classList.add('active');
-                        activeTab.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'auto' });
+                        centerHorizontalTab(activeTab);
                     }
                 }
             });
-        }, { rootMargin: '-20% 0px -70% 0px' });
+        }, { rootMargin: '-80px 0px -70% 0px' }); // Ajuste fino para ativar apenas quando o título estiver perto do menu
 
         document.querySelectorAll('.category-header').forEach(el => observer.observe(el));
     }

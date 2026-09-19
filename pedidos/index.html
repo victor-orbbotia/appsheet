@@ -59,7 +59,7 @@
                     </div>
                     <input type="text" id="searchInput" onkeyup="renderizarKanban()" placeholder="Buscar nome, telefone, conversa..." class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:border-indigo-500 w-52 transition-all focus:w-64">
                 </div>
-                
+
                 <span class="text-slate-200">|</span>
 
                 <input type="date" id="filtroData" onchange="carregarPedidos()" class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
@@ -96,7 +96,7 @@
 
         <!-- Quadro Kanban de Colunas -->
         <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
-            
+
             <!-- ====== COLUNAS DA ABA 1 (AÇÕES PRINCIPAIS) ====== -->
             <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_na_entrega">
                 <div class="flex items-center justify-between">
@@ -166,6 +166,12 @@
                 <div id="col-pedido_aprovado" class="flex flex-col gap-3 min-h-[120px]"></div>
             </div>
 
+
+            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pronto_para_entrega"><div class="flex items-center justify-between"><h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">Pronto para Entrega</h2><span id="count-pronto_para_entrega" class="text-xs font-bold">0</span></div><div id="col-pronto_para_entrega" class="flex flex-col gap-3 min-h-[120px]"></div></div>
+
+            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pronto_para_retirada"><div class="flex items-center justify-between"><h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">Pronto para Retirada</h2><span id="count-pronto_para_retirada" class="text-xs font-bold">0</span></div><div id="col-pronto_para_retirada" class="flex flex-col gap-3 min-h-[120px]"></div></div>
+
+            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-saiu_para_entrega"><div class="flex items-center justify-between"><h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">Saiu para Entrega</h2><span id="count-saiu_para_entrega" class="text-xs font-bold">0</span></div><div id="col-saiu_para_entrega" class="flex flex-col gap-3 min-h-[120px]"></div></div>
             <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-cancelado_cliente">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -196,7 +202,7 @@
         const urlAcao = 'https://n8n.orbbotia.com/webhook/pedidos-acao';
 
         let globalAccountId = null;
-        let segmentoAtual = 'restaurante'; 
+        let segmentoAtual = 'restaurante';
         let handshakeInterval;
         let listaPedidos = [];
         let currentTab = 1;
@@ -226,65 +232,68 @@
         }
 
         const STATUS_CONFIG = {
+            pronto_para_entrega: {"label":"Pronto para Entrega","proximo":"saiu_para_entrega","btnProximoLabel":"Registrar saída 🚚","btnProximoCor":"bg-indigo-600 hover:bg-indigo-700","podeCancel":true,"tab":3},
+            pronto_para_retirada: {"label":"Pronto para Retirada","podeCancel":true,"tab":3},
+            saiu_para_entrega: {"label":"Saiu para Entrega","podeCancel":true,"tab":3},
             // ================== ABA 1: AÇÕES PRINCIPAIS ==================
-            pagamento_na_entrega: { 
-                label: 'Pagamento na Entrega', 
-                proximo: 'pedido_aprovado', 
-                btnProximoLabel: 'Aprovar e Enviar ✅', 
-                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
-                podeCancel: true, 
-                tab: 1 
+            pagamento_na_entrega: {
+                label: 'Pagamento na Entrega',
+                proximo: 'pedido_aprovado',
+                btnProximoLabel: 'Aprovar pedido ✅',
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
+                podeCancel: true,
+                tab: 1
             },
-            comprovante_enviado: { 
-                label: 'Aguardando Comprovante', 
-                anterior: 'aguardando_pix', 
-                btnAnteriorLabel: '← Reenviar PIX', 
-                btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600', 
-                proximo: 'pedido_aprovado', 
-                btnProximoLabel: 'Aprovar Pagamento ✅', 
-                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
-                podeCancel: true, 
-                tab: 1 
+            comprovante_enviado: {
+                label: 'Aguardando Comprovante',
+                anterior: 'aguardando_pix',
+                btnAnteriorLabel: '← Reenviar PIX',
+                btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600',
+                proximo: 'pedido_aprovado',
+                btnProximoLabel: 'Aprovar Pagamento ✅',
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
+                podeCancel: true,
+                tab: 1
             },
-            retirada_balcao: { 
-                label: 'Retirada no Balcão', 
-                proximo: 'pedido_aprovado', 
-                btnProximoLabel: 'Aprovar e Entregar ✅', 
-                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700', 
-                podeCancel: true, 
-                tab: 1 
+            retirada_balcao: {
+                label: 'Retirada no Balcão',
+                proximo: 'pedido_aprovado',
+                btnProximoLabel: 'Aprovar retirada ✅',
+                btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
+                podeCancel: true,
+                tab: 1
             },
 
             // ================== ABA 2: EM ABERTO E AGUARDANDO PIX ==================
-            em_aberto: { 
-                label: 'Em Aberto', 
-                podeCancel: true, 
-                tab: 2 
+            em_aberto: {
+                label: 'Em Aberto',
+                podeCancel: true,
+                tab: 2
             },
-            aguardando_pix: { 
-                label: 'Aguardando PIX', 
-                proximo: 'comprovante_enviado', 
-                btnProximoLabel: 'Comprovante Recebido ✓', 
-                btnProximoCor: 'bg-blue-600 hover:bg-blue-700', 
-                podeCancel: true, 
-                tab: 2 
+            aguardando_pix: {
+                label: 'Aguardando PIX',
+                proximo: 'comprovante_enviado',
+                btnProximoLabel: 'Comprovante Recebido ✓',
+                btnProximoCor: 'bg-blue-600 hover:bg-blue-700',
+                podeCancel: true,
+                tab: 2
             },
 
             // ================== ABA 3: APROVADOS E CANCELADOS ==================
-            pedido_aprovado: { 
-                label: 'Pedido Aprovado', 
-                podeCancel: true, 
-                tab: 3 
+            pedido_aprovado: {
+                label: 'Pedido Aprovado',
+                podeCancel: true,
+                tab: 3
             },
-            cancelado_cliente: { 
-                label: 'Cancelado pelo Cliente', 
-                podeCancel: false, 
-                tab: 3 
+            cancelado_cliente: {
+                label: 'Cancelado pelo Cliente',
+                podeCancel: false,
+                tab: 3
             },
-            cancelado_atendente: { 
-                label: 'Cancelado pelo Atendente', 
-                podeCancel: false, 
-                tab: 3 
+            cancelado_atendente: {
+                label: 'Cancelado pelo Atendente',
+                podeCancel: false,
+                tab: 3
             }
         };
 
@@ -367,7 +376,7 @@
         async function carregarPedidos() {
             document.getElementById('area-loading').classList.remove('hidden');
             document.getElementById('kanban-board').classList.add('hidden');
-            
+
             const dataSelecionada = document.getElementById('filtroData').value;
             const accountIdFinal = globalAccountId || '3';
 
@@ -375,7 +384,7 @@
                 const endpoint = `${urlDados}?account_id=${accountIdFinal}&segmento=${segmentoAtual}&data_filtro=${dataSelecionada}`;
                 const res = await fetch(endpoint);
                 if (!res.ok) throw new Error('Erro ao buscar pedidos');
-                
+
                 const dados = await res.json();
                 listaPedidos = Array.isArray(dados) ? dados : (dados.data || []);
                 renderizarKanban();
@@ -395,10 +404,10 @@
             COLUNAS_TODAS.forEach(s => {
                 const elCol = document.getElementById(`col-${s}`);
                 const elKanbanCol = document.getElementById(`kanban-col-${s}`);
-                
+
                 if (elCol) elCol.innerHTML = '';
                 if (document.getElementById(`count-${s}`)) document.getElementById(`count-${s}`).textContent = '0';
-                
+
                 if (elKanbanCol) {
                     elKanbanCol.classList.toggle('hidden', STATUS_CONFIG[s].tab !== currentTab);
                 }
@@ -413,7 +422,7 @@
                     const chatMatch = String(p.conversa_id || '').toLowerCase().includes(searchQuery);
                     const nomeMatch = String(p.cliente_nome || '').toLowerCase().includes(searchQuery);
                     const telMatch = String(p.cliente_telefone || '').toLowerCase().includes(searchQuery);
-                    
+
                     if (!idMatch && !chatMatch && !nomeMatch && !telMatch) return false;
                 }
 
@@ -451,15 +460,26 @@
             document.getElementById('kanban-board').classList.remove('hidden');
         }
 
+        function proximaEtapaAprovado(p, status) {
+            if (status !== 'pedido_aprovado') return null;
+            const forma = String(p.forma_pagamento || '').toLowerCase();
+            const endereco = String(p.endereco_entrega || '').trim().toLowerCase();
+            if (forma === 'retirada' || /^(retirada|retirar|balc)/.test(endereco)) return 'pronto_para_retirada';
+            if (endereco) return 'pronto_para_entrega';
+            return null; // Dados legados ambíguos exigem conferir a modalidade.
+        }
+
         function criarCard(p, statusCalculado) {
-            const config = STATUS_CONFIG[statusCalculado] || {};
+            const config = { ...(STATUS_CONFIG[statusCalculado] || {}) };
+            const proximaEtapa = proximaEtapaAprovado(p, statusCalculado);
+            if (proximaEtapa) Object.assign(config, { proximo: proximaEtapa, btnProximoLabel: proximaEtapa === "pronto_para_retirada" ? "Marcar pronto para retirada 🛍️" : "Marcar pronto para entrega 📦", btnProximoCor: "bg-indigo-600 hover:bg-indigo-700" });
             const valor = parseFloat(p.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const dataStr = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
             // LÓGICA DA FORMA DE PAGAMENTO: Só renderiza o badge se houver uma forma de pagamento definida!
             const formaPgtoBruta = (p.forma_pagamento || '').trim();
             const formaPgto = formaPgtoBruta.toUpperCase();
-            
+
             let badgePgtoHtml = '';
             let textColorClass = 'text-slate-700';
 
@@ -497,7 +517,7 @@
             if (config.proximo) {
                 botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.proximo}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">${config.btnProximoLabel}</button>`;
             }
-            
+
             if (config.podeCancel) {
                 botoesHtml += `
                 <div class="w-full flex gap-1.5 mt-1">
@@ -509,7 +529,7 @@
             const card = document.createElement('div');
             card.id = `card-${p.id}`;
             card.className = 'card-pedido bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm space-y-2.5';
-            
+
             card.innerHTML = `
                 <div class="flex items-start justify-between gap-2">
                     <div>
@@ -541,12 +561,12 @@
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
 
-            const payload = { 
-                action: 'status', 
-                account_id: globalAccountId.toString(), 
-                id: id, 
+            const payload = {
+                action: 'status',
+                account_id: globalAccountId.toString(),
+                id: id,
                 conversa_id: conversaId,
-                status: novoStatus 
+                status: novoStatus
             };
 
             await enviarAcao(payload, btn, () => {
@@ -562,12 +582,12 @@
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
 
-            const payload = { 
-                action: 'status', 
-                account_id: globalAccountId.toString(), 
-                id: id, 
-                conversa_id: conversaId, 
-                status: tipoCancelamento 
+            const payload = {
+                action: 'status',
+                account_id: globalAccountId.toString(),
+                id: id,
+                conversa_id: conversaId,
+                status: tipoCancelamento
             };
 
             await enviarAcao(payload, btn, () => {
@@ -598,10 +618,12 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (res.ok) onSuccess();
-                else throw new Error('Falha no servidor');
+                const resultado = await res.json();
+                if (!res.ok || resultado.status === 'erro') throw new Error(resultado.mensagem || 'Falha no servidor');
+                if (payload.action === 'status' && resultado.status_pedido !== payload.status) throw new Error('O estado retornado diverge da alteração. Atualize o painel.');
+                onSuccess();
             } catch (error) {
-                mostrarToast('Erro ao comunicar com o servidor', 'error');
+                mostrarToast(error.message || 'Erro ao comunicar com o servidor', 'error');
                 btn.innerHTML = htmlOriginal;
                 btn.disabled = false;
             }

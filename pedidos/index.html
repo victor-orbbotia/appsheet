@@ -232,9 +232,14 @@
         }
 
         const STATUS_CONFIG = {
+            entregue: {label:'Entregue',podeCancel:false,tab:3},
+            retirado: {label:'Retirado',podeCancel:false,tab:3},
+            concluido: {label:'Concluído',podeCancel:false,tab:3},
+            finalizado: {label:'Finalizado',podeCancel:false,tab:3},
+            resolvido: {label:'Finalizado',podeCancel:false,tab:3},
             pronto_para_entrega: {"label":"Pronto para Entrega","proximo":"saiu_para_entrega","btnProximoLabel":"Registrar saída 🚚","btnProximoCor":"bg-indigo-600 hover:bg-indigo-700","podeCancel":true,"tab":3},
-            pronto_para_retirada: {"label":"Pronto para Retirada","podeCancel":true,"tab":3},
-            saiu_para_entrega: {"label":"Saiu para Entrega","podeCancel":true,"tab":3},
+            pronto_para_retirada: {"label":"Pronto para Retirada","proximo":"retirado","btnProximoLabel":"Confirmar retirada ✅","btnProximoCor":"bg-emerald-600","podeCancel":true,"tab":3},
+            saiu_para_entrega: {"label":"Saiu para Entrega","proximo":"entregue","btnProximoLabel":"Confirmar entrega ✅","btnProximoCor":"bg-emerald-600","podeCancel":true,"tab":3},
             // ================== ABA 1: AÇÕES PRINCIPAIS ==================
             pagamento_na_entrega: {
                 label: 'Pagamento na Entrega',
@@ -546,6 +551,7 @@
                     <span class="text-[11px] font-extrabold ${textColorClass}">${valor}</span>
                 </div>
 
+                ${p.editado ? '<p class="text-xs font-bold text-amber-700">✏️ Pedido editado — confira os itens</p>' : ''}
                 ${itensHtml}
                 ${p.endereco_entrega ? `<p class="text-[10px] text-slate-500 flex items-start gap-1"><span>📍</span><span>${p.endereco_entrega}</span></p>` : ''}
                 ${p.observacoes ? `<p class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">⚠️ ${p.observacoes}</p>` : ''}

@@ -357,22 +357,60 @@
       bottom: calc(6.2rem + env(safe-area-inset-bottom));
       z-index: 200;
       width: min(calc(100% - 2rem), 430px);
-      padding: .85rem 1rem;
+      padding: 1.15rem 1.2rem;
       transform: translate(-50%, 1rem);
-      border: 1px solid rgba(107,219,135,.28);
-      border-radius: .8rem;
+      border: 1px solid rgba(107,219,135,.32);
+      border-radius: 1rem;
       opacity: 0;
       pointer-events: none;
       background: rgba(27,54,34,.98);
-      color: #c7f5d2;
+      color: #e2fbe8;
       box-shadow: var(--shadow);
-      font-size: .9rem;
-      font-weight: 700;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 1.05rem;
+      font-weight: 750;
+      line-height: 1.45;
       text-align: center;
       transition: opacity .2s ease, transform .2s ease;
     }
     .toast.error { border-color: rgba(240,100,90,.32); background: rgba(74,29,25,.98); color: #ffd2ce; }
     .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .whatsapp-return {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      display: grid;
+      place-items: center;
+      padding: 1.25rem;
+      background: rgba(9,12,10,.94);
+      backdrop-filter: blur(8px);
+    }
+    .whatsapp-return[hidden] { display: none !important; }
+    .whatsapp-return-card {
+      width: min(100%, 420px);
+      padding: 2rem 1.4rem;
+      border: 1px solid var(--border-strong);
+      border-radius: 1.25rem;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .whatsapp-success-icon {
+      width: 64px;
+      height: 64px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 1rem;
+      border-radius: 999px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 900;
+    }
+    .whatsapp-return-card h2 { margin: 0 0 .65rem; color: #fff; font-size: 1.45rem; }
+    .whatsapp-return-card p { margin: 0 0 1.4rem; color: var(--text-soft); font-size: 1rem; line-height: 1.55; }
+    .whatsapp-return-card .btn { width: 100%; min-height: 54px; font-size: 1rem; }
 
     @media (min-width: 700px) {
       body { padding-block: 1.5rem; }
@@ -515,6 +553,15 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
+  <div id="whatsapp-return" class="whatsapp-return" hidden>
+    <div class="whatsapp-return-card">
+      <div class="whatsapp-success-icon" aria-hidden="true">✓</div>
+      <h2>Pedido enviado!</h2>
+      <p>Seu pedido foi enviado com sucesso. Continue o atendimento pelo WhatsApp.</p>
+      <button id="btn-return-whatsapp" class="btn" type="button">Voltar para o WhatsApp</button>
+    </div>
+  </div>
+
   <script src="../assets/catalogo.js"></script>
   <script src="../assets/pedido-cache.js"></script>
   <script>
@@ -523,6 +570,13 @@
 
       const URL_WEBHOOK_DADOS = "https://n8n.orbbotia.com/webhook/webapp-dados";
       const URL_WEBHOOK_PEDIDO = "https://n8n.orbbotia.com/webhook/webapp-pedido";
+
+      // TODO: WHATSAPP TEMPORARIAMENTE FIXO.
+      // Futuramente este número deverá vir dinamicamente das configurações
+      // da empresa correspondente ao ACCOUNT_ID.
+      const WHATSAPP_EMPRESA = "558585349501";
+      const WHATSAPP_EMPRESA_URL = `https://wa.me/${WHATSAPP_EMPRESA}`;
+
       const catalogo = window.criarCatalogo();
       let storage; try { storage = localStorage; } catch { storage = null; }
       const cacheEndereco = window.criarCacheEndereco(storage);
@@ -581,7 +635,7 @@
         clearTimeout(state.toastTimer);
         toast.textContent = message;
         toast.className = `toast ${type === "error" ? "error " : ""}show`;
-        state.toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
+        state.toastTimer = setTimeout(() => toast.classList.remove("show"), 6000);
       }
 
       function updateStickyOffset() {
@@ -741,7 +795,10 @@
       function populateBairros() {
         const select = $("#input-bairro");
         select.replaceChildren(new Option("Selecione o bairro...", ""));
-        state.taxas.forEach(taxa => select.add(new Option(`${taxa.bairro} (${money(taxa.valor)})`, taxa.bairro)));
+
+        state.taxas.forEach(taxa => {
+          select.add(new Option(taxa.bairro, taxa.bairro));
+        });
       }
 
       function lockPage() {
@@ -810,7 +867,7 @@
         $("#item-qty").value = state.current.qty;
         $("#item-qty").textContent = state.current.qty;
         $("#add-to-cart").disabled = state.current.basePrice === null;
-        $("#item-price-btn").textContent = state.current.basePrice === null ? "selecione uma opção" : money(state.current.basePrice * state.current.qty).replace("R$ ", "");
+        $("#item-price-btn").textContent = state.current.basePrice === null ? "selecione uma opção" : money(state.current.basePrice * state.current.qty).replace("R$ ", "");
       }
 
       function changeQty(delta) {
@@ -892,9 +949,7 @@
       function toggleDeliveryFields() {
         const delivery = isDelivery();
         $("#address-section").classList.toggle("hide", !delivery);
-        $("#payment-section").classList.toggle("hide", !delivery);
-        $$("input, select", $("#address-section")).forEach(control => control.disabled = !delivery);
-        $$("input", $("#payment-section")).forEach(control => control.disabled = !delivery);
+        $("#payment-section").classList.toggle("hide", !delivery);         $$("input, select", $("#address-section")).forEach(control => control.disabled = !delivery);         $$("input", $("#payment-section")).forEach(control => control.disabled = !delivery);
         if (!delivery) clearAddressValidation();
         updateCheckoutTotal();
       }
@@ -950,6 +1005,41 @@
         return { phoneDigits };
       }
 
+      function abrirWhatsApp() {
+        try {
+          window.location.href = WHATSAPP_EMPRESA_URL;
+        } catch (error) {
+          console.error("Não foi possível abrir o WhatsApp:", error);
+        }
+      }
+
+      function mostrarRetornoWhatsApp() {
+        const screen = $("#whatsapp-return");
+        if (screen) {
+          screen.hidden = false;
+        }
+      }
+
+      function finalizarEVoltarAoWhatsApp() {
+        mostrarRetornoWhatsApp();
+        showToast("Pedido enviado com sucesso! Voltando para o WhatsApp...");
+
+        setTimeout(() => {
+          abrirWhatsApp();
+
+          setTimeout(() => {
+            try {
+              window.close();
+            } catch (error) {
+              console.log(
+                "O navegador não permitiu fechar o WebApp automaticamente.",
+                error
+              );
+            }
+          }, 1200);
+        }, 2000);
+      }
+
       async function submitOrder() {
         if (!state.cart.length) return showToast("Adicione pelo menos um item antes de enviar.", "error");
         if (state.cart.some(i => i.indisponivel)) return showToast("Revise os itens marcados no carrinho antes de enviar.", "error");
@@ -993,7 +1083,12 @@
           syncBadges();
           updateCartBar();
           closeModal($("#cart-modal"));
-          showToast(IS_DEMO ? "Pedido demonstrativo concluído com sucesso." : "Pedido enviado. Confira o WhatsApp para continuar.");
+
+          if (IS_DEMO) {
+            showToast("Pedido demonstrativo concluído com sucesso.");
+          } else {
+            finalizarEVoltarAoWhatsApp();
+          }
         } catch (error) {
           console.error(error);
           showToast(error.message || "Não foi possível enviar o pedido. Tente novamente.", "error");
@@ -1070,6 +1165,21 @@
       function preencherEndereco(address) {
         for (const field of ['rua','numero','bairro']) $("#input-" + field).value = address?.[field] || '';
       }
+
+      $("#btn-return-whatsapp")?.addEventListener("click", () => {
+        abrirWhatsApp();
+        setTimeout(() => {
+          try {
+            window.close();
+          } catch (error) {
+            console.log(
+              "O navegador não permitiu fechar o WebApp automaticamente.",
+              error
+            );
+          }
+        }, 1000);
+      });
+
       $("#input-telefone").addEventListener('change', () => {
         if (!CLIENTE_TEL && !state.pedido) preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, '')));
       });
@@ -1091,11 +1201,9 @@
       $("#add-to-cart").addEventListener("click", addToCart);
       $("#open-cart-button").addEventListener("click", openCartModal);
       $("#btn-submit").addEventListener("click", submitOrder);
-      $("#input-bairro").addEventListener("change", () => { setFieldError("input-bairro", ""); updateCheckoutTotal(); });
-      ["input-telefone", "input-rua", "input-numero"].forEach(id => document.getElementById(id).addEventListener("input", () => setFieldError(id, "")));
-      $$("input[name='modalidade']").forEach(input => input.addEventListener("change", toggleDeliveryFields));
-      $$('[data-close-modal]').forEach(button => button.addEventListener("click", () => closeModal(button.closest(".modal"))));
-      $$(".modal").forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) closeModal(modal); }));
+      $("#input-bairro").addEventListener("change", () => { setFieldError("input-bairro", ""); updateCheckoutTotal(); });       ["input-telefone", "input-rua", "input-numero"].forEach(id => document.getElementById(id).addEventListener("input", () => setFieldError(id, "")));       $$("input[name='modalidade']").forEach(input => input.addEventListener("change", toggleDeliveryFields));
+      $$('[data-close-modal]').forEach(button => button.addEventListener("click", () => closeModal(button.closest(".modal"))));       $$
+(".modal").forEach(modal => modal.addEventListener("click", event => { if (event.target === modal) closeModal(modal); }));
       addEventListener("scroll", onScroll, { passive: true });
       addEventListener("wheel", cancelProgrammaticNavigation, { passive: true });
       addEventListener("touchstart", cancelProgrammaticNavigation, { passive: true });

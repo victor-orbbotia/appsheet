@@ -8,13 +8,13 @@
     <style>
         body { background-color: #f8fafc; font-family: system-ui, sans-serif; }
         .input-field {
-            width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; 
+            width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1;
             border-radius: 0.375rem; outline: none; transition: border-color 0.2s;
             font-size: 0.875rem; line-height: 1.5;
         }
         .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
         /* Remove setinhas do input number */
-        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
     </style>
@@ -26,7 +26,7 @@
     </div>
 
     <div id="app-container" class="max-w-4xl mx-auto space-y-4 hidden">
-        
+
         <!-- BOTÃO VOLTAR -->
         <div>
             <a id="link-voltar" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
@@ -53,7 +53,7 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Instruções da Base</label>
                     <textarea id="texto_base" class="input-field h-64 resize-y" maxlength="3000" placeholder="Ex:&#10;1. Nosso horário de funcionamento é de segunda a sexta, das 08h às 18h.&#10;2. O prazo de entrega padrão é de 45 minutos.&#10;3. Aceitamos PIX, Cartões de Crédito e Dinheiro."></textarea>
-                    
+
                     <div class="flex justify-end mt-2">
                         <span id="contador" class="text-xs font-medium text-slate-400">0 / 3000 caracteres</span>
                     </div>
@@ -62,13 +62,13 @@
                 <!-- NOVO CAMPO TEMPO DE ESPERA (NUMÉRICO) -->
                 <div>
                     <label for="tempo_espera" class="block text-sm font-medium text-slate-700 mb-1 flex items-center">
-                        Tempo de Espera 
-                        <span class="ml-2 cursor-help text-blue-500" title="Essa informação é OBRIGATÓRIA. É repassada ao cliente pela IA e usada para calcular os alertas e fluxos de atraso no sistema.">
+                        Tempo de Espera
+                        <span class="ml-2 cursor-help text-blue-500" title="Estimativa padrão informada pela IA. Não representa tempo restante nem horário garantido.">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
                         </span>
                     </label>
-                    <p class="text-xs text-slate-500 mb-2">Importante: Usado para cálculos nos fluxos automáticos.</p>
-                    
+                    <p class="text-xs text-slate-500 mb-2">Estimativa geral em minutos, editável por empresa. Deixe vazio se não houver previsão padrão.</p>
+
                     <div class="flex items-center space-x-2">
                         <!-- Type number para aceitar apenas números -->
                         <input type="number" id="tempo_espera" min="1" step="1" class="input-field !w-24 text-center font-semibold text-slate-700" placeholder="Ex: 45">
@@ -83,7 +83,7 @@
     <script>
         const urlDados = 'https://n8n.orbbotia.com/webhook/conhecimento-dados';
         const urlAcao  = 'https://n8n.orbbotia.com/webhook/conhecimento-acao';
-        
+
         let globalAccountId = null;
         let segmentoAtual = 'institucional';
         let handshakeInterval;
@@ -125,10 +125,15 @@
             }
         }, 2000);
 
+        if (globalAccountId) {
+            clearInterval(handshakeInterval);
+            iniciarApp();
+        }
+
         function iniciarApp() {
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            
+
             document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
             document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
 
@@ -142,8 +147,8 @@
                     const dados = await res.json();
                     if (dados && dados.length > 0) {
                         textArea.value = dados[0].texto_base || '';
-                        tempoEsperaInput.value = dados[0].tempo_espera || ''; 
-                        textArea.dispatchEvent(new Event('input')); 
+                        tempoEsperaInput.value = dados[0].tempo_espera || '';
+                        textArea.dispatchEvent(new Event('input'));
                     }
                 }
             } catch (error) {
@@ -155,10 +160,11 @@
             const btnSalvar = document.getElementById('btnSalvar');
             const texto = textArea.value.trim();
             const tempoEsperaRaw = tempoEsperaInput.value.trim();
-            
+
             // Converte para número inteiro para cálculos matemáticos. Se vazio, envia nulo.
-            const tempoEsperaNumber = tempoEsperaRaw ? parseInt(tempoEsperaRaw, 10) : null; 
-            
+            const tempoEsperaNumber = tempoEsperaRaw ? Number(tempoEsperaRaw) : null;
+            if (tempoEsperaNumber !== null && (!Number.isInteger(tempoEsperaNumber) || tempoEsperaNumber <= 0)) { alert('Informe uma quantidade inteira e positiva de minutos ou deixe vazio.'); return; }
+
             btnSalvar.innerText = 'Salvando...';
             btnSalvar.disabled = true;
 
@@ -179,9 +185,9 @@
                 if (response.ok) {
                     btnSalvar.innerText = 'Salvo! ✓';
                     btnSalvar.classList.replace('bg-blue-700', 'bg-emerald-600');
-                    setTimeout(() => { 
+                    setTimeout(() => {
                         btnSalvar.classList.replace('bg-emerald-600', 'bg-blue-700');
-                        btnSalvar.innerText = 'Salvar Informações'; 
+                        btnSalvar.innerText = 'Salvar Informações';
                         btnSalvar.disabled = false;
                     }, 1500);
                 } else {

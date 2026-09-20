@@ -424,6 +424,7 @@
       </header>
       <div class="modal-content">
         <p id="modal-item-desc" class="modal-description"></p>
+        <div id="variation-field" class="field hide"><label class="field-label" for="item-variation">Escolha a opção</label><select id="item-variation"><option value="">Selecione...</option></select></div>
         <div class="options-group">
           <label class="field-label" for="item-obs">Alguma observação?</label>
           <input type="text" id="item-obs" placeholder="Ex.: sem cebola, carne bem passada..." maxlength="180">
@@ -480,6 +481,7 @@
           </div>
           <div class="field">
             <label class="field-label" for="input-rua">Rua ou avenida</label>
+            <button id="forget-address" type="button" class="caption">Esquecer endereço salvo neste dispositivo</button>
             <input type="text" id="input-rua" autocomplete="address-line1" aria-describedby="rua-error">
             <p class="field-error" id="rua-error" aria-live="polite"></p>
           </div>
@@ -513,12 +515,17 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
+  <script src="../assets/catalogo.js"></script>
+  <script src="../assets/pedido-cache.js"></script>
   <script>
     (() => {
       "use strict";
 
       const URL_WEBHOOK_DADOS = "https://n8n.orbbotia.com/webhook/webapp-dados";
       const URL_WEBHOOK_PEDIDO = "https://n8n.orbbotia.com/webhook/webapp-pedido";
+      const catalogo = window.criarCatalogo();
+      let storage; try { storage = localStorage; } catch { storage = null; }
+      const cacheEndereco = window.criarCacheEndereco(storage);
       const params = new URLSearchParams(location.search);
       const ACCOUNT_ID = params.get("account_id");
       const CLIENTE_TEL = params.get("tel") || "";
@@ -551,7 +558,7 @@
       const safePrice = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
 
       const state = {
-        produtos: [], taxas: [], cart: [], current: null, activeModal: null, returnFocus: null,
+        pedido: null, requisicaoId: null, produtos: [], taxas: [], cart: [], current: null, activeModal: null, returnFocus: null,
         lockedScrollY: 0, scrollTicking: false, navigationToken: 0, navigationTarget: null,
         navigationSettleTimer: null, navigationFallbackTimer: null, toastTimer: null
       };
@@ -715,7 +722,7 @@
               element("div", "item-added-badge", "✓ Adicionado"),
               element("h3", "", product.nome || "Item"),
               element("p", "", product.descricao || ""),
-              element("div", "menu-price", money(safePrice(product.preco_base)))
+              element("div", "menu-price", (catalogo.opcoes(product).some(o => o.variacao) ? "A partir de " : "") + money(Math.min(...catalogo.opcoes(product).map(o => o.preco))))
             );
             const add = element("span", "add-indicator", "+");
             add.setAttribute("aria-hidden", "true");
@@ -784,10 +791,17 @@
       }
 
       function openItemModal(product, trigger) {
-        state.current = { nome: String(product.nome || "Item"), basePrice: safePrice(product.preco_base), qty: 1 };
+        const options = catalogo.opcoes(product);
+        if (!options.length) return showToast("Produto indisponível.", "error");
+        state.current = { produto_id: product.id || '', produto: product, nome: String(product.nome || "Item"), basePrice: options[0].variacao ? null : options[0].preco, variacao: '', qty: 1, options };
         $("#modal-item-title").textContent = state.current.nome;
         $("#modal-item-desc").textContent = product.descricao || "";
         $("#item-obs").value = "";
+        const select = $("#item-variation");
+        select.replaceChildren(new Option("Selecione...", ""));
+        options.filter(o => o.variacao).forEach(o => select.add(new Option(`${o.variacao} — ${money(o.preco)}`, o.variacao)));
+        $("#variation-field").classList.toggle("hide", !options[0].variacao);
+        select.value = '';
         renderItemPrice();
         openModal($("#item-modal"), trigger);
       }
@@ -795,7 +809,8 @@
       function renderItemPrice() {
         $("#item-qty").value = state.current.qty;
         $("#item-qty").textContent = state.current.qty;
-        $("#item-price-btn").textContent = money(state.current.basePrice * state.current.qty).replace("R$ ", "");
+        $("#add-to-cart").disabled = state.current.basePrice === null;
+        $("#item-price-btn").textContent = state.current.basePrice === null ? "selecione uma opção" : money(state.current.basePrice * state.current.qty).replace("R$ ", "");
       }
 
       function changeQty(delta) {
@@ -805,11 +820,11 @@
       }
 
       function addToCart() {
-        if (!state.current) return;
+        if (!state.current || state.current.basePrice === null) return;
         const observation = $("#item-obs").value.trim();
-        const existing = state.cart.find(item => item.nome === state.current.nome && item.observacao === observation && item.preco === state.current.basePrice);
+        const existing = state.cart.find(item => item.nome === state.current.nome && item.variacao === state.current.variacao && item.observacao === observation && item.preco === state.current.basePrice);
         if (existing) existing.quantidade += state.current.qty;
-        else state.cart.push({ nome: state.current.nome, observacao: observation, quantidade: state.current.qty, preco: state.current.basePrice });
+        else state.cart.push({ produto_id: state.current.produto_id, variacao: state.current.variacao, nome: state.current.nome, observacao: observation, quantidade: state.current.qty, preco: state.current.basePrice });
         syncBadges();
         updateCartBar();
         closeModal($("#item-modal"));
@@ -839,6 +854,7 @@
           const line = element("div", "cart-line");
           const copy = element("div", "cart-line-copy");
           copy.append(element("p", "", `${item.quantidade}× ${item.nome}`));
+          if (item.indisponivel) copy.append(element("p", "error-text", "Remova e selecione novamente este item e sua opção no cardápio."));
           if (item.observacao) copy.append(element("p", "muted", `Obs.: ${item.observacao}`));
           copy.append(element("p", "muted", money(item.preco * item.quantidade)));
           const remove = element("button", "remove-btn", "×");
@@ -936,6 +952,7 @@
 
       async function submitOrder() {
         if (!state.cart.length) return showToast("Adicione pelo menos um item antes de enviar.", "error");
+        if (state.cart.some(i => i.indisponivel)) return showToast("Revise os itens marcados no carrinho antes de enviar.", "error");
         const valid = validateCheckout();
         if (!valid) return;
         const delivery = isDelivery();
@@ -943,9 +960,12 @@
         const rua = $("#input-rua").value.trim();
         const numero = $("#input-numero").value.trim();
         const fee = deliveryFee();
-        const itens = state.cart.map(item => ({ nome: item.observacao ? `${item.nome} (Obs: ${item.observacao})` : item.nome, quantidade: item.quantidade, preco: item.preco }));
+        const itens = state.cart.map(item => ({ produto_id: item.produto_id, variacao: item.variacao || "", nome: item.nome, observacao: item.observacao || "", quantidade: item.quantidade, preco: item.preco }));
         if (delivery && fee > 0) itens.push({ nome: "Taxa de Entrega", quantidade: 1, preco: fee });
         const payload = {
+          pedido_id: state.pedido?.id || null,
+          versao: state.pedido?.versao || null,
+          requisicao_id: state.requisicaoId || (state.requisicaoId = crypto.randomUUID()),
           account_id: ACCOUNT_ID,
           cliente_telefone: valid.phoneDigits,
           cliente_nome: CLIENTE_NOME,
@@ -964,7 +984,10 @@
           if (IS_DEMO) await new Promise(resolve => setTimeout(resolve, 450));
           else {
             const response = await fetch(URL_WEBHOOK_PEDIDO, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error(`Pedido recusado: ${response.status}`);
+            const result = await response.json();
+            if (!response.ok || result.success !== true) throw new Error(result.message || 'Não foi possível atualizar o pedido.');
+            state.pedido = result.pedido || state.pedido;
+            if (delivery) cacheEndereco.salvar(ACCOUNT_ID, valid.phoneDigits, { rua, numero, bairro });
           }
           state.cart = [];
           syncBadges();
@@ -973,7 +996,7 @@
           showToast(IS_DEMO ? "Pedido demonstrativo concluído com sucesso." : "Pedido enviado. Confira o WhatsApp para continuar.");
         } catch (error) {
           console.error(error);
-          showToast("Não foi possível enviar o pedido. Tente novamente.", "error");
+          showToast(error.message || "Não foi possível enviar o pedido. Tente novamente.", "error");
         } finally {
           button.disabled = false;
           button.textContent = "Enviar pedido";
@@ -981,9 +1004,15 @@
       }
 
       function normalizeCartItem(item) {
+        try {
+          const resolved = catalogo.resolver(state.produtos, item);
+          return { ...resolved, observacao: item.observacao || '' };
+        } catch { /* Mantém visível e exige revisão, sem usar preço-base zero. */ }
+
         const fullName = String(item.nome || "Item");
         const match = fullName.match(/^(.*?) \(Obs: (.*)\)$/);
         return {
+          indisponivel: true, produto_id: item.produto_id || "", variacao: item.variacao || "",
           nome: match ? match[1] : fullName,
           observacao: item.observacao || (match ? match[2] : ""),
           quantidade: Math.max(1, Number(item.quantidade) || 1),
@@ -999,11 +1028,13 @@
             state.produtos = DEMO_PRODUTOS;
             state.taxas = DEMO_TAXAS;
           } else {
-            const query = new URLSearchParams({ account_id: ACCOUNT_ID, tel: CLIENTE_TEL });
+            const query = new URLSearchParams({ account_id: ACCOUNT_ID, tel: CLIENTE_TEL, conv: CONVERSATION_ID, pedido_id: params.get("pedido_id") || "" });
             const response = await fetch(`${URL_WEBHOOK_DADOS}?${query}`);
             if (!response.ok) throw new Error(`Cardápio indisponível: ${response.status}`);
             const data = await response.json();
-            state.produtos = Array.isArray(data.produtos) ? data.produtos : [];
+            if (data.pedido_indisponivel) throw new Error("Este pedido não está disponível para edição. Solicite um link atualizado no WhatsApp.");
+            state.produtos = (Array.isArray(data.produtos) ? data.produtos : []).filter(p => catalogo.opcoes(p).length);
+            state.pedido = data.pedido_atual || null;
             if (typeof data.taxas_entrega === "string") {
               try { state.taxas = JSON.parse(data.taxas_entrega); } catch { state.taxas = []; }
             } else state.taxas = Array.isArray(data.taxas_entrega) ? data.taxas_entrega : [];
@@ -1013,14 +1044,48 @@
           }
           renderMenu();
           populateBairros();
+          if (state.pedido) {
+            const p = state.pedido;
+            const match = String(p.endereco_entrega || '').match(/^(.+),\s*(.+?)\s+-\s+(.+?)(?:\s+\(Ref:.*\))?$/);
+            preencherEndereco(match ? { rua: match[1], numero: match[2], bairro: match[3] } : null);
+            const pickup = p.forma_pagamento === 'retirada' || /^retirada/i.test(p.endereco_entrega || '');
+            $("input[name='modalidade'][value='" + (pickup ? 'retirada' : 'entrega') + "']").checked = true;
+            const payment = $("input[name='pagamento'][value='" + (['pix','dinheiro','cartao'].includes(p.forma_pagamento) ? p.forma_pagamento : 'pix') + "']");
+            if (payment) payment.checked = true;
+            $("#input-obs").value = p.observacoes || '';
+            if (!['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','comprovante_enviado','retirada_balcao'].includes(p.status)) {
+              $("#btn-submit").disabled = true;
+              $("#btn-submit").textContent = 'Alterações com a equipe pelo WhatsApp';
+            }
+          } else preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, CLIENTE_TEL.replace(/\D/g, '')));
+          if (CLIENTE_TEL) $("#input-telefone").readOnly = true;
           updateCartBar();
           toggleDeliveryFields();
         } catch (error) {
           console.error(error);
-          menu.replaceChildren(element("div", "loading-state error-text", "Não foi possível carregar o cardápio. Tente novamente em instantes."));
+          menu.replaceChildren(element("div", "loading-state error-text", error.message || "Não foi possível carregar o cardápio. Tente novamente em instantes."));
         }
       }
 
+      function preencherEndereco(address) {
+        for (const field of ['rua','numero','bairro']) $("#input-" + field).value = address?.[field] || '';
+      }
+      $("#input-telefone").addEventListener('change', () => {
+        if (!CLIENTE_TEL && !state.pedido) preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, '')));
+      });
+      $("#forget-address").addEventListener('click', () => {
+        cacheEndereco.apagar(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, ''));
+        if (!state.pedido) preencherEndereco(null);
+        showToast('Endereço salvo removido deste dispositivo.');
+      });
+      $("#item-variation").addEventListener('change', () => {
+        const option = state.current?.options.find(o => o.variacao === $("#item-variation").value);
+        if (!state.current) return;
+        state.current.variacao = option?.variacao || '';
+        state.current.nome = option?.nome || state.current.produto.nome;
+        state.current.basePrice = option?.preco ?? null;
+        renderItemPrice();
+      });
       $("#qty-minus").addEventListener("click", () => changeQty(-1));
       $("#qty-plus").addEventListener("click", () => changeQty(1));
       $("#add-to-cart").addEventListener("click", addToCart);

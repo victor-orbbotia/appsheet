@@ -683,7 +683,12 @@
       const CLIENTE_TEL = params.get("tel") || "";
       const CLIENTE_NOME = params.get("nome") || "Cliente Web";
       const CONVERSATION_ID = params.get("conv") || "";
-      const MODO = params.get('modo') || 'selecionar';
+      const MODO_SOLICITADO = params.get('modo') || 'selecionar';
+      // Link vindo do WhatsApp pode pedir "acompanhar" sem conhecer o pedido_id.
+      // Nesse caso usamos o contexto operacional atual e abrimos a tela de acompanhamento.
+      const MODO = MODO_SOLICITADO === 'acompanhar' && !params.get('pedido_id')
+        ? 'andamento'
+        : MODO_SOLICITADO;
       const ACESSO = params.get('acesso') || '';
       const TERMINAIS = ['cancelado','cancelado_cliente','cancelado_atendente','entregue','retirado','concluido','finalizado','resolvido'];
       const EDITAVEIS = ['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','comprovante_enviado','retirada_balcao'];

@@ -217,6 +217,42 @@
                 </div>
             </div>
 
+            <!-- TAXA ESPECIAL: OUTROS LOCAIS -->
+            <div class="bg-white shadow-sm border border-indigo-200 rounded-xl overflow-hidden">
+                <div class="p-4 md:p-5 border-b border-indigo-100 bg-indigo-50/70 flex flex-wrap justify-between items-start gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-md font-bold text-slate-800">📍 Taxa para Outros Locais</h2>
+                            <span class="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">Estimativa</span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1 max-w-3xl">
+                            Esta configuração cria a opção <strong>“Outro / Meu bairro não está na lista”</strong> no cardápio digital.
+                            O cliente digita o próprio bairro ou local, e o valor abaixo é apresentado como uma <strong>taxa estimada</strong>.
+                            O cardápio avisa que o valor pode variar após a conferência do endereço pela equipe.
+                        </p>
+                    </div>
+                </div>
+                <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-4 items-end">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Valor estimado para Outros (R$)</label>
+                        <input type="number" id="entrega_outros_valor" class="input-field font-mono font-bold text-emerald-700" placeholder="Ex: 15.00" step="0.01" min="0">
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                            Se não houver valor salvo, a opção “Outro” não aparece para o cliente.
+                            Esta configuração é armazenada junto das demais taxas, sem criar coluna nova no banco.
+                        </p>
+                        <p id="entrega-outros-status" class="text-[11px] font-semibold text-slate-500 mt-2"></p>
+                    </div>
+                    <div class="flex gap-2 flex-wrap md:justify-end">
+                        <button type="button" id="btnRemoverOutros" onclick="removerTaxaOutros()" class="hidden px-4 py-2 text-sm font-bold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors shadow-sm">
+                            Remover
+                        </button>
+                        <button type="button" id="btnSalvarOutros" onclick="salvarTaxaOutros()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                            Salvar Outros
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col">
                 <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h2 class="text-md font-bold text-slate-800">Regiões Cadastradas</h2>
@@ -364,6 +400,7 @@
         // ESTADOS (ENTREGAS E CONFIGS)
         let listaTaxas = [];
         let configEmpresaCache = {};
+        const TAXA_OUTROS_KEY = '__outros__';
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -568,6 +605,7 @@
                     try { listaTaxas = JSON.parse(listaTaxas); } catch(e) { listaTaxas = []; }
                 }
                 renderizarTabelaTaxas();
+                sincronizarTaxaOutrosUI();
 
                 document.getElementById('upsell_ativo').checked = data.upsell_ativo === true || data.upsell_ativo === 'true';
                 preencherDropdownsUpsell(data);
@@ -577,16 +615,51 @@
             }
         }
 
+        function normalizarTaxaTexto(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+        }
+
+        function obterTaxaOutros() {
+            return Array.isArray(listaTaxas)
+                ? listaTaxas.find(t => normalizarTaxaTexto(t?.bairro) === TAXA_OUTROS_KEY) || null
+                : null;
+        }
+
+        function sincronizarTaxaOutrosUI() {
+            const taxa = obterTaxaOutros();
+            const input = document.getElementById('entrega_outros_valor');
+            const status = document.getElementById('entrega-outros-status');
+            const btnRemover = document.getElementById('btnRemoverOutros');
+            if (!input || !status || !btnRemover) return;
+
+            if (taxa && Number.isFinite(Number(taxa.valor)) && Number(taxa.valor) >= 0) {
+                input.value = Number(taxa.valor).toFixed(2);
+                status.textContent = `Ativo: clientes fora da lista verão uma taxa estimada de ${formatarMoeda(taxa.valor)}.`;
+                status.className = 'text-[11px] font-semibold text-emerald-700 mt-2';
+                btnRemover.classList.remove('hidden');
+            } else {
+                input.value = '';
+                status.textContent = 'Não configurado: a opção “Outro” não será exibida no cardápio.';
+                status.className = 'text-[11px] font-semibold text-slate-500 mt-2';
+                btnRemover.classList.add('hidden');
+            }
+        }
+
         function renderizarTabelaTaxas() {
             const tbody = document.getElementById('lista-entregas');
             tbody.innerHTML = '';
 
-            if (!Array.isArray(listaTaxas) || listaTaxas.length === 0) {
+            const regulares = Array.isArray(listaTaxas)
+                ? listaTaxas.map((taxa, index) => ({ taxa, index }))
+                    .filter(({ taxa }) => normalizarTaxaTexto(taxa?.bairro) !== TAXA_OUTROS_KEY)
+                : [];
+
+            if (!regulares.length) {
                 tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhuma taxa de entrega cadastrada.</td></tr>`;
                 return;
             }
 
-            listaTaxas.forEach((taxa, index) => {
+            regulares.forEach(({ taxa, index }) => {
                 const tr = document.createElement('tr');
                 tr.className = `transition-colors hover:bg-slate-50 bg-white`;
                 tr.innerHTML = `
@@ -602,6 +675,55 @@
             });
         }
 
+        async function salvarTaxaOutros() {
+            const input = document.getElementById('entrega_outros_valor');
+            const btn = document.getElementById('btnSalvarOutros');
+            const valor = Number(input.value);
+            if (!Number.isFinite(valor) || valor < 0) return alert('Informe um valor válido para a taxa estimada de Outros.');
+
+            btn.innerText = '⏳ Salvando...';
+            btn.disabled = true;
+            const novaLista = (Array.isArray(listaTaxas) ? listaTaxas : [])
+                .filter(t => normalizarTaxaTexto(t?.bairro) !== TAXA_OUTROS_KEY);
+            novaLista.push({ bairro: TAXA_OUTROS_KEY, valor: Math.round(valor * 100) / 100, estimada: true });
+
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: globalAccountId.toString(), taxas_entrega: novaLista })
+                });
+                if (!response.ok) throw new Error();
+                listaTaxas = novaLista;
+                sincronizarTaxaOutrosUI();
+                renderizarTabelaTaxas();
+            } catch (error) {
+                alert('Erro ao salvar a taxa estimada de Outros.');
+            } finally {
+                btn.innerText = 'Salvar Outros';
+                btn.disabled = false;
+            }
+        }
+
+        async function removerTaxaOutros() {
+            if (!confirm('Deseja remover a opção “Outro” do cardápio digital?')) return;
+            const novaLista = (Array.isArray(listaTaxas) ? listaTaxas : [])
+                .filter(t => normalizarTaxaTexto(t?.bairro) !== TAXA_OUTROS_KEY);
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: globalAccountId.toString(), taxas_entrega: novaLista })
+                });
+                if (!response.ok) throw new Error();
+                listaTaxas = novaLista;
+                sincronizarTaxaOutrosUI();
+                renderizarTabelaTaxas();
+            } catch (error) {
+                alert('Erro ao remover a taxa de Outros.');
+            }
+        }
+
         async function adicionarTaxaEntrega() {
             const inputBairro = document.getElementById('entrega_bairro');
             const inputValor = document.getElementById('entrega_valor');
@@ -611,7 +733,9 @@
             const valor = parseFloat(inputValor.value);
 
             if (!bairro) return alert("Digite o nome do bairro ou região!");
-            if (isNaN(valor)) return alert("Digite um valor válido para a entrega!");
+            if (normalizarTaxaTexto(bairro) === TAXA_OUTROS_KEY) return alert('Use o campo separado “Taxa para Outros Locais”.');
+            if (listaTaxas.some(t => normalizarTaxaTexto(t?.bairro) === normalizarTaxaTexto(bairro))) return alert('Este bairro/região já está cadastrado.');
+            if (isNaN(valor) || valor < 0) return alert("Digite um valor válido para a entrega!");
 
             btn.innerText = "⏳ Salvando...";
             btn.disabled = true;

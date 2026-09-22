@@ -1487,7 +1487,7 @@
         url.searchParams.delete('pedido_id'); url.searchParams.delete('repetir');
         if (id) url.searchParams.set('pedido_id', id);
         if (repetir) url.searchParams.set('repetir', repetir);
-        location.assign(url.href);
+        location.replace(url.href);
       }
       function acaoBotao(text, action) {
         const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = text; b.addEventListener('click', action); return b;

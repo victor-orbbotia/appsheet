@@ -331,6 +331,8 @@
     input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(240,100,90,.12); }
     .field + .field { margin-top: 1rem; }
     .field-error { min-height: 1.15rem; margin: .35rem 0 0; color: #ff8b84; font-size: .78rem; line-height: 1.35; }
+    .estimated-delivery-note { margin-top: .65rem; padding: .8rem .9rem; border: 1px solid rgba(244,190,73,.28); border-radius: .8rem; background: rgba(244,190,73,.08); color: #e9d8a6; font-size: .8rem; line-height: 1.45; }
+    .estimated-delivery-note strong { color: #ffe29a; }
     .choice-list { overflow: hidden; border: 1px solid var(--border); border-radius: .85rem; background: rgba(255,255,255,.02); }
     .choice-row { border-bottom: 1px solid var(--border); }
     .choice-row:last-child { border-bottom: 0; }
@@ -597,6 +599,15 @@
             <select id="input-bairro" aria-describedby="bairro-error"><option value="">Selecione o bairro...</option></select>
             <p class="field-error" id="bairro-error" aria-live="polite"></p>
           </div>
+          <div id="outro-local-section" class="field hide">
+            <label class="field-label" for="input-outro-local">Seu bairro ou local de entrega</label>
+            <input type="text" id="input-outro-local" autocomplete="address-level3" maxlength="120" placeholder="Ex.: Jardim Primavera, Comunidade X..." aria-describedby="outro-local-error outro-taxa-aviso">
+            <p class="field-error" id="outro-local-error" aria-live="polite"></p>
+            <div id="outro-taxa-aviso" class="estimated-delivery-note" hidden>
+              <strong>Taxa estimada:</strong> <span id="outro-taxa-valor">R$ 0,00</span><br>
+              Este valor não é exato e pode variar após a equipe conferir o endereço final.
+            </div>
+          </div>
           <div class="field">
             <label class="field-label" for="input-rua">Rua ou avenida</label>
             <button id="forget-address" type="button" class="caption">Esquecer endereço salvo neste dispositivo</button>
@@ -669,6 +680,7 @@
 
       const URL_WEBHOOK_DADOS = "https://n8n.orbbotia.com/webhook/webapp-dados";
       const URL_WEBHOOK_PEDIDO = "https://n8n.orbbotia.com/webhook/webapp-pedido";
+      const TAXA_OUTROS_KEY = "__outros__";
       if (typeof window.criarCatalogo !== 'function' || typeof window.criarCacheEndereco !== 'function') {
         const loading = document.querySelector('.loading-state');
         if (loading) loading.textContent = 'Não foi possível iniciar o cardápio. Recarregue a página. Se persistir, avise o atendimento.';
@@ -763,17 +775,23 @@
       }
       function dashboardHeader(title, description, back = false) {
         const wrap = element('div', 'dashboard-head');
+        const toolbar = element('div', 'view-toolbar');
+        const copy = element('div');
+        copy.append(element('h2', '', title), element('p', '', description));
+        const actions = element('div', 'order-card-actions');
         if (back) {
-          const toolbar = element('div', 'view-toolbar');
-          const copy = element('div');
-          copy.append(element('h2', '', title), element('p', '', description));
           const button = acaoBotao('Voltar', () => navegar('selecionar'));
           button.classList.add('btn-secondary');
-          toolbar.append(copy, button);
-          wrap.append(toolbar);
-        } else {
-          wrap.append(element('h2', '', title), element('p', '', description));
+          actions.append(button);
         }
+        if (state.whatsapp) {
+          const whatsappButton = acaoBotao('Voltar ao WhatsApp', sairDoWebApp);
+          whatsappButton.classList.add('btn-secondary');
+          actions.append(whatsappButton);
+        }
+        toolbar.append(copy);
+        if (actions.children.length) toolbar.append(actions);
+        wrap.append(toolbar);
         return wrap;
       }
       function addMeta(container, label, value) {
@@ -883,11 +901,15 @@
       }
       function parseStoredObservacoes(text, payment) {
         const raw = String(text || '');
-        if (payment !== 'dinheiro' || !raw.includes('💵 PAGAMENTO EM DINHEIRO')) return { note: raw, change: '', amount: '' };
-        const change = /Troco:\s*SIM/i.test(raw) ? 'sim' : /Troco:\s*NÃO/i.test(raw) ? 'nao' : '';
-        const amountMatch = raw.match(/Troco para:\s*R\$\s*([\d.,]+)/i);
         const noteMarker = '📝 OBSERVAÇÕES DO CLIENTE';
-        const note = raw.includes(noteMarker) ? raw.split(noteMarker).slice(1).join(noteMarker).trim() : '';
+        const hasSystemBlock = raw.includes('💵 PAGAMENTO EM DINHEIRO') || raw.includes('📍 ENTREGA COM TAXA ESTIMADA');
+        const note = raw.includes(noteMarker)
+          ? raw.split(noteMarker).slice(1).join(noteMarker).trim()
+          : (hasSystemBlock ? '' : raw);
+        const change = payment === 'dinheiro'
+          ? (/Troco:\s*SIM/i.test(raw) ? 'sim' : /Troco:\s*NÃO/i.test(raw) ? 'nao' : '')
+          : '';
+        const amountMatch = raw.match(/Troco para:\s*R\$\s*([\d.,]+)/i);
         return { note, change, amount: amountMatch ? amountMatch[1] : '' };
       }
       function parseMoneyInput(value) {
@@ -1078,10 +1100,38 @@
         syncActiveCategory(true);
       }
 
+      function isTaxaOutros(taxa) {
+        return catalogo.normalizar(taxa?.bairro) === TAXA_OUTROS_KEY;
+      }
+      function getTaxaOutros() {
+        return (Array.isArray(state.taxas) ? state.taxas : []).find(taxa =>
+          isTaxaOutros(taxa) && Number.isFinite(Number(taxa?.valor)) && Number(taxa.valor) >= 0
+        ) || null;
+      }
+      function isOutroSelected() { return $("#input-bairro").value === TAXA_OUTROS_KEY; }
+      function bairroEntregaEfetivo() {
+        return isOutroSelected() ? $("#input-outro-local").value.trim() : $("#input-bairro").value;
+      }
+      function toggleOutroLocalField() {
+        const delivery = isDelivery();
+        const selected = delivery && isOutroSelected();
+        const wrap = $("#outro-local-section");
+        wrap.classList.toggle('hide', !selected);
+        $("#input-outro-local").disabled = !selected;
+        const taxa = getTaxaOutros();
+        $("#outro-taxa-aviso").hidden = !selected || !taxa;
+        if (taxa) $("#outro-taxa-valor").textContent = money(safePrice(taxa.valor));
+        if (!selected) setFieldError('input-outro-local', '');
+      }
       function populateBairros() {
         const select = $("#input-bairro");
         select.replaceChildren(new Option("Selecione o bairro...", ""));
-        state.taxas.forEach(taxa => select.add(new Option(taxa.bairro, taxa.bairro)));
+        (Array.isArray(state.taxas) ? state.taxas : [])
+          .filter(taxa => !isTaxaOutros(taxa))
+          .forEach(taxa => select.add(new Option(taxa.bairro, taxa.bairro)));
+        const outros = getTaxaOutros();
+        if (outros) select.add(new Option("Outro / Meu bairro não está na lista", TAXA_OUTROS_KEY));
+        toggleOutroLocalField();
       }
 
       function lockPage() {
@@ -1237,20 +1287,28 @@
         $$("input, select", $("#address-section")).forEach(control => control.disabled = !delivery);
         $$("input", $("#payment-section")).forEach(control => control.disabled = !delivery);
         if (!delivery) clearAddressValidation();
+        toggleOutroLocalField();
         toggleCashChangeFields();
         updateCheckoutTotal();
       }
 
       function deliveryFee() {
         if (!isDelivery()) return 0;
-        const selected = state.taxas.find(taxa => taxa.bairro === $("#input-bairro").value);
+        const selected = (Array.isArray(state.taxas) ? state.taxas : []).find(taxa =>
+          isOutroSelected() ? isTaxaOutros(taxa) : taxa.bairro === $("#input-bairro").value
+        );
         return selected ? safePrice(selected.valor) : 0;
       }
 
       function updateCheckoutTotal() {
         const fee = deliveryFee();
         const waitingForArea = isDelivery() && !$("#input-bairro").value;
-        $("#taxa-info").textContent = waitingForArea ? "· frete a calcular" : fee ? `· inclui ${money(fee)} de entrega` : "";
+        const estimated = isDelivery() && isOutroSelected();
+        $("#taxa-info").textContent = waitingForArea
+          ? "· frete a calcular"
+          : estimated
+            ? `· inclui ${money(fee)} de taxa estimada`
+            : fee ? `· inclui ${money(fee)} de entrega` : "";
         $("#checkout-total").textContent = money(cartSubtotal() + fee);
       }
 
@@ -1261,8 +1319,8 @@
         if (error) error.textContent = message;
       }
 
-      function clearAddressValidation() { ["input-bairro", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); }
-      function clearValidation() { ["input-telefone", "input-bairro", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); clearChangeValidation(); }
+      function clearAddressValidation() { ["input-bairro", "input-outro-local", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); }
+      function clearValidation() { ["input-telefone", "input-bairro", "input-outro-local", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); clearChangeValidation(); }
 
       function validateCheckout() {
         clearValidation();
@@ -1276,6 +1334,11 @@
           if (!$("#input-bairro").value) {
             setFieldError("input-bairro", "Selecione o bairro de entrega.");
             $("#input-bairro").focus();
+            return null;
+          }
+          if (isOutroSelected() && !$("#input-outro-local").value.trim()) {
+            setFieldError("input-outro-local", "Informe seu bairro ou local de entrega.");
+            $("#input-outro-local").focus();
             return null;
           }
           if (!$("#input-rua").value.trim()) {
@@ -1326,12 +1389,18 @@
         const valid = validateCheckout();
         if (!valid) return;
         const delivery = isDelivery();
-        const bairro = $("#input-bairro").value;
+        const bairroSelecionado = $("#input-bairro").value;
+        const entregaOutro = delivery && isOutroSelected();
+        const localOutro = entregaOutro ? $("#input-outro-local").value.trim() : '';
+        const bairro = entregaOutro ? localOutro : bairroSelecionado;
         const rua = $("#input-rua").value.trim();
         const numero = $("#input-numero").value.trim();
         const fee = deliveryFee();
         const itens = state.cart.map(item => ({ produto_id: item.produto_id, variacao: item.variacao || "", nome: item.nome, observacao: item.observacao || "", quantidade: item.quantidade, preco: item.preco }));
-        if (delivery && fee > 0) itens.push({ nome: "Taxa de Entrega", quantidade: 1, preco: fee });
+        if (delivery && fee > 0) itens.push({
+          nome: "Taxa de Entrega", quantidade: 1, preco: fee,
+          ...(entregaOutro ? { estimada: true, local_informado: localOutro } : {})
+        });
         const payload = {
           acesso: ACESSO, modo: state.pedido ? 'editar' : 'novo',
           pedido_id: state.pedido?.id || null,
@@ -1345,6 +1414,8 @@
           valor_total: cartSubtotal() + fee,
           endereco: delivery ? `${rua}, ${numero} - ${bairro}` : "Retirada no Local",
           forma_pagamento: delivery ? $("input[name='pagamento']:checked").value : "retirada",
+          entrega_outro: entregaOutro,
+          local_outro: localOutro || null,
           troco_necessario: valid.trocoChoice || null,
           troco_para: valid.trocoPara,
           observacoes: $("#input-obs").value.trim()
@@ -1360,7 +1431,9 @@
             const result = await response.json();
             if (!response.ok || result.success !== true) throw new Error(result.message || 'Não foi possível atualizar o pedido.');
             state.pedido = result.pedido || state.pedido;
-            if (delivery) cacheEndereco.salvar(ACCOUNT_ID, valid.phoneDigits, { rua, numero, bairro });
+            if (delivery) cacheEndereco.salvar(ACCOUNT_ID, valid.phoneDigits, {
+              rua, numero, bairro: entregaOutro ? TAXA_OUTROS_KEY : bairro, outroLocal: localOutro
+            });
           }
           state.cart = [];
           syncBadges();
@@ -1395,6 +1468,17 @@
           quantidade: Math.max(1, Number(item.quantidade) || 1),
           preco: safePrice(item.preco)
         };
+      }
+
+      function sairDoWebApp() {
+        const destino = state.whatsapp || '';
+        try { window.close(); } catch (_) {}
+        setTimeout(() => {
+          if (document.hidden) return;
+          if (destino) { location.replace(destino); return; }
+          const help = $("#close-webapp-help");
+          if (help) help.hidden = false;
+        }, 180);
       }
 
       function navegar(modo, id = '', repetir = '') {
@@ -1461,7 +1545,14 @@
           if (state.pedido) {
             const p = state.pedido;
             const match = String(p.endereco_entrega || '').match(/^(.+),\s*(.+?)\s+-\s+(.+?)(?:\s+\(Ref:.*\))?$/);
-            preencherEndereco(match ? { rua: match[1], numero: match[2], bairro: match[3] } : null);
+            const taxaEstimada = (Array.isArray(p.itens) ? p.itens : []).find(i =>
+              catalogo.normalizar(i?.nome) === 'taxa de entrega' && i?.estimada === true
+            );
+            preencherEndereco(match ? {
+              rua: match[1], numero: match[2],
+              bairro: taxaEstimada && getTaxaOutros() ? TAXA_OUTROS_KEY : match[3],
+              outroLocal: taxaEstimada ? (taxaEstimada.local_informado || match[3]) : ''
+            } : null);
             const pickup = p.forma_pagamento === 'retirada' || /^retirada/i.test(p.endereco_entrega || '');
             $("input[name='modalidade'][value='" + (pickup ? 'retirada' : 'entrega') + "']").checked = true;
             const payment = $("input[name='pagamento'][value='" + (['pix','dinheiro','cartao'].includes(p.forma_pagamento) ? p.forma_pagamento : 'pix') + "']");
@@ -1489,6 +1580,8 @@
 
       function preencherEndereco(address) {
         for (const field of ['rua','numero','bairro']) $("#input-" + field).value = address?.[field] || '';
+        $("#input-outro-local").value = address?.outroLocal || '';
+        toggleOutroLocalField();
       }
       $("#input-telefone").addEventListener('change', () => {
         if (!CLIENTE_TEL && !state.pedido) preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, '')));
@@ -1511,17 +1604,13 @@
       $("#add-to-cart").addEventListener("click", addToCart);
       $("#open-cart-button").addEventListener("click", openCartModal);
       $("#btn-submit").addEventListener("click", submitOrder);
-      $('#btn-return-whatsapp').addEventListener('click', () => { if (state.whatsapp) location.replace(state.whatsapp); });
-      $("#close-webapp").addEventListener("click", () => {
-        if (state.whatsapp) { location.replace(state.whatsapp); return; }
-        $("#close-webapp-help").hidden = false;
-        window.close();
-        setTimeout(() => { if (!document.hidden) $("#close-webapp-help").hidden = false; }, 250);
-      });
+      $('#btn-return-whatsapp').addEventListener('click', sairDoWebApp);
+      $("#close-webapp").addEventListener("click", sairDoWebApp);
       $$("input[name='pagamento']").forEach(input => input.addEventListener('change', () => { clearChangeValidation(); toggleCashChangeFields(); }));
       $$("input[name='troco']").forEach(input => input.addEventListener('change', () => { clearChangeValidation(); toggleChangeValue(); }));
       $('#input-troco').addEventListener('input', () => { $('#troco-valor-error').textContent = ''; $('#input-troco').setAttribute('aria-invalid','false'); });
-      $("#input-bairro").addEventListener("change", () => { setFieldError("input-bairro", ""); updateCheckoutTotal(); });
+      $("#input-bairro").addEventListener("change", () => { setFieldError("input-bairro", ""); toggleOutroLocalField(); updateCheckoutTotal(); });
+      $("#input-outro-local").addEventListener("input", () => setFieldError("input-outro-local", ""));
       ["input-telefone", "input-rua", "input-numero"].forEach(id => document.getElementById(id).addEventListener("input", () => setFieldError(id, "")));
       $$("input[name='modalidade']").forEach(input => input.addEventListener("change", toggleDeliveryFields));
       $$('[data-close-modal]').forEach(button => button.addEventListener("click", () => closeModal(button.closest(".modal"))));

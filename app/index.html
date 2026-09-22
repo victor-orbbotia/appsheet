@@ -413,6 +413,85 @@
     .whatsapp-return-card p { margin: 0 0 1.4rem; color: var(--text-soft); font-size: 1rem; line-height: 1.55; }
     .whatsapp-return-card .btn { width: 100%; min-height: 54px; font-size: 1rem; }
 
+
+    .btn-secondary {
+      background: rgba(255,255,255,.045);
+      border-color: var(--border-strong);
+      color: var(--text-soft);
+      box-shadow: none;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,.075); filter: none; }
+    .dashboard-menu { gap: 1rem; }
+    .dashboard-head { padding: .2rem .1rem .35rem; }
+    .dashboard-head h2 { margin: 0 0 .4rem; color: #fff; font-size: 1.35rem; letter-spacing: -.025em; }
+    .dashboard-head p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+    .home-actions { display: grid; gap: .8rem; }
+    .home-card {
+      width: 100%;
+      min-height: 112px;
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      align-items: center;
+      gap: .9rem;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(34,42,37,.96), rgba(25,31,27,.98));
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+    .home-card:hover { border-color: var(--border-strong); background: var(--surface-hover); }
+    .home-card:active { transform: scale(.992); }
+    .home-card-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: .85rem; background: var(--primary-soft); font-size: 1.35rem; }
+    .home-card-copy strong { display: block; margin-bottom: .26rem; color: #fff; font-size: 1rem; }
+    .home-card-copy span { display: block; color: var(--text-muted); font-size: .86rem; line-height: 1.4; }
+    .home-card-meta { color: #8be9a4; font-size: .78rem; font-weight: 800; white-space: nowrap; }
+    .view-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .view-toolbar .btn { min-height: 42px; padding: .62rem .8rem; }
+    .orders-grid { display: grid; gap: .9rem; }
+    .order-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(150deg, rgba(34,42,37,.96), rgba(22,28,24,.98));
+      box-shadow: 0 12px 30px rgba(0,0,0,.14);
+    }
+    .order-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .8rem; padding: 1rem; border-bottom: 1px solid var(--border); }
+    .order-card-title { margin: 0; color: #fff; font-size: 1.03rem; letter-spacing: -.015em; }
+    .order-card-date { margin: .3rem 0 0; color: var(--text-muted); font-size: .78rem; }
+    .status-pill { flex: 0 0 auto; padding: .38rem .62rem; border-radius: 999px; font-size: .73rem; font-weight: 850; line-height: 1.2; text-align: center; }
+    .status-info { background: rgba(73,143,220,.14); color: #9bccff; border: 1px solid rgba(104,168,235,.22); }
+    .status-warn { background: rgba(227,176,62,.13); color: #f3cc71; border: 1px solid rgba(227,176,62,.22); }
+    .status-success { background: rgba(49,173,87,.14); color: #8be9a4; border: 1px solid rgba(73,190,102,.24); }
+    .status-danger { background: rgba(240,100,90,.12); color: #ff9b94; border: 1px solid rgba(240,100,90,.22); }
+    .status-neutral { background: rgba(255,255,255,.055); color: var(--text-soft); border: 1px solid var(--border); }
+    .order-card-body { padding: 1rem; }
+    .order-items { display: grid; gap: .6rem; }
+    .order-item { display: flex; justify-content: space-between; gap: .9rem; padding-bottom: .6rem; border-bottom: 1px dashed rgba(235,245,238,.1); }
+    .order-item:last-child { padding-bottom: 0; border-bottom: 0; }
+    .order-item-copy { min-width: 0; }
+    .order-item-copy strong { display: block; color: var(--text); font-size: .9rem; line-height: 1.4; }
+    .order-item-copy span { display: block; margin-top: .15rem; color: var(--text-muted); font-size: .77rem; line-height: 1.35; }
+    .order-item-price { flex: 0 0 auto; color: #fff; font-size: .86rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .order-total { display: flex; justify-content: space-between; gap: 1rem; margin-top: .85rem; padding-top: .85rem; border-top: 1px solid var(--border-strong); }
+    .order-total span { color: var(--text-soft); font-weight: 700; }
+    .order-total strong { color: #fff; font-size: 1.06rem; font-variant-numeric: tabular-nums; }
+    .order-meta-grid { display: grid; gap: .65rem; margin-top: .9rem; }
+    .order-meta { padding: .75rem .8rem; border-radius: .78rem; background: rgba(255,255,255,.028); border: 1px solid rgba(235,245,238,.07); }
+    .order-meta-label { display: block; margin-bottom: .25rem; color: var(--text-muted); font-size: .72rem; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; }
+    .order-meta-value { color: var(--text-soft); font-size: .86rem; line-height: 1.48; white-space: pre-line; }
+    .order-card-actions { display: flex; flex-wrap: wrap; gap: .6rem; padding: 0 1rem 1rem; }
+    .order-card-actions .btn { flex: 1 1 150px; }
+    .empty-state { padding: 2rem 1rem; border: 1px dashed var(--border-strong); border-radius: var(--radius); color: var(--text-muted); text-align: center; line-height: 1.55; }
+    .change-panel { padding: .9rem; border: 1px solid rgba(227,176,62,.18); border-radius: var(--radius); background: rgba(227,176,62,.055); }
+    .change-panel h3 { margin-top: 0; }
+    .cash-value-wrap { margin-top: .9rem; }
+    .cash-hint { margin: .45rem 0 0; color: var(--text-muted); font-size: .78rem; line-height: 1.4; }
+    .whatsapp-return-card .btn + .btn { margin-top: .65rem; }
+
     @media (min-width: 700px) {
       body { padding-block: 1.5rem; }
       #app { min-height: calc(100svh - 3rem); border-radius: 1.2rem; box-shadow: 0 24px 70px rgba(0,0,0,.46); }
@@ -540,9 +619,25 @@
           </div>
         </fieldset>
 
+        <fieldset id="cash-change-section" class="options-group change-panel hide" style="border:0">
+          <h3>Troco para pagamento em dinheiro</h3>
+          <p class="section-note">Informe obrigatoriamente se será necessário levar troco.</p>
+          <div class="choice-list">
+            <div class="choice-row"><label><input type="radio" name="troco" value="nao"> Não, vou pagar o valor exato</label></div>
+            <div class="choice-row"><label><input type="radio" name="troco" value="sim"> Sim, preciso de troco</label></div>
+          </div>
+          <p class="field-error" id="troco-error" aria-live="polite"></p>
+          <div id="cash-value-wrap" class="field cash-value-wrap hide">
+            <label class="field-label" for="input-troco">Troco para quanto?</label>
+            <input type="text" id="input-troco" inputmode="decimal" autocomplete="off" placeholder="Ex.: 100,00" aria-describedby="troco-valor-error troco-hint">
+            <p id="troco-hint" class="cash-hint">Digite o valor da nota ou quantia que será entregue ao entregador.</p>
+            <p class="field-error" id="troco-valor-error" aria-live="polite"></p>
+          </div>
+        </fieldset>
+
         <div class="options-group">
           <label class="field-label" for="input-obs">Observações gerais</label>
-          <input type="text" id="input-obs" placeholder="Ex.: preciso de troco para R$ 50" maxlength="180">
+          <input type="text" id="input-obs" placeholder="Ex.: sem cebola, entregar na portaria..." maxlength="700">
         </div>
       </div>
       <footer class="modal-footer">
@@ -559,7 +654,9 @@
       <div class="whatsapp-success-icon" aria-hidden="true">✓</div>
       <h2>Pedido enviado!</h2>
       <p>Seu pedido foi enviado com sucesso. Continue o atendimento pelo WhatsApp.</p>
-      <button id="btn-return-whatsapp" hidden class="btn" type="button">Voltar para o WhatsApp</button><button id="close-webapp" type="button" class="btn">Fechar esta aba</button><p id="close-webapp-help" hidden>Se continuar aberta, feche esta aba e volte à conversa no WhatsApp.</p>
+      <button id="btn-return-whatsapp" hidden class="btn" type="button">Voltar para o WhatsApp</button>
+      <button id="close-webapp" type="button" class="btn btn-secondary">Fechar página</button>
+      <p id="close-webapp-help" hidden>O navegador não permite fechar esta aba automaticamente. Você já pode fechá-la com segurança e voltar à conversa.</p>
     </div>
   </div>
 
@@ -617,7 +714,8 @@
       const safePrice = value => Number.isFinite(Number(value)) ? Math.max(0, Number(value)) : 0;
 
       const state = {
-        pedido: null, requisicaoId: null, produtos: [], taxas: [], cart: [], current: null, activeModal: null, returnFocus: null,
+        pedido: null, pedidoAndamento: null, contextoPedido: null, pedidos: [], whatsapp: '',
+        requisicaoId: null, produtos: [], taxas: [], cart: [], current: null, activeModal: null, returnFocus: null,
         lockedScrollY: 0, scrollTicking: false, navigationToken: 0, navigationTarget: null,
         navigationSettleTimer: null, navigationFallbackTimer: null, toastTimer: null
       };
@@ -633,6 +731,184 @@
         if (className) node.className = className;
         if (text !== undefined) node.textContent = text;
         return node;
+      }
+
+
+      const STATUS_UI = {
+        em_aberto: ['Pedido recebido', 'info'], rascunho: ['Pedido em montagem', 'info'],
+        aguardando_pix: ['Aguardando PIX', 'warn'], pagamento_na_entrega: ['Pagamento na entrega', 'info'],
+        pagamento_entrega: ['Pagamento na entrega', 'info'], comprovante_enviado: ['Comprovante enviado', 'warn'],
+        retirada_balcao: ['Retirada no balcão', 'info'], aprovado: ['Pedido confirmado', 'success'],
+        confirmado: ['Pedido confirmado', 'success'], em_preparo: ['Em preparo', 'warn'], preparando: ['Em preparo', 'warn'],
+        pronto_para_entrega: ['Pronto para entrega', 'success'], pronto_para_retirada: ['Pronto para retirada', 'success'],
+        saiu_para_entrega: ['Saiu para entrega', 'success'], entregue: ['Entregue', 'success'], retirado: ['Retirado', 'success'],
+        concluido: ['Concluído', 'success'], finalizado: ['Finalizado', 'success'], resolvido: ['Finalizado', 'success'],
+        cancelado: ['Cancelado', 'danger'], cancelado_cliente: ['Cancelado', 'danger'], cancelado_atendente: ['Cancelado', 'danger']
+      };
+      const paymentLabel = value => ({ pix: 'PIX', cartao: 'Cartão na entrega', dinheiro: 'Dinheiro', retirada: 'Retirada no balcão' }[value] || String(value || 'Não informado').replaceAll('_', ' '));
+      function statusInfo(status) {
+        const [label, tone] = STATUS_UI[status] || [String(status || 'Em andamento').replaceAll('_', ' '), 'neutral'];
+        return { label, tone };
+      }
+      function setDashboardMode() {
+        tabsWrap.classList.add('hide');
+        cartBar.classList.add('hidden');
+        $('#open-cart-button').disabled = true;
+        menu.classList.add('dashboard-menu');
+      }
+      function dashboardHeader(title, description, back = false) {
+        const wrap = element('div', 'dashboard-head');
+        if (back) {
+          const toolbar = element('div', 'view-toolbar');
+          const copy = element('div');
+          copy.append(element('h2', '', title), element('p', '', description));
+          const button = acaoBotao('Voltar', () => navegar('selecionar'));
+          button.classList.add('btn-secondary');
+          toolbar.append(copy, button);
+          wrap.append(toolbar);
+        } else {
+          wrap.append(element('h2', '', title), element('p', '', description));
+        }
+        return wrap;
+      }
+      function addMeta(container, label, value) {
+        if (!value) return;
+        const box = element('div', 'order-meta');
+        box.append(element('span', 'order-meta-label', label), element('div', 'order-meta-value', value));
+        container.append(box);
+      }
+      function buildOrderCard(p, options = {}) {
+        const card = element('article', 'order-card');
+        const header = element('div', 'order-card-header');
+        const left = element('div');
+        const orderId = String(p.id || p.pedido_id || '').slice(0, 8) || 'pedido';
+        left.append(element('h3', 'order-card-title', `Pedido #${orderId}`));
+        const when = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR') : '';
+        left.append(element('p', 'order-card-date', when));
+        const s = statusInfo(p.status || p.status_pedido);
+        header.append(left, element('span', `status-pill status-${s.tone}`, s.label));
+        card.append(header);
+
+        const body = element('div', 'order-card-body');
+        const items = element('div', 'order-items');
+        for (const item of (Array.isArray(p.itens) ? p.itens : [])) {
+          const row = element('div', 'order-item');
+          const copy = element('div', 'order-item-copy');
+          const qty = Math.max(1, Number(item.quantidade) || 1);
+          copy.append(element('strong', '', `${qty}× ${item.nome || 'Item'}`));
+          const details = [item.variacao, item.observacao ? `Obs.: ${item.observacao}` : ''].filter(Boolean).join(' · ');
+          if (details) copy.append(element('span', '', details));
+          row.append(copy, element('span', 'order-item-price', money((Number(item.preco) || 0) * qty)));
+          items.append(row);
+        }
+        if (!(p.itens || []).length) items.append(element('p', 'caption', 'Itens ainda não registrados.'));
+        body.append(items);
+        const total = element('div', 'order-total');
+        total.append(element('span', '', 'Total'), element('strong', '', money(p.valor_total)));
+        body.append(total);
+        const meta = element('div', 'order-meta-grid');
+        addMeta(meta, 'Pagamento', paymentLabel(p.forma_pagamento));
+        addMeta(meta, /^retirada/i.test(String(p.endereco_entrega || '')) ? 'Retirada' : 'Entrega', p.endereco_entrega);
+        addMeta(meta, 'Observações', p.observacoes);
+        if (meta.children.length) body.append(meta);
+        card.append(body);
+
+        const actions = element('div', 'order-card-actions');
+        if (options.open) actions.append(acaoBotao('Acompanhar pedido', () => navegar('acompanhar', p.id || p.pedido_id)));
+        if (options.edit && EDITAVEIS.includes(p.status || p.status_pedido)) actions.append(acaoBotao('Editar este pedido', () => navegar('editar', p.id || p.pedido_id)));
+        if (options.repeat && TERMINAIS.includes(p.status || p.status_pedido)) actions.append(acaoBotao('Pedir novamente', () => navegar('novo', '', p.id || p.pedido_id)));
+        if (actions.children.length) card.append(actions);
+        return card;
+      }
+      function renderHome() {
+        setDashboardMode();
+        menu.replaceChildren();
+        menu.append(dashboardHeader('O que você deseja fazer?', 'Escolha uma opção para continuar.'));
+        const activeCount = (state.pedidos || []).filter(p => !TERMINAIS.includes(p.status)).length;
+        const historyCount = (state.pedidos || []).filter(p => TERMINAIS.includes(p.status)).length;
+        const actions = element('div', 'home-actions');
+        const choices = [
+          ['🛍️', 'Novo pedido', 'Abra o cardápio e monte um novo pedido.', '', () => navegar('novo')],
+          ['🧾', 'Acompanhar pedido', 'Veja o pedido que está realmente em andamento nesta conversa.', activeCount ? `${activeCount} ativo${activeCount > 1 ? 's' : ''}` : 'nenhum ativo', () => navegar('andamento')],
+          ['🕘', 'Histórico', 'Consulte pedidos finalizados, itens, pagamento e entrega.', historyCount ? `${historyCount} pedido${historyCount > 1 ? 's' : ''}` : 'vazio', () => navegar('historico')]
+        ];
+        for (const [icon, title, desc, meta, action] of choices) {
+          const b = element('button', 'home-card'); b.type = 'button'; b.addEventListener('click', action);
+          const copy = element('div', 'home-card-copy'); copy.append(element('strong', '', title), element('span', '', desc));
+          b.append(element('span', 'home-card-icon', icon), copy, element('span', 'home-card-meta', meta)); actions.append(b);
+        }
+        menu.append(actions);
+      }
+      function renderHistory() {
+        setDashboardMode(); menu.replaceChildren();
+        menu.append(dashboardHeader('Histórico de pedidos', 'Confira tudo o que já foi pedido e finalizado.', true));
+        const list = (state.pedidos || []).filter(p => TERMINAIS.includes(p.status));
+        if (!list.length) return menu.append(element('div', 'empty-state', 'Você ainda não tem pedidos finalizados neste histórico.'));
+        const grid = element('div', 'orders-grid');
+        list.forEach(p => grid.append(buildOrderCard(p, { repeat: true })));
+        menu.append(grid);
+      }
+      function renderAndamento() {
+        setDashboardMode(); menu.replaceChildren();
+        const ctx = state.contextoPedido || {};
+        let current = state.pedidoAndamento || ctx.pedido || null;
+        const currentId = String(current?.id || current?.pedido_id || '');
+        if (currentId) current = (state.pedidos || []).find(p => String(p.id) === currentId) || current;
+        if (current && TERMINAIS.includes(current.status || current.status_pedido)) current = null;
+        if (current) {
+          menu.append(dashboardHeader('Acompanhar pedido', 'Este é o pedido atualmente em foco no seu atendimento.', true));
+          menu.append(buildOrderCard(current, { edit: true }));
+          return;
+        }
+        const candidateIds = new Set((ctx.candidatos || []).map(p => String(p.pedido_id || p.id || '')));
+        let candidates = (state.pedidos || []).filter(p => !TERMINAIS.includes(p.status) && (!candidateIds.size || candidateIds.has(String(p.id))));
+        if (!candidates.length) {
+          menu.append(dashboardHeader('Acompanhar pedido', 'Consulte aqui pedidos que ainda não foram finalizados.', true));
+          menu.append(element('div', 'empty-state', 'Você não tem nenhum pedido em andamento no momento.'));
+          return;
+        }
+        if (candidates.length === 1) {
+          menu.append(dashboardHeader('Acompanhar pedido', 'Este é o único pedido em andamento encontrado.', true));
+          menu.append(buildOrderCard(candidates[0], { edit: true }));
+          return;
+        }
+        menu.append(dashboardHeader('Escolha o pedido', 'Há mais de um pedido em andamento. Selecione qual deseja acompanhar.', true));
+        const grid = element('div', 'orders-grid'); candidates.forEach(p => grid.append(buildOrderCard(p, { open: true })));
+        menu.append(grid);
+      }
+      function parseStoredObservacoes(text, payment) {
+        const raw = String(text || '');
+        if (payment !== 'dinheiro' || !raw.includes('💵 PAGAMENTO EM DINHEIRO')) return { note: raw, change: '', amount: '' };
+        const change = /Troco:\s*SIM/i.test(raw) ? 'sim' : /Troco:\s*NÃO/i.test(raw) ? 'nao' : '';
+        const amountMatch = raw.match(/Troco para:\s*R\$\s*([\d.,]+)/i);
+        const noteMarker = '📝 OBSERVAÇÕES DO CLIENTE';
+        const note = raw.includes(noteMarker) ? raw.split(noteMarker).slice(1).join(noteMarker).trim() : '';
+        return { note, change, amount: amountMatch ? amountMatch[1] : '' };
+      }
+      function parseMoneyInput(value) {
+        let raw = String(value || '').trim().replace(/R\$/gi, '').replace(/\s/g, '');
+        if (!raw) return null;
+        if (raw.includes(',') && raw.includes('.')) raw = raw.replace(/\./g, '').replace(',', '.');
+        else if (raw.includes(',')) raw = raw.replace(',', '.');
+        const n = Number(raw.replace(/[^\d.-]/g, ''));
+        return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
+      }
+      function clearChangeValidation() {
+        $('#troco-error').textContent = '';
+        $('#troco-valor-error').textContent = '';
+        $('#input-troco').setAttribute('aria-invalid', 'false');
+      }
+      function toggleChangeValue() {
+        const selected = $("input[name='troco']:checked")?.value;
+        $('#cash-value-wrap').classList.toggle('hide', selected !== 'sim');
+        if (selected !== 'sim') { $('#input-troco').value = ''; $('#troco-valor-error').textContent = ''; }
+      }
+      function toggleCashChangeFields() {
+        const cash = isDelivery() && $("input[name='pagamento']:checked")?.value === 'dinheiro';
+        $('#cash-change-section').classList.toggle('hide', !cash);
+        $$('input', $('#cash-change-section')).forEach(control => control.disabled = !cash);
+        if (!cash) clearChangeValidation();
+        toggleChangeValue();
       }
 
       function showToast(message, type = "success") {
@@ -930,6 +1206,7 @@
         clearValidation();
         renderCart();
         updateCheckoutTotal();
+        toggleCashChangeFields();
         openModal($("#cart-modal"), $("#open-cart-button"));
       }
 
@@ -955,6 +1232,7 @@
         $$("input, select", $("#address-section")).forEach(control => control.disabled = !delivery);
         $$("input", $("#payment-section")).forEach(control => control.disabled = !delivery);
         if (!delivery) clearAddressValidation();
+        toggleCashChangeFields();
         updateCheckoutTotal();
       }
 
@@ -979,7 +1257,7 @@
       }
 
       function clearAddressValidation() { ["input-bairro", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); }
-      function clearValidation() { ["input-telefone", "input-bairro", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); }
+      function clearValidation() { ["input-telefone", "input-bairro", "input-rua", "input-numero"].forEach(id => setFieldError(id, "")); clearChangeValidation(); }
 
       function validateCheckout() {
         clearValidation();
@@ -1005,8 +1283,35 @@
             $("#input-numero").focus();
             return null;
           }
+          const payment = $("input[name='pagamento']:checked")?.value;
+          if (payment === 'dinheiro') {
+            const change = $("input[name='troco']:checked")?.value;
+            if (!['sim','nao'].includes(change)) {
+              $('#troco-error').textContent = 'Informe se você precisa de troco.';
+              $("input[name='troco']")?.focus();
+              return null;
+            }
+            if (change === 'sim') {
+              const amount = parseMoneyInput($('#input-troco').value);
+              const total = cartSubtotal() + deliveryFee();
+              if (amount === null) {
+                $('#input-troco').setAttribute('aria-invalid', 'true');
+                $('#troco-valor-error').textContent = 'Informe o valor que será entregue para pagamento.';
+                $('#input-troco').focus();
+                return null;
+              }
+              if (amount <= total) {
+                $('#input-troco').setAttribute('aria-invalid', 'true');
+                $('#troco-valor-error').textContent = `O valor para troco deve ser maior que o total do pedido (${money(total)}).`;
+                $('#input-troco').focus();
+                return null;
+              }
+              return { phoneDigits, trocoChoice: change, trocoPara: amount };
+            }
+            return { phoneDigits, trocoChoice: change, trocoPara: null };
+          }
         }
-        return { phoneDigits };
+        return { phoneDigits, trocoChoice: '', trocoPara: null };
       }
 
       async function submitOrder() {
@@ -1035,6 +1340,8 @@
           valor_total: cartSubtotal() + fee,
           endereco: delivery ? `${rua}, ${numero} - ${bairro}` : "Retirada no Local",
           forma_pagamento: delivery ? $("input[name='pagamento']:checked").value : "retirada",
+          troco_necessario: valid.trocoChoice || null,
+          troco_para: valid.trocoPara,
           observacoes: $("#input-obs").value.trim()
         };
 
@@ -1057,8 +1364,7 @@
           showToast(IS_DEMO ? "Pedido demonstrativo concluído com sucesso." : "Pedido enviado. Confira o WhatsApp para continuar.");
           if (!IS_DEMO) {
             $('#whatsapp-return').hidden = false;
-            $('#btn-return-whatsapp').focus();
-            if (state.whatsapp) setTimeout(() => location.assign(state.whatsapp), 1500);
+            (state.whatsapp ? $('#btn-return-whatsapp') : $('#close-webapp')).focus();
           }
         } catch (error) {
           console.error(error);
@@ -1098,27 +1404,11 @@
         const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = text; b.addEventListener('click', action); return b;
       }
       function renderDetalhe(p) {
-        $("#open-cart-button").disabled = true;
-        menu.replaceChildren();
-        const title = document.createElement('h2'); title.textContent = 'Pedido ' + p.id.slice(0,8); menu.append(title);
-        const info = document.createElement('p'); info.textContent = new Date(p.created_at).toLocaleString('pt-BR') + ' · ' + p.status.replaceAll('_',' ') + ' · ' + money(p.valor_total); menu.append(info);
-        for (const i of p.itens || []) { const row = document.createElement('p'); row.textContent = i.quantidade + 'x ' + i.nome + ' — ' + money(Number(i.preco)*Number(i.quantidade)); menu.append(row); }
-        const dados = document.createElement('p'); dados.textContent = [p.endereco_entrega,p.forma_pagamento,p.observacoes].filter(Boolean).join(' · '); menu.append(dados);
-        if (EDITAVEIS.includes(p.status)) menu.append(acaoBotao('Editar este pedido',()=>navegar('editar',p.id)));
-        else if (!TERMINAIS.includes(p.status)) { const note=document.createElement('p');note.textContent='Para alterar este pedido, fale com a equipe no WhatsApp.';menu.append(note); }
-        if (TERMINAIS.includes(p.status)) menu.append(acaoBotao('Pedir novamente',()=>navegar('novo','',p.id)));
-        menu.append(acaoBotao('Voltar aos pedidos',()=>navegar('selecionar')));
-      }
-      function renderPedidos() {
-        menu.replaceChildren(acaoBotao('Fazer novo pedido',()=>navegar('novo')), acaoBotao('Em andamento',()=>navegar('andamento')), acaoBotao('Histórico',()=>navegar('historico')));
-        const list=(state.pedidos || []).filter(p => MODO==='historico' ? TERMINAIS.includes(p.status) : !TERMINAIS.includes(p.status));
-        if (!list.length) { const note=document.createElement('p');note.textContent='Nenhum pedido nesta lista.';menu.append(note); }
-        for (const p of list) {
-          const card=document.createElement('section'); card.style.padding='18px 0';
-          const summary=document.createElement('p');summary.textContent='Pedido '+p.id.slice(0,8)+' · '+new Date(p.created_at).toLocaleString('pt-BR')+' · '+p.status.replaceAll('_',' ')+' · '+money(p.valor_total);card.append(summary);
-          card.append(acaoBotao('Ver pedido',()=>navegar('acompanhar',p.id))); menu.append(card);
-        }
-        $('#open-cart-button').disabled=true;
+        setDashboardMode();
+        menu.replaceChildren(
+          dashboardHeader(TERMINAIS.includes(p.status) ? 'Detalhes do pedido' : 'Acompanhar pedido', 'Confira os itens e as informações registradas.', true),
+          buildOrderCard(p, { edit: true, repeat: true })
+        );
       }
       async function init() {
         $("#input-telefone").value = CLIENTE_TEL;
@@ -1133,9 +1423,12 @@
             if (!response.ok) throw new Error(`Cardápio indisponível: ${response.status}`);
             const data = await response.json();
             if (data.acesso_valido !== true) throw new Error('Este link expirou ou não é válido. Peça um novo link no WhatsApp.');
-            state.pedidos = data.pedidos || [];
+            state.pedidos = Array.isArray(data.pedidos) ? data.pedidos : [];
+            state.contextoPedido = data.contexto_pedido || null;
+            state.pedidoAndamento = data.pedido_andamento || state.contextoPedido?.pedido || null;
             state.whatsapp = /^\d{10,15}$/.test(String(data.whatsapp_empresa || '')) ? 'https://wa.me/' + data.whatsapp_empresa : '';
             $('#btn-return-whatsapp').hidden = !state.whatsapp;
+            $('#close-webapp').textContent = state.whatsapp ? 'Fechar página e voltar ao WhatsApp' : 'Fechar esta aba';
             if (data.pedido_indisponivel) throw new Error("Este pedido não está disponível para edição. Solicite um link atualizado no WhatsApp.");
             state.produtos = (Array.isArray(data.produtos) ? data.produtos : []).filter(p => catalogo.opcoes(p).length);
             state.pedido = ['editar','acompanhar'].includes(MODO) ? data.pedido_atual || null : null;
@@ -1147,7 +1440,9 @@
               ? data.carrinho_atual.filter(item => item.nome !== "Taxa de Entrega").map(normalizeCartItem)
               : [];
           }
-          if (!IS_DEMO && ['selecionar','historico','andamento'].includes(MODO)) { renderPedidos(); return; }
+          if (!IS_DEMO && MODO === 'selecionar') { renderHome(); return; }
+          if (!IS_DEMO && MODO === 'historico') { renderHistory(); return; }
+          if (!IS_DEMO && MODO === 'andamento') { renderAndamento(); return; }
           if (!IS_DEMO && MODO === 'acompanhar') { renderDetalhe(state.pedido); return; }
           if (!IS_DEMO && !['novo','editar'].includes(MODO)) throw new Error('Modo de abertura inválido. Peça um novo link no atendimento.');
           if (MODO === 'novo' && params.get('repetir')) {
@@ -1166,7 +1461,13 @@
             $("input[name='modalidade'][value='" + (pickup ? 'retirada' : 'entrega') + "']").checked = true;
             const payment = $("input[name='pagamento'][value='" + (['pix','dinheiro','cartao'].includes(p.forma_pagamento) ? p.forma_pagamento : 'pix') + "']");
             if (payment) payment.checked = true;
-            $("#input-obs").value = p.observacoes || '';
+            const stored = parseStoredObservacoes(p.observacoes, p.forma_pagamento);
+            $("#input-obs").value = stored.note;
+            if (stored.change) {
+              const changeInput = $("input[name='troco'][value='" + stored.change + "']");
+              if (changeInput) changeInput.checked = true;
+            }
+            $("#input-troco").value = stored.amount;
             if (!['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','comprovante_enviado','retirada_balcao'].includes(p.status)) {
               $("#btn-submit").disabled = true;
               $("#btn-submit").textContent = 'Alterações com a equipe pelo WhatsApp';
@@ -1205,11 +1506,16 @@
       $("#add-to-cart").addEventListener("click", addToCart);
       $("#open-cart-button").addEventListener("click", openCartModal);
       $("#btn-submit").addEventListener("click", submitOrder);
-      $('#btn-return-whatsapp').addEventListener('click', () => { if (state.whatsapp) location.assign(state.whatsapp); });
+      $('#btn-return-whatsapp').addEventListener('click', () => { if (state.whatsapp) location.replace(state.whatsapp); });
       $("#close-webapp").addEventListener("click", () => {
+        if (state.whatsapp) { location.replace(state.whatsapp); return; }
         $("#close-webapp-help").hidden = false;
         window.close();
+        setTimeout(() => { if (!document.hidden) $("#close-webapp-help").hidden = false; }, 250);
       });
+      $$("input[name='pagamento']").forEach(input => input.addEventListener('change', () => { clearChangeValidation(); toggleCashChangeFields(); }));
+      $$("input[name='troco']").forEach(input => input.addEventListener('change', () => { clearChangeValidation(); toggleChangeValue(); }));
+      $('#input-troco').addEventListener('input', () => { $('#troco-valor-error').textContent = ''; $('#input-troco').setAttribute('aria-invalid','false'); });
       $("#input-bairro").addEventListener("change", () => { setFieldError("input-bairro", ""); updateCheckoutTotal(); });
       ["input-telefone", "input-rua", "input-numero"].forEach(id => document.getElementById(id).addEventListener("input", () => setFieldError(id, "")));
       $$("input[name='modalidade']").forEach(input => input.addEventListener("change", toggleDeliveryFields));

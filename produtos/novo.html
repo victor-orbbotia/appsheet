@@ -434,6 +434,11 @@
             document.getElementById('link-menu-studio').href = `./menu_studio_pro_mobile_first.html?account_id=${globalAccountId}`;
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
             document.getElementById('link-personalizacoes').href = `./personalizacoes.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
+            const linkPizza = document.createElement('a');
+            linkPizza.className = document.getElementById('link-personalizacoes').className;
+            linkPizza.href = `./meia-pizza.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
+            linkPizza.textContent = '🍕 Montagem de pizzas';
+            document.getElementById('link-personalizacoes').after(linkPizza);
             
             carregarLista();
             carregarTaxasEntrega();

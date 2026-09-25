@@ -339,6 +339,16 @@
     .choice-row label { min-height: 52px; display: flex; align-items: center; gap: .7rem; padding: .75rem .85rem; color: var(--text-soft); cursor: pointer; }
     .choice-row label:hover { background: rgba(255,255,255,.025); }
     input[type="radio"] { width: 19px; height: 19px; flex: 0 0 auto; accent-color: var(--primary); }
+    .modifier-group { margin:.8rem 0; padding:.8rem; border:1px solid var(--border); border-radius:.8rem; background:rgba(255,255,255,.02); }
+    .modifier-group h4 { margin:0 0 .25rem; color:#fff; font-size:.92rem; }
+    .modifier-hint { margin:0 0 .55rem; color:var(--text-muted); font-size:.78rem; }
+    .modifier-option { min-height:46px; display:flex; align-items:center; gap:.65rem; border-top:1px solid var(--border); color:var(--text-soft); }
+    .modifier-option input { width:68px; min-height:38px; margin-left:auto; padding:.35rem .45rem; border:1px solid var(--border); border-radius:.55rem; background:#0d110e; color:#fff; text-align:center; }
+    .pizza-part { margin:.8rem 0; padding:.85rem; border:1px solid var(--border); border-radius:.9rem; background:rgba(255,255,255,.025); }
+    .pizza-part-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.65rem; }
+    .pizza-part-head strong { color:#fff; }
+    .pizza-part select, .pizza-part input[type="number"] { margin-bottom:.65rem; }
+    .pizza-live-total { min-height:1.2rem; margin:.45rem 0; color:#8be9a4; font-size:.82rem; font-weight:700; }
     .stepper { display: flex; align-items: center; overflow: hidden; border: 1px solid var(--border-strong); border-radius: .78rem; background: #0d110e; }
     .stepper button { width: 44px; height: 48px; border: 0; background: transparent; color: #fff; font-size: 1.3rem; cursor: pointer; }
     .stepper button:hover { background: rgba(255,255,255,.05); }
@@ -545,6 +555,7 @@
       <div class="modal-content">
         <p id="modal-item-desc" class="modal-description"></p>
         <div id="variation-field" class="field hide"><label class="field-label" for="item-variation">Escolha a opção</label><select id="item-variation"><option value="">Selecione...</option></select></div>
+        <div id="item-personalizacoes" class="options-group hide"></div>
         <div class="options-group">
           <label class="field-label" for="item-obs">Alguma observação?</label>
           <input type="text" id="item-obs" placeholder="Ex.: sem cebola, carne bem passada..." maxlength="180">
@@ -557,6 +568,33 @@
           <button id="qty-plus" type="button" aria-label="Aumentar quantidade">+</button>
         </div>
         <button class="btn btn-grow" id="add-to-cart" type="button">Adicionar · R$ <span id="item-price-btn">0,00</span></button>
+      </footer>
+    </div>
+  </section>
+
+  <section id="pizza-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-modal-title" aria-hidden="true">
+    <div class="modal-panel">
+      <header class="modal-header">
+        <h2 id="pizza-modal-title">Monte sua pizza</h2>
+        <button class="icon-btn" type="button" data-close-modal aria-label="Fechar montagem da pizza">×</button>
+      </header>
+      <div class="modal-content">
+        <p id="pizza-modal-desc" class="modal-description"></p>
+        <div id="pizza-partes"></div>
+        <button id="pizza-add-parte" class="btn btn-secondary" type="button">Adicionar sabor</button>
+        <div id="pizza-globais" class="options-group"></div>
+        <div class="options-group">
+          <label class="field-label" for="pizza-obs">Observação</label>
+          <input id="pizza-obs" type="text" maxlength="180" placeholder="Alguma orientação para a cozinha?">
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <div class="stepper" aria-label="Quantidade de pizzas">
+          <button id="pizza-qty-minus" type="button" aria-label="Diminuir quantidade">−</button>
+          <output id="pizza-qty">1</output>
+          <button id="pizza-qty-plus" type="button" aria-label="Aumentar quantidade">+</button>
+        </div>
+        <button id="pizza-add-cart" class="btn btn-grow" type="button" disabled>Adicionar · <span id="pizza-price">Selecione os sabores</span></button>
       </footer>
     </div>
   </section>
@@ -673,6 +711,7 @@
 
 
   <script src="../assets/catalogo.js"></script>
+  <script src="../assets/pedido-composto.js"></script>
   <script src="../assets/pedido-cache.js"></script>
   <script>
     (() => {
@@ -681,7 +720,7 @@
       const URL_WEBHOOK_DADOS = "https://n8n.orbbotia.com/webhook/webapp-dados";
       const URL_WEBHOOK_PEDIDO = "https://n8n.orbbotia.com/webhook/webapp-pedido";
       const TAXA_OUTROS_KEY = "__outros__";
-      if (typeof window.criarCatalogo !== 'function' || typeof window.criarCacheEndereco !== 'function') {
+      if (typeof window.criarCatalogo !== 'function' || typeof window.criarCacheEndereco !== 'function' || typeof window.criarMotorPersonalizacoes !== 'function' || typeof window.cotarMeiaPizza !== 'function') {
         const loading = document.querySelector('.loading-state');
         if (loading) loading.textContent = 'Não foi possível iniciar o cardápio. Recarregue a página. Se persistir, avise o atendimento.';
         console.error('Arquivos assets/catalogo.js ou assets/pedido-cache.js não carregados.');
@@ -732,7 +771,8 @@
 
       const state = {
         pedido: null, pedidoAndamento: null, contextoPedido: null, pedidos: [], whatsapp: '',
-        requisicaoId: null, produtos: [], taxas: [], cart: [], current: null, activeModal: null, returnFocus: null,
+        requisicaoId: null, produtos: [], taxas: [], cart: [], current: null, pizzaCurrent: null, composicaoMotor: null,
+        catalogoComposto: null, composicoesPizza: [], versaoPersonalizacoes: null, activeModal: null, returnFocus: null,
         lockedScrollY: 0, scrollTicking: false, navigationToken: 0, navigationTarget: null,
         navigationSettleTimer: null, navigationFallbackTimer: null, toastTimer: null
       };
@@ -819,7 +859,12 @@
           const copy = element('div', 'order-item-copy');
           const qty = Math.max(1, Number(item.quantidade) || 1);
           copy.append(element('strong', '', `${qty}× ${item.nome || 'Item'}`));
-          const details = [item.variacao, item.observacao ? `Obs.: ${item.observacao}` : ''].filter(Boolean).join(' · ');
+          const compositionParts = item.meia_pizza?.partes || item.partes || [];
+          const modifierList = item.meia_pizza?.modificadores || item.modificadores || [];
+          const compositionText = item.tipo === 'meia_pizza' && compositionParts.length
+            ? `${compositionParts.map(part => `${part.fracao?.numerador || part.percentual || ''}${part.fracao ? `/${part.fracao.denominador}` : '%'} ${part.nome} ${part.variacao || ''}`.trim()).join(' + ')}${modifierList.length ? ' · ' + modifierList.map(m => `${m.quantidade}× ${m.nome}${m.escopo === 'inteira' ? ' (inteira)' : ` (${compositionParts.find(p => p.produto_id === m.produto_id)?.nome || 'parte'})`}`).join(' · ') : ''}`
+            : modifierList.map(m => `${m.quantidade}× ${m.nome}${m.grupo_nome ? ` (${m.grupo_nome})` : ''}`).join(' · ');
+          const details = [item.variacao, compositionText, item.observacao ? `Obs.: ${item.observacao}` : ''].filter(Boolean).join(' · ');
           if (details) copy.append(element('span', '', details));
           row.append(copy, element('span', 'order-item-price', money((Number(item.preco) || 0) * qty)));
           items.append(row);
@@ -1038,12 +1083,13 @@
       function renderMenu() {
         tabs.replaceChildren();
         menu.replaceChildren();
-        if (!state.produtos.length) {
+        if (!state.produtos.length && !state.composicoesPizza.length) {
           menu.append(element("div", "loading-state", "Cardápio vazio no momento."));
           return;
         }
 
         const categories = [...new Set(state.produtos.map(product => product.categoria || "Outros"))];
+        if (state.composicoesPizza.length) categories.push('Monte sua pizza');
         categories.forEach((category, index) => {
           const id = `categoria-${index + 1}`;
           const tab = element("button", `tab${index === 0 ? " active" : ""}`, category);
@@ -1070,7 +1116,8 @@
           const headingRow = element("div", "category-heading");
           const heading = element("h2", "category-header", category);
           heading.id = `${id}-title`;
-          headingRow.append(heading, element("span", "category-count", `${products.length} ${products.length === 1 ? "item" : "itens"}`));
+          const count = category === 'Monte sua pizza' ? state.composicoesPizza.length : products.length;
+          headingRow.append(heading, element("span", "category-count", `${count} ${count === 1 ? "opção" : "opções"}`));
           section.append(headingRow);
 
           const items = element("div", "category-items");
@@ -1090,6 +1137,18 @@
             add.setAttribute("aria-hidden", "true");
             card.append(info, add);
             card.addEventListener("click", () => openItemModal(product, card));
+            items.append(card);
+          });
+          if (category === 'Monte sua pizza') state.composicoesPizza.forEach(config => {
+            const card = element('button', 'menu-cell');
+            card.type = 'button';
+            card.dataset.itemName = `${config.nome} — ${config.tamanho}`;
+            card.setAttribute('aria-label', `Montar ${config.nome}, tamanho ${config.tamanho}`);
+            const info = element('div', 'menu-info');
+            info.append(element('h3', '', config.nome), element('p', '', `${config.tamanho} · escolha de ${config.minimo} a ${config.maximo} sabores`), element('div', 'menu-price', 'Monte sua combinação'));
+            const add = element('span', 'add-indicator', '+'); add.setAttribute('aria-hidden', 'true');
+            card.append(info, add);
+            card.addEventListener('click', () => openPizzaModal(config, card));
             items.append(card);
           });
           section.append(items);
@@ -1180,10 +1239,235 @@
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
       }
 
+      function variacaoCatalogoId(productId, variacao, hinted = '') {
+        if (hinted) return String(hinted);
+        const match = (state.catalogoComposto?.personalizacoes?.produto_variacoes || []).find(v =>
+          v.produto_id === productId && v.ativo && catalogo.normalizar(v.nome) === catalogo.normalizar(variacao));
+        return match?.id || '';
+      }
+
+      function consultarProdutoPersonalizado(productId, variationId) {
+        if (!state.composicaoMotor || !state.catalogoComposto?.personalizacoes) return null;
+        return state.composicaoMotor.consultarProduto(
+          { account_id: String(ACCOUNT_ID), segmento: state.catalogoComposto.segmento || 'restaurante' },
+          { produto_id: productId, variacao_id: variationId || null }
+        );
+      }
+
+      function coletarModificadores(container) {
+        return $$('input[data-grupo][data-opcao]', container).map(input => ({
+          grupo_id: input.dataset.grupo,
+          opcao_id: input.dataset.opcao,
+          quantidade: Number(input.value || 0)
+        })).filter(item => item.quantidade > 0);
+      }
+
+      function renderGruposModificadores(container, groups, onChange, initial = []) {
+        container.replaceChildren();
+        if (!groups?.length) { container.classList.add('hide'); return; }
+        container.classList.remove('hide');
+        container.append(element('h3', '', 'Personalize seu pedido'));
+        const selected = new Map((initial || []).map(m => [`${m.grupo_id}/${m.opcao_id}`, Number(m.quantidade) || 0]));
+        for (const group of groups) {
+          const box = element('section', 'modifier-group');
+          box.append(element('h4', '', group.nome));
+          box.append(element('p', 'modifier-hint', group.min_selecoes
+            ? `Escolha de ${group.min_selecoes} a ${group.max_selecoes}.` : `Opcional · até ${group.max_selecoes} escolha(s).`));
+          for (const option of group.opcoes) {
+            const row = element('label', 'modifier-option');
+            const copy = element('span', '', `${option.nome} · ${money(option.preco_centavos / 100)} cada`);
+            const input = document.createElement('input');
+            input.type = 'number'; input.min = '0'; input.max = String(option.max_quantidade); input.step = '1';
+            input.value = String(selected.get(`${group.id}/${option.id}`) || 0);
+            input.dataset.grupo = group.id; input.dataset.opcao = option.id;
+            input.setAttribute('aria-label', `Quantidade de ${option.nome}`);
+            input.addEventListener('input', onChange);
+            row.append(copy, input); box.append(row);
+          }
+          container.append(box);
+        }
+      }
+
+      function atualizarCotacaoProduto() {
+        if (!state.current) return;
+        const mods = coletarModificadores($('#item-personalizacoes'));
+        state.current.modificadores = mods;
+        if (IS_DEMO) { state.current.quoteError = ''; renderItemPrice(); return; }
+        const result = state.composicaoMotor.validarItem(
+          { account_id: String(ACCOUNT_ID), segmento: state.catalogoComposto?.segmento || 'restaurante' },
+          { produto_id: state.current.produto_id, variacao_id: state.current.variacao_id || null,
+            quantidade: state.current.qty, observacao: $('#item-obs').value.trim(), modificadores: mods }
+        );
+        if (result.status === 'orcamento') {
+          state.current.quote = result;
+          state.current.basePrice = result.item.preco;
+          state.current.quoteError = '';
+        } else {
+          state.current.quote = null;
+          state.current.quoteError = ({limite_grupo:'Confira os adicionais obrigatórios e os limites de escolha.',limite_opcao:'Revise a quantidade deste adicional.',opcao_indisponivel:'Uma das opções não está disponível para este produto.',orcamento_alterado:'O preço mudou. Atualize o cardápio.'})[result.codigo] || 'Revise as escolhas obrigatórias.';
+          const productOption = state.current.options.find(o => o.variacao === state.current.variacao);
+          state.current.basePrice = productOption?.preco ?? state.current.basePrice;
+        }
+        renderItemPrice();
+      }
+
+      function carregarGruposProduto() {
+        const container = $('#item-personalizacoes');
+        if (IS_DEMO || !state.current || (state.current.options[0]?.variacao && !state.current.variacao)) {
+          container.replaceChildren(); container.classList.add('hide');
+          return;
+        }
+        const productOption = state.current.options.find(o => o.variacao === state.current.variacao) || state.current.options[0];
+        state.current.variacao_id = variacaoCatalogoId(state.current.produto_id, state.current.variacao, productOption?.variacao_id);
+        const result = consultarProdutoPersonalizado(state.current.produto_id, state.current.variacao_id);
+        if (result?.status !== 'sucesso') {
+          container.replaceChildren(element('p', 'error-text', 'Não foi possível carregar as escolhas deste item. Reabra o cardápio.'));
+          container.classList.remove('hide'); state.current.quoteError = result?.codigo || 'catalogo_indisponivel'; renderItemPrice(); return;
+        }
+        state.current.catalog = result.catalogo;
+        state.current.basePrice = result.catalogo.preco_base_centavos / 100;
+        renderGruposModificadores(container, result.catalogo.grupos, atualizarCotacaoProduto, state.current.modificadores || []);
+        atualizarCotacaoProduto();
+      }
+
+      function pizzaProdutoVinculado(config, produtoId) {
+        const vinculo = (config.sabores || []).find(s => s.produto_id === produtoId);
+        if (!vinculo) return null;
+        return state.produtos.find(p => p.id === produtoId) || null;
+      }
+      function pizzaOpcoesSabor(config) {
+        return (config.sabores || []).map(v => {
+          const produto = state.produtos.find(p => p.id === v.produto_id);
+          const variation = (state.catalogoComposto?.personalizacoes?.produto_variacoes || []).find(x => x.id === v.variacao_id);
+          if (!produto || !variation || !variation.ativo) return null;
+          return { produto, variation, label: `${produto.nome} · ${variation.nome}` };
+        }).filter(Boolean);
+      }
+      function renderPizzaModal() {
+        const current = state.pizzaCurrent;
+        const config = current?.config;
+        if (!config) return;
+        const flavors = pizzaOpcoesSabor(config);
+        const partsMount = $('#pizza-partes');
+        partsMount.replaceChildren();
+        current.partes.forEach((part, index) => {
+          const box = element('section', 'modifier-group');
+          const title = element('h3', '', `Sabor ${index + 1}`);
+          if (current.partes.length > config.minimo) {
+            const removePart=element('button','btn btn-secondary','Remover sabor');removePart.type='button';
+            removePart.addEventListener('click',()=>{current.partes.splice(index,1);if(config.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal();});
+            box.append(title,removePart);
+          } else box.append(title);
+          const select = document.createElement('select');
+          select.setAttribute('aria-label', `Escolha o sabor ${index + 1}`);
+          select.add(new Option('Selecione um sabor', ''));
+          for (const flavor of flavors) select.add(new Option(flavor.label, flavor.produto.id));
+          select.value = part.produto_id || '';
+          select.addEventListener('change', () => { current.partes[index].produto_id = select.value; current.partes[index].modificadores = []; current.globais=[]; renderPizzaModal(); });
+          box.append(select);
+          if (config.divisao === 'personalizada') {
+            const fractionLabel = element('label', 'field-label', 'Parte da pizza (%)');
+            const fraction = document.createElement('input'); fraction.type = 'number'; fraction.min = '5'; fraction.max = '95'; fraction.step = '5';
+            fraction.value = String(part.percentual || Math.floor(100 / config.minimo / 5) * 5);
+            fraction.addEventListener('input', () => { current.partes[index].percentual = Number(fraction.value); atualizarCotacaoPizza(); });
+            box.append(fractionLabel, fraction);
+          } else box.append(element('p', 'modifier-hint', 'Os sabores terão partes iguais.'));
+          if (part.produto_id) {
+            const vinculo = (config.sabores || []).find(v => v.produto_id === part.produto_id);
+            const consulta = consultarProdutoPersonalizado(part.produto_id, vinculo?.variacao_id);
+            if (consulta?.status === 'sucesso') {
+              for (const group of consulta.catalogo.grupos) {
+                const rule = (config.grupos || []).find(g => g.grupo_id === group.id && g.escopo === 'parte');
+                if (!rule) continue;
+                const selected = new Map((part.modificadores || []).map(m => [m.opcao_id, m.quantidade]));
+                const groupBox = element('section', 'modifier-group');
+                groupBox.append(element('h4', '', `${group.nome} nesta parte`));
+                for (const option of group.opcoes) {
+                  const label = element('label', 'modifier-option');
+                  label.append(element('span', '', `${option.nome} · ${money(option.preco_centavos / 100)}`));
+                  const input = document.createElement('input'); input.type='number'; input.min='0'; input.max=String(option.max_quantidade); input.step='1'; input.value=String(selected.get(option.id)||0);
+                  input.addEventListener('input', () => { current.partes[index].modificadores = $$('input[data-pizza-part-mod]', box).map(i=>({grupo_id:i.dataset.grupo,opcao_id:i.dataset.opcao,quantidade:Number(i.value||0)})).filter(m=>m.quantidade>0); atualizarCotacaoPizza(); });
+                  input.dataset.pizzaPartMod='1'; input.dataset.grupo=group.id; input.dataset.opcao=option.id; label.append(input); groupBox.append(label);
+                }
+                box.append(groupBox);
+              }
+            }
+          }
+          partsMount.append(box);
+        });
+        $('#pizza-add-parte').classList.toggle('hide', current.partes.length >= config.maximo);
+        $('#pizza-add-parte').disabled = current.partes.length >= config.maximo;
+        renderPizzaGlobais();
+        $('#pizza-qty').textContent = String(current.quantidade);
+        atualizarCotacaoPizza();
+      }
+      function renderPizzaGlobais() {
+        const current = state.pizzaCurrent, config = current.config, mount = $('#pizza-globais');
+        mount.replaceChildren();
+        const globalRules = (config.grupos || []).filter(g => g.escopo === 'inteira');
+        if (!globalRules.length) return;
+        mount.append(element('h3', '', 'Adicionais para a pizza inteira'));
+        for (const rule of globalRules) {
+          const selectedParts = current.partes.filter(p => p.produto_id);
+          const catalogs = selectedParts.map(part => {
+            const link = (config.sabores || []).find(v => v.produto_id === part.produto_id);
+            return consultarProdutoPersonalizado(part.produto_id, link?.variacao_id)?.catalogo;
+          }).filter(Boolean);
+          if (catalogs.length !== selectedParts.length || !catalogs.length) continue;
+          const groups = catalogs.map(c => c.grupos.find(g => g.id === rule.grupo_id));
+          if (groups.some(g => !g)) continue;
+          const common = groups[0].opcoes.filter(o => groups.every(g => g.opcoes.some(x => x.id === o.id)));
+          if (!common.length) continue;
+          const box = element('section', 'modifier-group'); box.append(element('h4', '', groups[0].nome));
+          for (const option of common) {
+            const label = element('label', 'modifier-option');
+            label.append(element('span', '', `${option.nome} · cobrança ${rule.cobranca === 'proporcional' ? 'proporcional' : rule.cobranca === 'integral' ? 'integral' : rule.cobranca}`));
+            const input = document.createElement('input'); input.type='number'; input.min='0'; input.max=String(Math.min(...groups.map(g=>g.opcoes.find(o=>o.id===option.id).max_quantidade))); input.step='1';
+            input.value=String((current.globais||[]).find(m=>m.grupo_id===rule.grupo_id&&m.opcao_id===option.id)?.quantidade||0);
+            input.dataset.pizzaGlobal='1'; input.dataset.grupo=rule.grupo_id; input.dataset.opcao=option.id;
+            input.addEventListener('input', () => { current.globais=$$('input[data-pizza-global]',mount).map(i=>({grupo_id:i.dataset.grupo,opcao_id:i.dataset.opcao,quantidade:Number(i.value||0)})).filter(m=>m.quantidade>0); atualizarCotacaoPizza(); });
+            label.append(input); box.append(label);
+          }
+          mount.append(box);
+        }
+      }
+      function atualizarCotacaoPizza() {
+        const current = state.pizzaCurrent;
+        if (!current) return;
+        const config = current.config;
+        const payload = { composicao_id: config.id, quantidade: current.quantidade,
+          partes: current.partes.map(p => ({ produto_id:p.produto_id, ...(config.divisao==='personalizada'?{percentual:p.percentual}:{}), modificadores:p.modificadores||[] })),
+          globais: current.globais||[] };
+        const quote = window.cotarMeiaPizza({configuracoes:state.composicoesPizza,catalogo:state.catalogoComposto?.personalizacoes},
+          {account_id:String(ACCOUNT_ID),segmento:state.catalogoComposto?.segmento||'restaurante'},payload);
+        current.quote = quote.status === 'orcamento' ? quote : null;
+        current.quoteError = current.quote ? '' : ({limite_sabores:'Escolha a quantidade mínima de sabores.',sabor_repetido:'Escolha sabores diferentes.',fracoes_invalidas:'A soma das partes deve ser 100% em intervalos de 5%.',limite_grupo:'Confira os adicionais obrigatórios e os limites de escolha.',grupo_obrigatorio_sem_regra:'Uma personalização obrigatória não está disponível para esta montagem. Avise a equipe.',opcao_indisponivel_ou_limite:'Revise a disponibilidade e quantidade dos adicionais.',composicao_indisponivel:'Esta montagem não está disponível.'})[quote.codigo] || 'Revise as escolhas da pizza.';
+        const button=$('#pizza-add-cart'); button.disabled=!current.quote;
+        $('#pizza-price').textContent=current.quote?`${money(current.quote.preco_unitario_centavos/100)} cada · ${money(current.quote.total_centavos/100)}`:current.quoteError;
+      }
+      function openPizzaModal(config, trigger) {
+        if (!state.composicaoMotor || !state.catalogoComposto?.personalizacoes) return showToast('As opções de montagem não carregaram. Recarregue o cardápio.', 'error');
+        const basePercentual=Math.floor(100/config.minimo/5)*5;
+        state.pizzaCurrent={item_id:crypto.randomUUID(),config,quantidade:1,partes:Array.from({length:config.minimo},(_,i)=>({produto_id:'',percentual:i===config.minimo-1?100-basePercentual*(config.minimo-1):basePercentual,modificadores:[]})),globais:[],observacao:'',quote:null};
+        $('#pizza-modal-title').textContent=`Monte ${config.nome} · ${config.tamanho}`;
+        $('#pizza-modal-desc').textContent=`Escolha de ${config.minimo} a ${config.maximo} sabores.${config.divisao==='personalizada'?' Distribua as partes em intervalos de 5%, somando 100%.':' Os sabores serão divididos igualmente.'}`;
+        $('#pizza-obs').value=''; renderPizzaModal(); openModal($('#pizza-modal'),trigger);
+      }
+      function addPizzaToCart() {
+        const current=state.pizzaCurrent;
+        if (!current?.quote) return;
+        const quote=current.quote;
+        state.cart.push({contrato_item:2,tipo:'meia_pizza',item_id:current.item_id,composicao_id:current.config.id,
+          versao_composicao:current.config.versao,nome:current.config.nome,variacao:current.config.tamanho,
+          quantidade:current.quantidade,preco:quote.preco_unitario_centavos/100,observacao:$('#pizza-obs').value.trim(),
+          partes:current.partes.map(p=>({...p})),globais:current.globais,meia_pizza:quote});
+        syncBadges();updateCartBar();closeModal($('#pizza-modal'));showToast(`${current.config.nome} adicionada ao pedido.`);state.pizzaCurrent=null;
+      }
+
       function openItemModal(product, trigger) {
         const options = catalogo.opcoes(product);
         if (!options.length) return showToast("Produto indisponível.", "error");
-        state.current = { produto_id: product.id || '', produto: product, nome: String(product.nome || "Item"), basePrice: options[0].variacao ? null : options[0].preco, variacao: '', qty: 1, options };
+        state.current = { item_id: crypto.randomUUID(), produto_id: product.id || '', produto: product, nome: String(product.nome || "Item"), basePrice: options[0].variacao ? null : options[0].preco, variacao: '', variacao_id: '', qty: 1, options, modificadores: [] };
         $("#modal-item-title").textContent = state.current.nome;
         $("#modal-item-desc").textContent = product.descricao || "";
         $("#item-obs").value = "";
@@ -1192,6 +1476,8 @@
         options.filter(o => o.variacao).forEach(o => select.add(new Option(`${o.variacao} — ${money(o.preco)}`, o.variacao)));
         $("#variation-field").classList.toggle("hide", !options[0].variacao);
         select.value = '';
+        if (!options[0].variacao) carregarGruposProduto();
+        else { $('#item-personalizacoes').replaceChildren(); $('#item-personalizacoes').classList.add('hide'); }
         renderItemPrice();
         openModal($("#item-modal"), trigger);
       }
@@ -1199,8 +1485,8 @@
       function renderItemPrice() {
         $("#item-qty").value = state.current.qty;
         $("#item-qty").textContent = state.current.qty;
-        $("#add-to-cart").disabled = state.current.basePrice === null;
-        $("#item-price-btn").textContent = state.current.basePrice === null ? "selecione uma opção" : money(state.current.basePrice * state.current.qty).replace("R$ ", "");
+        $("#add-to-cart").disabled = state.current.basePrice === null || Boolean(state.current.quoteError);
+        $("#item-price-btn").textContent = state.current.quoteError ? 'revise as escolhas' : state.current.basePrice === null ? "selecione uma opção" : money(state.current.basePrice * state.current.qty).replace("R$ ", "");
       }
 
       function changeQty(delta) {
@@ -1210,11 +1496,16 @@
       }
 
       function addToCart() {
-        if (!state.current || state.current.basePrice === null) return;
+        if (!state.current || state.current.basePrice === null || state.current.quoteError) return;
         const observation = $("#item-obs").value.trim();
-        const existing = state.cart.find(item => item.nome === state.current.nome && item.variacao === state.current.variacao && item.observacao === observation && item.preco === state.current.basePrice);
-        if (existing) existing.quantidade += state.current.qty;
-        else state.cart.push({ produto_id: state.current.produto_id, variacao: state.current.variacao, nome: state.current.nome, observacao: observation, quantidade: state.current.qty, preco: state.current.basePrice });
+        const quoted = state.current.quote?.item;
+        const item = { ...(quoted || {}), contrato_item: quoted?.contrato_item || 1,
+          item_id: state.current.item_id, produto_id: state.current.produto_id,
+          variacao_id: state.current.variacao_id || quoted?.variacao_id || null,
+          variacao: state.current.variacao || quoted?.variacao || '', nome: state.current.nome,
+          observacao: observation, quantidade: state.current.qty, preco: state.current.basePrice,
+          modificadores: quoted?.modificadores || [] };
+        state.cart.push(item);
         syncBadges();
         updateCartBar();
         closeModal($("#item-modal"));
@@ -1243,7 +1534,13 @@
         state.cart.forEach((item, index) => {
           const line = element("div", "cart-line");
           const copy = element("div", "cart-line-copy");
-          copy.append(element("p", "", `${item.quantidade}× ${item.nome}`));
+          copy.append(element("p", "", `${item.quantidade}× ${item.tipo === 'meia_pizza' ? item.nome : item.nome}`));
+          if (item.tipo === 'meia_pizza') {
+            const flavors = item.meia_pizza?.partes || item.partes || [];
+            if (flavors.length) copy.append(element('p', 'muted', flavors.map(p => `${p.fracao?.numerador || p.percentual || ''}${p.fracao ? `/${p.fracao.denominador}` : '%'} ${p.nome} ${p.variacao || ''}`.trim()).join(' + ')));
+            const mods = item.meia_pizza?.modificadores || item.globais || [];
+            if (mods.length) copy.append(element('p', 'muted', mods.map(m => `${m.quantidade}× ${m.nome} (${m.escopo === 'inteira' ? 'pizza inteira' : flavors.find(p => p.produto_id === m.produto_id)?.nome || 'parte'})`).join(' · ')));
+          } else if (item.modificadores?.length) copy.append(element('p', 'muted', item.modificadores.map(m => `${m.quantidade}× ${m.nome}`).join(' · ')));
           if (item.indisponivel) copy.append(element("p", "error-text", "Remova e selecione novamente este item e sua opção no cardápio."));
           if (item.observacao) copy.append(element("p", "muted", `Obs.: ${item.observacao}`));
           copy.append(element("p", "muted", money(item.preco * item.quantidade)));
@@ -1396,7 +1693,7 @@
         const rua = $("#input-rua").value.trim();
         const numero = $("#input-numero").value.trim();
         const fee = deliveryFee();
-        const itens = state.cart.map(item => ({ produto_id: item.produto_id, variacao: item.variacao || "", nome: item.nome, observacao: item.observacao || "", quantidade: item.quantidade, preco: item.preco }));
+        const itens = state.cart.map(item => ({ ...item, produto_id: item.produto_id || null, variacao: item.variacao || "", nome: item.nome, observacao: item.observacao || "", quantidade: item.quantidade, preco: item.preco }));
         if (delivery && fee > 0) itens.push({
           nome: "Taxa de Entrega", quantidade: 1, preco: fee,
           ...(entregaOutro ? { estimada: true, local_informado: localOutro } : {})
@@ -1418,6 +1715,7 @@
           local_outro: localOutro || null,
           troco_necessario: valid.trocoChoice || null,
           troco_para: valid.trocoPara,
+          catalogo_personalizacao_versao: state.versaoPersonalizacoes,
           observacoes: $("#input-obs").value.trim()
         };
 
@@ -1454,9 +1752,35 @@
       }
 
       function normalizeCartItem(item) {
+        if (item?.tipo === 'meia_pizza') {
+          const snapshot = item.meia_pizza || {};
+          const configId = item.composicao_id || snapshot.composicao_id;
+          const partes = item.partes || snapshot.partes || [];
+          const globais = item.globais || snapshot.modificadores || [];
+          const config = state.composicoesPizza.find(c => c.id === configId);
+          const quote = config && state.catalogoComposto?.personalizacoes
+            ? window.cotarMeiaPizza({configuracoes:state.composicoesPizza,catalogo:state.catalogoComposto.personalizacoes},
+              {account_id:String(ACCOUNT_ID),segmento:state.catalogoComposto.segmento||'restaurante'},
+              {composicao_id:configId,quantidade:Math.max(1,Number(item.quantidade)||1),partes,globais}) : null;
+          return { ...item, item_id: item.item_id || crypto.randomUUID(), tipo: 'meia_pizza',
+            nome: item.nome || snapshot.nome || 'Pizza montada', quantidade: Math.max(1, Number(item.quantidade) || 1),
+            preco: quote?.status === 'orcamento' ? quote.preco_unitario_centavos/100 : safePrice(item.preco),
+            versao_composicao: config?.versao || item.versao_composicao,
+            partes, globais, meia_pizza: quote?.status === 'orcamento' ? quote : snapshot,
+            indisponivel: quote?.status !== 'orcamento' || !config?.venda_habilitada };
+        }
         try {
           const resolved = catalogo.resolver(state.produtos, item);
-          return { ...resolved, observacao: item.observacao || '' };
+          let quote = null;
+          const variationId = item.variacao_id || variacaoCatalogoId(resolved.produto_id, resolved.variacao, '');
+          if (state.composicaoMotor && state.catalogoComposto?.personalizacoes) {
+            const checked = state.composicaoMotor.validarItem({account_id:String(ACCOUNT_ID),segmento:state.catalogoComposto.segmento||'restaurante'},
+              {produto_id:resolved.produto_id,variacao_id:variationId||null,quantidade:resolved.quantidade,observacao:item.observacao||'',modificadores:Array.isArray(item.modificadores)?item.modificadores:[]});
+            if (checked.status !== 'orcamento') throw new Error(checked.codigo);
+            quote = checked.item;
+          }
+          return { ...resolved, ...quote, item_id:item.item_id || crypto.randomUUID(), variacao_id:variationId,
+            modificadores:quote?.modificadores || [], observacao: item.observacao || '' };
         } catch { /* Mantém visível e exige revisão, sem usar preço-base zero. */ }
 
         const fullName = String(item.nome || "Item");
@@ -1520,6 +1844,13 @@
             $('#close-webapp').textContent = state.whatsapp ? 'Fechar página e voltar ao WhatsApp' : 'Fechar esta aba';
             if (data.pedido_indisponivel) throw new Error("Este pedido não está disponível para edição. Solicite um link atualizado no WhatsApp.");
             state.produtos = (Array.isArray(data.produtos) ? data.produtos : []).filter(p => catalogo.opcoes(p).length);
+            state.versaoPersonalizacoes = data.catalogo_personalizacao_versao;
+            state.composicoesPizza = Array.isArray(data.composicoes_pizza) ? data.composicoes_pizza : [];
+            state.catalogoComposto = data.personalizacoes ? {
+              segmento: data.segmento || 'restaurante', versao_personalizacao: data.catalogo_personalizacao_versao,
+              personalizacoes: data.personalizacoes
+            } : null;
+            state.composicaoMotor = state.catalogoComposto ? window.criarMotorPersonalizacoes(state.catalogoComposto.personalizacoes) : null;
             state.pedido = ['editar','acompanhar'].includes(MODO) ? data.pedido_atual || null : null;
             if (['editar','acompanhar'].includes(MODO) && !state.pedido) throw new Error('Selecione um pedido na lista para continuar.');
             if (typeof data.taxas_entrega === "string") {
@@ -1597,8 +1928,15 @@
         state.current.variacao = option?.variacao || '';
         state.current.nome = option?.nome || state.current.produto.nome;
         state.current.basePrice = option?.preco ?? null;
-        renderItemPrice();
+        state.current.modificadores = [];
+        carregarGruposProduto();
       });
+      $('#item-qty').addEventListener('change', () => { if (state.current) { state.current.qty = Math.max(1,Math.min(99,Number($('#item-qty').value)||1)); atualizarCotacaoProduto(); } });
+      $('#pizza-add-parte').addEventListener('click', () => { const current=state.pizzaCurrent,c=current?.config;if(!c||current.partes.length>=c.maximo)return;current.partes.push({produto_id:'',percentual:0,modificadores:[]});if(c.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal(); });
+      $('#pizza-qty-minus').addEventListener('click',()=>{if(state.pizzaCurrent){state.pizzaCurrent.quantidade=Math.max(1,state.pizzaCurrent.quantidade-1);atualizarCotacaoPizza();$('#pizza-qty').textContent=String(state.pizzaCurrent.quantidade);}});
+      $('#pizza-qty-plus').addEventListener('click',()=>{if(state.pizzaCurrent){state.pizzaCurrent.quantidade=Math.min(99,state.pizzaCurrent.quantidade+1);atualizarCotacaoPizza();$('#pizza-qty').textContent=String(state.pizzaCurrent.quantidade);}});
+      $('#pizza-obs').addEventListener('input',()=>{if(state.pizzaCurrent)state.pizzaCurrent.observacao=$('#pizza-obs').value.trim();});
+      $('#pizza-add-cart').addEventListener('click',addPizzaToCart);
       $("#qty-minus").addEventListener("click", () => changeQty(-1));
       $("#qty-plus").addEventListener("click", () => changeQty(1));
       $("#add-to-cart").addEventListener("click", addToCart);

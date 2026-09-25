@@ -63,8 +63,8 @@ function renderizarGrupos(){
    line.append(botao('Salvar opção',()=>salvarOpcao({...o,nome:oname.input.value.trim(),preco_padrao:Number(price.input.value),permite_quantidade:repeat.checked,max_quantidade:repeat.checked?Number(limit.input.value):1}),'secondary'));
    line.append(botao(o.ativo?'Desativar':'Ativar',()=>salvarOpcao({...o,ativo:!o.ativo}),'secondary'));line.append(botao('Excluir opção',()=>excluirOpcao(o),'danger-text'));content.append(line);
   }
-  const links=document.createElement('div');links.className='checklist';for(const c of (catalogo.categorias||[]).filter(c=>c.ativo)){const label=document.createElement('label');label.className='check';const cb=document.createElement('input');cb.type='checkbox';cb.checked=vinculoCategoria(c.id,g.id);cb.addEventListener('change',()=>alternarCategoria(c.id,g.id,cb.checked));label.append(cb,document.createTextNode(c.nome));links.append(label);}
-  content.append(texto('p','Categorias vinculadas','muted'),links);
+  const categoriasVinculadas=(catalogo.categorias||[]).filter(c=>c.ativo&&vinculoCategoria(c.id,g.id)).map(c=>c.nome);
+  content.append(texto('p','Aplicada às categorias: '+(categoriasVinculadas.join(', ')||'nenhuma — configure na etapa 3'),'muted'));
   const regras=(catalogo.produto_personalizacao_grupos||[]).filter(x=>x.grupo_id===g.id);content.append(texto('p','Regras específicas de produto: '+(regras.map(x=>((catalogo.produtos||[]).find(p=>p.id===x.produto_id)?.nome||'Produto')+' ('+x.modo+')').join(', ')||'nenhuma'),'muted'));
   box.append(content);root.append(box);
  }

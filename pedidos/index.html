@@ -508,10 +508,19 @@
                 badgePgtoHtml = `<span class="text-[9px] font-bold border px-2 py-0.5 rounded-md uppercase tracking-wider ${badgePgtoClass}">💳 ${formaPgto}</span>`;
             }
 
+            const escaparHtml = valor => String(valor ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const resumoItem = item => {
+                const quantidade = Math.max(1, Number(item.quantidade) || 1);
+                const nomes = item.tipo === 'meia_pizza'
+                    ? (item.meia_pizza?.partes || item.partes || []).map(parte => `${parte.fracao?.numerador || parte.percentual || ''}${parte.fracao ? `/${parte.fracao.denominador}` : '%'} ${parte.nome} ${parte.variacao || ''}`.trim()).join(' + ')
+                    : (item.modificadores || []).map(mod => `${mod.quantidade || 1}× ${mod.nome}`).join(' · ');
+                const label = `${quantidade}× ${item.nome || 'Item'}${item.variacao ? ` — ${item.variacao}` : ''}${nomes ? ` · ${nomes}` : ''}`;
+                return `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${escaparHtml(label)}</span>`;
+            };
             let itensHtml = '';
             if (Array.isArray(p.itens) && p.itens.length > 0) {
                 itensHtml = `<div class="flex flex-wrap gap-1">
-                    ${p.itens.map(i => `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${i.quantidade || 1}× ${i.nome}</span>`).join('')}
+                    ${p.itens.map(resumoItem).join('')}
                 </div>`;
             }
 

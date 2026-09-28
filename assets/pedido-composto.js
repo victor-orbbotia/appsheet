@@ -92,6 +92,7 @@ function criarMotorPersonalizacoes(dados) {
         variacoes: todasVariacoes.filter(v => v.ativo).map(v => ({ id: v.id, nome: v.nome, preco: v.preco }))
       });
       variacao = unico(todasVariacoes.filter(v => v.id === entrada.variacao_id && v.ativo === true), 'variacao_indisponivel');
+      if (variacao.pizza_tamanho_ativo === false) falhar('variacao_indisponivel');
     } else if (entrada.variacao_id) falhar('variacao_indisponivel');
     const precoBase = centavos(variacao ? variacao.preco : produto.preco_base);
     const vinculos = linhas('produto_personalizacao_grupos', escopo).filter(v => v.produto_id === produto.id);
@@ -113,7 +114,7 @@ function criarMotorPersonalizacoes(dados) {
       const excluidas = linhas('produto_personalizacao_opcoes', escopo)
         .filter(v => v.produto_id === produto.id && v.grupo_id === id && v.excluida).map(v => v.opcao_id);
       const opcoes = linhas('personalizacao_opcoes', escopo)
-        .filter(o => o.grupo_id === id && o.ativo === true && !excluidas.includes(o.id))
+        .filter(o => o.grupo_id === id && o.ativo === true && !excluidas.includes(o.id) && !(variacao?.pizza_opcoes_indisponiveis || []).includes(o.id))
         .sort(ordenar).map(o => {
           inteiro(o.max_quantidade, 1, 'max_quantidade');
           if (typeof o.permite_quantidade !== 'boolean' || (!o.permite_quantidade && o.max_quantidade !== 1)) {

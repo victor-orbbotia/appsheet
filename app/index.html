@@ -1088,6 +1088,12 @@
         requestAnimationFrame(() => syncActiveCategory());
       }
 
+      function opcoesDisponiveis(product) {
+        return catalogo.opcoes(product).filter(o => {
+          const v=(state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.produto_id===product.id&&(o.variacao_id?v.id===o.variacao_id:v.nome===o.variacao));
+          return v?.pizza_tamanho_ativo!==false;
+        });
+      }
       function renderMenu() {
         tabs.replaceChildren();
         menu.replaceChildren();
@@ -1097,7 +1103,7 @@
         }
 
         const categories = [...new Set(state.produtos.map(product => product.categoria || "Outros"))];
-        for (const c of state.composicoesPizza) { const category = categoriaPizza(c); if (!categories.includes(category)) categories.push(category); }
+        for (const c of tamanhosDaPizza()) { const category = categoriaPizza(c); if (!categories.includes(category)) categories.push(category); }
         categories.forEach((category, index) => {
           const id = `categoria-${index + 1}`;
           const tab = element("button", `tab${index === 0 ? " active" : ""}`, category);
@@ -1139,7 +1145,7 @@
               element("div", "item-added-badge", "✓ Adicionado"),
               element("h3", "", product.nome || "Item"),
               element("p", "", product.descricao || ""),
-              element("div", "menu-price", (catalogo.opcoes(product).some(o => o.variacao) ? "A partir de " : "") + money(Math.min(...catalogo.opcoes(product).map(o => o.preco))))
+              element("div", "menu-price", (opcoesDisponiveis(product).some(o => o.variacao) ? "A partir de " : "") + money(Math.min(...opcoesDisponiveis(product).map(o => o.preco))))
             );
             const add = element("span", "add-indicator", "+");
             add.setAttribute("aria-hidden", "true");
@@ -1147,7 +1153,7 @@
             card.addEventListener("click", () => openPizzaJourney(product, card));
             items.append(card);
           });
-          const configs = state.composicoesPizza.filter(c => categoriaPizza(c) === category);
+          const configs = tamanhosDaPizza().filter(c => categoriaPizza(c) === category);
           if (configs.length) {
             const card = element('button', 'menu-cell'); card.type = 'button';
             const info = element('div', 'menu-info');
@@ -1334,19 +1340,27 @@
         atualizarCotacaoProduto();
       }
 
+      function tamanhosDaPizza() {
+        if (!state.tamanhosPizza?.length) return state.composicoesPizza;
+        const independent = state.tamanhosPizza.map(t => {
+          const composition = state.composicoesPizza.find(c=>c.id===t.composicao_id);
+          return {...t,tamanho:t.nome,composicao:composition,minimo:composition?.minimo||2,maximo:composition?.maximo||1};
+        }).filter(t=>pizzaOpcoesSabor(t).length);
+        return [...independent, ...state.composicoesPizza.filter(c=>!state.tamanhosPizza.some(t=>t.id===c.tamanho_id))];
+      }
       function categoriaPizza(config) {
         const p = (state.catalogoComposto?.personalizacoes?.produtos || state.produtos).find(p =>
           p.categoria_id === config.categoria_id || (config.sabores || []).some(f => f.produto_id === p.id));
         return p?.categoria || 'Pizzas';
       }
       function openPizzaJourney(product, trigger, configs = null) {
-        const available = configs || state.composicoesPizza.filter(c => (c.sabores || []).some(f => f.produto_id === product?.id));
+        const available = configs || tamanhosDaPizza().filter(c => (c.sabores || []).some(f => f.produto_id === product?.id));
         if (!available.length) return product ? openItemModal(product, trigger) : undefined;
         const sizes = $('#pizza-size-choice'), counts = $('#pizza-flavor-count'), flavor = $('#pizza-first-flavor');
         sizes.replaceChildren(new Option('Selecione o tamanho', ''));
         const entries = available.map(c => ({config:c, label:c.tamanho, value:c.id}));
         // Preserve tamanhos de pizzas inteiras que ainda não participam de montagens.
-        if (product) for (const option of catalogo.opcoes(product)) {
+        if (product) for (const option of opcoesDisponiveis(product)) {
           const id = variacaoCatalogoId(product.id, option.variacao, option.variacao_id);
           if (!available.some(c => c.sabores.some(f => f.produto_id === product.id && f.variacao_id === id)))
             entries.push({option, value:'produto:'+id, label:option.variacao || 'Único'});
@@ -1357,7 +1371,7 @@
           const entry = entries.find(e=>e.value===sizes.value);
           counts.replaceChildren(new Option('1 sabor — pizza inteira', '1'));
           const c = entry?.config, options = c ? pizzaOpcoesSabor(c) : [];
-          if (c) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n+' sabores',String(n)));
+          if (c && c.permite_dividir !== false) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n+' sabores',String(n)));
           flavor.replaceChildren(new Option('Escolha o primeiro sabor',''));
           if (c) options.forEach(f=>flavor.add(new Option(f.produto.nome+' · '+money(Number(f.variation.preco)),f.produto.id)));
           else if (product) flavor.add(new Option(product.nome,product.id));
@@ -1369,7 +1383,7 @@
         $('#pizza-journey-next').onclick=()=>{
           const entry=entries.find(e=>e.value===sizes.value), selected=state.produtos.find(p=>p.id===flavor.value);
           if (!entry || !selected) return;
-          if (Number(counts.value)>1) return openPizzaModal(entry.config,trigger,selected.id,Number(counts.value));
+          if (Number(counts.value)>1) return openPizzaModal(entry.config.composicao||entry.config,trigger,selected.id,Number(counts.value));
           const link=entry.config?.sabores.find(f=>f.produto_id===selected.id);
           const variant=(state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.id===link?.variacao_id);
           openItemModal(selected,trigger);
@@ -1387,7 +1401,7 @@
         return (config.sabores || []).map(v => {
           const produto = state.produtos.find(p => p.id === v.produto_id);
           const variation = (state.catalogoComposto?.personalizacoes?.produto_variacoes || []).find(x => x.id === v.variacao_id);
-          if (!produto || !variation || !variation.ativo) return null;
+          if (!produto || !variation || !variation.ativo || variation.pizza_tamanho_ativo === false) return null;
           return { produto, variation, label: produto.nome };
         }).filter(Boolean);
       }
@@ -1513,7 +1527,7 @@
       }
 
       function openItemModal(product, trigger) {
-        const options = catalogo.opcoes(product);
+        const options = opcoesDisponiveis(product).filter(o => {const v=(state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.id===o.variacao_id);return v?.pizza_tamanho_ativo!==false;});
         if (!options.length) return showToast("Produto indisponível.", "error");
         state.current = { item_id: crypto.randomUUID(), produto_id: product.id || '', produto: product, nome: String(product.nome || "Item"), basePrice: options[0].variacao ? null : options[0].preco, variacao: '', variacao_id: '', qty: 1, options, modificadores: [] };
         $("#modal-item-title").textContent = state.current.nome;
@@ -1893,12 +1907,14 @@
             if (data.pedido_indisponivel) throw new Error("Este pedido não está disponível para edição. Solicite um link atualizado no WhatsApp.");
             state.produtos = (Array.isArray(data.produtos) ? data.produtos : []).filter(p => catalogo.opcoes(p).length);
             state.versaoPersonalizacoes = data.catalogo_personalizacao_versao;
+            state.tamanhosPizza = Array.isArray(data.tamanhos_pizza) ? data.tamanhos_pizza : [];
             state.composicoesPizza = Array.isArray(data.composicoes_pizza) ? data.composicoes_pizza : [];
             state.catalogoComposto = data.personalizacoes ? {
               segmento: data.segmento || 'restaurante', versao_personalizacao: data.catalogo_personalizacao_versao,
               personalizacoes: data.personalizacoes
             } : null;
             state.composicaoMotor = state.catalogoComposto ? window.criarMotorPersonalizacoes(state.catalogoComposto.personalizacoes) : null;
+            state.produtos = state.produtos.filter(p=>opcoesDisponiveis(p).length);
             state.pedido = ['editar','acompanhar'].includes(MODO) ? data.pedido_atual || null : null;
             if (['editar','acompanhar'].includes(MODO) && !state.pedido) throw new Error('Selecione um pedido na lista para continuar.');
             if (typeof data.taxas_entrega === "string") {

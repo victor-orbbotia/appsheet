@@ -30,6 +30,7 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+<link rel="stylesheet" href="pizzas-produtos.css">
 </head>
 
 <body class="p-4 md:p-6 space-y-6">
@@ -75,8 +76,29 @@
              ========================================== -->
         <div id="view-produtos" class="space-y-6 block">
             
+
+<section class="pizza-ui pc-row" aria-label="Tipo de cadastro">
+<button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span>Produto comum<span>Nome, preço e variações para os demais produtos.</span></button>
+<button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span>Pizza<span>Sabores, tamanhos, bordas e combinações em um só lugar.</span></button>
+</section>
+<div class="pizza-ui"><button id="pc-manage-categories" type="button">Gerenciar categorias</button></div>
+<section id="pc-editor" class="pizza-ui" hidden>
+<div class="pc-card"><h2>Cadastro de pizzas</h2><p>Cadastre um tamanho uma vez e informe o preço de cada sabor. A categoria padrão Pizzas é protegida.</p>
+<label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
+<p>A chave é a mesma do cadastro anterior e permanece somente enquanto esta página estiver aberta.</p><div id="pc-status" role="status" aria-live="polite"></div></div>
+<fieldset id="pc-content" disabled>
+<nav class="pc-row" aria-label="Seções do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button><button type="button" data-pc-section="category-section">Categorias</button></nav>
+<section id="pc-sizes" class="pc-card pc-section"><h2>1. Tamanhos</h2><p>Pequena, Média e Grande são sugestões. Crie os tamanhos vendidos pelo seu estabelecimento; cada um pode permitir apenas inteira ou também combinar sabores.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-list"></div><div id="pc-size-form" hidden></div></section>
+<section id="pc-flavors" class="pc-card pc-section"><h2>2. Sabores e preços</h2><p>O preço informado é o da pizza inteira. As combinações usam a regra configurada no tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
+<section id="pc-borders" class="pc-card pc-section"><h2>3. Bordas</h2><p>Defina as opções e os preços por tamanho. Escolha se são opcionais ou obrigatórias e onde podem ser usadas.</p><button id="pc-new-borda" type="button">Nova escolha de borda</button><div id="pc-borda-list"></div><div id="pc-borda-form" hidden></div></section>
+<section id="pc-extras" class="pc-card pc-section"><h2>4. Adicionais</h2><p>Configure quantidades e cobrança na pizza inteira ou em cada sabor.</p><button id="pc-new-adicional" type="button">Nova escolha de adicionais</button><div id="pc-adicional-list"></div><div id="pc-adicional-form" hidden></div>
+<details><summary>Usar bordas ou adicionais já cadastrados</summary><p>Escolha a função desta personalização. Os produtos que já a utilizam mantêm o mesmo vínculo.</p><select id="pc-existing-group" aria-label="Escolha existente"></select><select id="pc-existing-kind" aria-label="Usar como"><option value="borda">Borda</option><option value="adicional">Adicional</option></select><button id="pc-reuse" type="button">Configurar escolha existente</button></details></section>
+<section id="pc-category-section" class="pc-card pc-section"><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. A categoria padrão Pizzas permanece no cadastro mesmo sem produtos.</p><div id="pc-categories"></div></section>
+</fieldset></section>
+<section class="pizza-ui"><div class="pc-card"><h2>Pizzas cadastradas</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></section>
+
             <!-- BLOCO 1: FORMULÁRIO -->
-            <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
+            <div id="pc-common" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
                 <div class="flex flex-wrap justify-between items-center p-4 md:p-5 border-b border-slate-100 bg-slate-50/80 gap-4">
                     <div class="flex items-center gap-3">
                         <button id="btnToggleFormProduto" onclick="toggleSection('form-produto-wrapper', this)" title="Expandir/Recolher formulário" class="flex items-center justify-center w-8 h-8 bg-white border border-slate-300 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 rounded-lg shadow-sm transition-all focus:outline-none">
@@ -383,6 +405,7 @@
 
     </div>
 
+    <script src="pizzas-produtos.js"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -424,7 +447,7 @@
         }, 500);
 
         setTimeout(() => {
-            if (!globalAccountId) { globalAccountId = '3'; iniciarApp(); }
+            if (!globalAccountId) document.getElementById('alerta-chatwoot').textContent = 'Abra pelo painel do estabelecimento ou informe account_id no endereço.';
         }, 1500);
 
         function iniciarApp() {
@@ -434,12 +457,8 @@
             document.getElementById('link-menu-studio').href = `./menu_studio_pro_mobile_first.html?account_id=${globalAccountId}`;
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
             document.getElementById('link-personalizacoes').href = `./personalizacoes.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
-            const linkPizza = document.createElement('a');
-            linkPizza.className = document.getElementById('link-personalizacoes').className;
-            linkPizza.href = `./meia-pizza.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
-            linkPizza.textContent = '🍕 Pizzas: tamanhos e sabores';
-            document.getElementById('link-personalizacoes').after(linkPizza);
-            
+            window.pizzasCadastro.init(globalAccountId, urlParams.get('segmento') || 'restaurante');
+
             carregarLista();
             carregarTaxasEntrega();
             if (document.getElementById('lista-de-variacoes').children.length === 0) adicionarVariacao();
@@ -864,6 +883,7 @@
                 const dados = await res.json();
                 listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
                 
+                window.pizzasCadastro.renderList(listaAtual.map(x=>x.json||x).filter(p=>window.pizzasCadastro.isPizza(p)&&!p.deletado));
                 atualizarDatalistCategorias();
                 renderizarFiltros();
                 renderizarTabela();
@@ -910,6 +930,7 @@
         }
 
         function renderizarTabela() {
+            window.pizzasCadastro.renderList(listaAtual.map(x=>x.json||x).filter(p=>window.pizzasCadastro.isPizza(p)&&!p.deletado));
             const tbody = document.getElementById('lista-produtos');
             tbody.innerHTML = '';
 
@@ -917,7 +938,7 @@
 
             const listaFiltrada = listaAtual.filter(item => {
                 const p = item.json || item;
-                if (p.deletado === true) return false;
+                if (p.deletado === true || window.pizzasCadastro.isPizza(p)) return false;
                 
                 // Filtro para ocultar/mostrar desativados (padrão: ocultar desativados)
                 const isAtivo = p.ativo !== false && p.ativo !== "false";
@@ -1023,6 +1044,7 @@
             if (!prodObj) return;
             const p = prodObj.json || prodObj;
 
+            if (window.pizzasCadastro.isPizza(p)) return window.pizzasCadastro.open(p.id);
             document.getElementById('produto_id').value = p.id;
             document.getElementById('nome').value = p.nome || '';
             document.getElementById('descricao').value = p.descricao || '';
@@ -1181,6 +1203,7 @@
                 metadata.tamanhos = arrayVariacoes;
             }
 
+            if (categoria.trim().toLowerCase() === 'pizzas') { alert('Use o card Pizza para cadastrar sabores e tamanhos na categoria padrão Pizzas.'); return; }
             enviarAcao({
                 action: id ? 'editar' : 'criar',
                 id: id,
@@ -1192,6 +1215,7 @@
                 metadata: metadata
             }, document.getElementById('btnSalvar'), '✓ Salvo');
         }
+        if (globalAccountId) iniciarApp();
     </script>
 </body>
 </html>

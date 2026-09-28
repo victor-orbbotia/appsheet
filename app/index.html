@@ -572,6 +572,14 @@
     </div>
   </section>
 
+  <section id="pizza-journey" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-journey-title" aria-hidden="true">
+    <div class="modal-panel"><header class="modal-header"><h2 id="pizza-journey-title">Escolha sua pizza</h2><button class="icon-btn" type="button" data-close-modal aria-label="Fechar escolha da pizza">×</button></header>
+    <div class="modal-content"><p>Escolha o tamanho e os sabores. Depois você poderá adicionar bordas e acompanhamentos.</p>
+    <div class="options-group"><label class="field-label" for="pizza-size-choice">Tamanho</label><select id="pizza-size-choice"></select></div>
+    <div class="options-group"><label class="field-label" for="pizza-flavor-count">Quantos sabores?</label><select id="pizza-flavor-count"></select></div>
+    <div class="options-group"><label class="field-label" for="pizza-first-flavor">Primeiro sabor</label><select id="pizza-first-flavor"></select></div></div>
+    <footer class="modal-footer"><button id="pizza-journey-next" type="button" class="btn btn-grow" disabled>Continuar para personalizar</button></footer></div>
+  </section>
   <section id="pizza-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-modal-title" aria-hidden="true">
     <div class="modal-panel">
       <header class="modal-header">
@@ -1089,7 +1097,7 @@
         }
 
         const categories = [...new Set(state.produtos.map(product => product.categoria || "Outros"))];
-        if (state.composicoesPizza.length) categories.push('Monte sua pizza');
+        for (const c of state.composicoesPizza) { const category = categoriaPizza(c); if (!categories.includes(category)) categories.push(category); }
         categories.forEach((category, index) => {
           const id = `categoria-${index + 1}`;
           const tab = element("button", `tab${index === 0 ? " active" : ""}`, category);
@@ -1116,7 +1124,7 @@
           const headingRow = element("div", "category-heading");
           const heading = element("h2", "category-header", category);
           heading.id = `${id}-title`;
-          const count = category === 'Monte sua pizza' ? state.composicoesPizza.length : products.length;
+          const count = products.length;
           headingRow.append(heading, element("span", "category-count", `${count} ${count === 1 ? "opção" : "opções"}`));
           section.append(headingRow);
 
@@ -1136,21 +1144,17 @@
             const add = element("span", "add-indicator", "+");
             add.setAttribute("aria-hidden", "true");
             card.append(info, add);
-            card.addEventListener("click", () => openItemModal(product, card));
+            card.addEventListener("click", () => openPizzaJourney(product, card));
             items.append(card);
           });
-          if (category === 'Monte sua pizza') state.composicoesPizza.forEach(config => {
-            const card = element('button', 'menu-cell');
-            card.type = 'button';
-            card.dataset.itemName = `${config.nome} — ${config.tamanho}`;
-            card.setAttribute('aria-label', `Montar ${config.nome}, tamanho ${config.tamanho}`);
+          const configs = state.composicoesPizza.filter(c => categoriaPizza(c) === category);
+          if (configs.length) {
+            const card = element('button', 'menu-cell'); card.type = 'button';
             const info = element('div', 'menu-info');
-            info.append(element('h3', '', config.nome), element('p', '', `${config.tamanho} · escolha de ${config.minimo} a ${config.maximo} sabores`), element('div', 'menu-price', 'Monte sua combinação'));
-            const add = element('span', 'add-indicator', '+'); add.setAttribute('aria-hidden', 'true');
-            card.append(info, add);
-            card.addEventListener('click', () => openPizzaModal(config, card));
-            items.append(card);
-          });
+            info.append(element('h3', '', 'Escolha sua pizza'), element('p', '', 'Escolha o tamanho e peça um sabor ou combine seus favoritos.'));
+            card.append(info, element('span', 'add-indicator', '+'));
+            card.addEventListener('click', () => openPizzaJourney(null, card, configs)); items.prepend(card);
+          }
           section.append(items);
           menu.append(section);
         });
@@ -1330,6 +1334,50 @@
         atualizarCotacaoProduto();
       }
 
+      function categoriaPizza(config) {
+        const p = (state.catalogoComposto?.personalizacoes?.produtos || state.produtos).find(p =>
+          p.categoria_id === config.categoria_id || (config.sabores || []).some(f => f.produto_id === p.id));
+        return p?.categoria || 'Pizzas';
+      }
+      function openPizzaJourney(product, trigger, configs = null) {
+        const available = configs || state.composicoesPizza.filter(c => (c.sabores || []).some(f => f.produto_id === product?.id));
+        if (!available.length) return product ? openItemModal(product, trigger) : undefined;
+        const sizes = $('#pizza-size-choice'), counts = $('#pizza-flavor-count'), flavor = $('#pizza-first-flavor');
+        sizes.replaceChildren(new Option('Selecione o tamanho', ''));
+        const entries = available.map(c => ({config:c, label:c.tamanho, value:c.id}));
+        // Preserve tamanhos de pizzas inteiras que ainda não participam de montagens.
+        if (product) for (const option of catalogo.opcoes(product)) {
+          const id = variacaoCatalogoId(product.id, option.variacao, option.variacao_id);
+          if (!available.some(c => c.sabores.some(f => f.produto_id === product.id && f.variacao_id === id)))
+            entries.push({option, value:'produto:'+id, label:option.variacao || 'Único'});
+        }
+        const duplicated = new Set(entries.filter((e,i) => entries.some((x,j) => j!==i && x.label===e.label)).map(e=>e.label));
+        entries.forEach(e => sizes.add(new Option(e.label+(duplicated.has(e.label)&&e.config?' · '+e.config.nome:''),e.value)));
+        function updateChoices() {
+          const entry = entries.find(e=>e.value===sizes.value);
+          counts.replaceChildren(new Option('1 sabor — pizza inteira', '1'));
+          const c = entry?.config, options = c ? pizzaOpcoesSabor(c) : [];
+          if (c) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n+' sabores',String(n)));
+          flavor.replaceChildren(new Option('Escolha o primeiro sabor',''));
+          if (c) options.forEach(f=>flavor.add(new Option(f.produto.nome+' · '+money(Number(f.variation.preco)),f.produto.id)));
+          else if (product) flavor.add(new Option(product.nome,product.id));
+          flavor.value=product?.id||'';
+          $('#pizza-journey-next').disabled=!entry || !flavor.value;
+        }
+        sizes.onchange=updateChoices;
+        flavor.onchange=()=>{$('#pizza-journey-next').disabled=!sizes.value||!flavor.value;};
+        $('#pizza-journey-next').onclick=()=>{
+          const entry=entries.find(e=>e.value===sizes.value), selected=state.produtos.find(p=>p.id===flavor.value);
+          if (!entry || !selected) return;
+          if (Number(counts.value)>1) return openPizzaModal(entry.config,trigger,selected.id,Number(counts.value));
+          const link=entry.config?.sabores.find(f=>f.produto_id===selected.id);
+          const variant=(state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.id===link?.variacao_id);
+          openItemModal(selected,trigger);
+          $('#item-variation').value=variant?.nome||entry.option?.variacao||'';
+          $('#item-variation').dispatchEvent(new Event('change'));
+        };
+        updateChoices(); openModal($('#pizza-journey'),trigger);
+      }
       function pizzaProdutoVinculado(config, produtoId) {
         const vinculo = (config.sabores || []).find(s => s.produto_id === produtoId);
         if (!vinculo) return null;
@@ -1340,7 +1388,7 @@
           const produto = state.produtos.find(p => p.id === v.produto_id);
           const variation = (state.catalogoComposto?.personalizacoes?.produto_variacoes || []).find(x => x.id === v.variacao_id);
           if (!produto || !variation || !variation.ativo) return null;
-          return { produto, variation, label: `${produto.nome} · ${variation.nome}` };
+          return { produto, variation, label: produto.nome };
         }).filter(Boolean);
       }
       function renderPizzaModal() {
@@ -1361,7 +1409,7 @@
           const select = document.createElement('select');
           select.setAttribute('aria-label', `Escolha o sabor ${index + 1}`);
           select.add(new Option('Selecione um sabor', ''));
-          for (const flavor of flavors) select.add(new Option(flavor.label, flavor.produto.id));
+          for (const flavor of flavors) { const option = new Option(flavor.label, flavor.produto.id); option.disabled = current.partes.some((p,i)=>i!==index && p.produto_id===flavor.produto.id); select.add(option); }
           select.value = part.produto_id || '';
           select.addEventListener('change', () => { current.partes[index].produto_id = select.value; current.partes[index].modificadores = []; current.globais=[]; renderPizzaModal(); });
           box.append(select);
@@ -1395,8 +1443,8 @@
           }
           partsMount.append(box);
         });
-        $('#pizza-add-parte').classList.toggle('hide', current.partes.length >= config.maximo);
-        $('#pizza-add-parte').disabled = current.partes.length >= config.maximo;
+        $('#pizza-add-parte').classList.toggle('hide', current.partes.length >= Math.min(config.maximo, flavors.length));
+        $('#pizza-add-parte').disabled = current.partes.length >= Math.min(config.maximo, flavors.length);
         renderPizzaGlobais();
         $('#pizza-qty').textContent = String(current.quantidade);
         atualizarCotacaoPizza();
@@ -1445,12 +1493,12 @@
         const button=$('#pizza-add-cart'); button.disabled=!current.quote;
         $('#pizza-price').textContent=current.quote?`${money(current.quote.preco_unitario_centavos/100)} cada · ${money(current.quote.total_centavos/100)}`:current.quoteError;
       }
-      function openPizzaModal(config, trigger) {
+      function openPizzaModal(config, trigger, primeiroSabor = '', quantidadeSabores = config.minimo) {
         if (!state.composicaoMotor || !state.catalogoComposto?.personalizacoes) return showToast('As opções de montagem não carregaram. Recarregue o cardápio.', 'error');
-        const basePercentual=Math.floor(100/config.minimo/5)*5;
-        state.pizzaCurrent={item_id:crypto.randomUUID(),config,quantidade:1,partes:Array.from({length:config.minimo},(_,i)=>({produto_id:'',percentual:i===config.minimo-1?100-basePercentual*(config.minimo-1):basePercentual,modificadores:[]})),globais:[],observacao:'',quote:null};
+        const basePercentual=Math.floor(100/quantidadeSabores/5)*5;
+        state.pizzaCurrent={item_id:crypto.randomUUID(),config,quantidade:1,partes:Array.from({length:quantidadeSabores},(_,i)=>({produto_id:i===0?primeiroSabor:'',percentual:i===quantidadeSabores-1?100-basePercentual*(quantidadeSabores-1):basePercentual,modificadores:[]})),globais:[],observacao:'',quote:null};
         $('#pizza-modal-title').textContent=`Monte ${config.nome} · ${config.tamanho}`;
-        $('#pizza-modal-desc').textContent=`Escolha de ${config.minimo} a ${config.maximo} sabores.${config.divisao==='personalizada'?' Distribua as partes em intervalos de 5%, somando 100%.':' Os sabores serão divididos igualmente.'}`;
+        $('#pizza-modal-desc').textContent=`Escolha de ${config.minimo} a ${Math.min(config.maximo,pizzaOpcoesSabor(config).length)} sabores.${config.divisao==='personalizada'?' Distribua as partes em intervalos de 5%, somando 100%.':' Os sabores serão divididos igualmente.'}`;
         $('#pizza-obs').value=''; renderPizzaModal(); openModal($('#pizza-modal'),trigger);
       }
       function addPizzaToCart() {
@@ -1932,7 +1980,7 @@
         carregarGruposProduto();
       });
       $('#item-qty').addEventListener('change', () => { if (state.current) { state.current.qty = Math.max(1,Math.min(99,Number($('#item-qty').value)||1)); atualizarCotacaoProduto(); } });
-      $('#pizza-add-parte').addEventListener('click', () => { const current=state.pizzaCurrent,c=current?.config;if(!c||current.partes.length>=c.maximo)return;current.partes.push({produto_id:'',percentual:0,modificadores:[]});if(c.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal(); });
+      $('#pizza-add-parte').addEventListener('click', () => { const current=state.pizzaCurrent,c=current?.config;if(!c||current.partes.length>=Math.min(c.maximo,pizzaOpcoesSabor(c).length))return;current.partes.push({produto_id:'',percentual:0,modificadores:[]});if(c.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal(); });
       $('#pizza-qty-minus').addEventListener('click',()=>{if(state.pizzaCurrent){state.pizzaCurrent.quantidade=Math.max(1,state.pizzaCurrent.quantidade-1);atualizarCotacaoPizza();$('#pizza-qty').textContent=String(state.pizzaCurrent.quantidade);}});
       $('#pizza-qty-plus').addEventListener('click',()=>{if(state.pizzaCurrent){state.pizzaCurrent.quantidade=Math.min(99,state.pizzaCurrent.quantidade+1);atualizarCotacaoPizza();$('#pizza-qty').textContent=String(state.pizzaCurrent.quantidade);}});
       $('#pizza-obs').addEventListener('input',()=>{if(state.pizzaCurrent)state.pizzaCurrent.observacao=$('#pizza-obs').value.trim();});

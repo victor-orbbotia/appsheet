@@ -437,7 +437,7 @@
             const linkPizza = document.createElement('a');
             linkPizza.className = document.getElementById('link-personalizacoes').className;
             linkPizza.href = `./meia-pizza.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
-            linkPizza.textContent = '🍕 Montagem de pizzas';
+            linkPizza.textContent = '🍕 Pizzas: tamanhos e sabores';
             document.getElementById('link-personalizacoes').after(linkPizza);
             
             carregarLista();

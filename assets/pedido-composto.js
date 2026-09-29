@@ -129,9 +129,9 @@ function criarMotorPersonalizacoes(dados) {
       if (opcoes.reduce((s, o) => seguro(s + o.max_quantidade), 0) < min) {
         falhar('grupo_obrigatorio_indisponivel', { grupo_id: id });
       }
-      grupos.push({ id, nome: grupo.nome, min_selecoes: min, max_selecoes: max, opcoes });
+      grupos.push({ id, uso_pizza: grupo.uso_pizza || null, nome: grupo.nome, min_selecoes: min, max_selecoes: max, opcoes });
     }
-    const catalogo = { produto_id: produto.id, nome: produto.nome, categoria_id: produto.categoria_id || null,
+    const catalogo = { max_bordas: variacao?.pizza_max_bordas ?? null, produto_id: produto.id, nome: produto.nome, categoria_id: produto.categoria_id || null,
       variacao_id: variacao?.id || null, variacao: variacao?.nome || '', preco_base_centavos: precoBase, grupos };
     // Revisão determinística para detectar alterações, não é token de autorização.
     return { ...catalogo, revisao_catalogo: JSON.stringify(catalogo) };
@@ -169,6 +169,8 @@ function criarMotorPersonalizacoes(dados) {
         modificadores.push({ grupo_id: grupo.id, grupo_nome: grupo.nome, opcao_id: opcao.id,
           nome: opcao.nome, quantidade: qtd, preco: opcao.preco_centavos / 100 });
       }
+      const bordas=catalogo.grupos.filter(g=>g.uso_pizza==='borda').reduce((n,g)=>n+(contagem.get(g.id)||0),0);
+      if(catalogo.max_bordas!==null&&bordas>catalogo.max_bordas)falhar('limite_bordas',{maximo:catalogo.max_bordas});
       for (const grupo of catalogo.grupos) {
         const qtd = contagem.get(grupo.id) || 0;
         if (qtd < grupo.min_selecoes || qtd > grupo.max_selecoes) {
@@ -286,6 +288,8 @@ function cotarMeiaPizza(dados, escopo, entrada) {
       const q=contagens.get(`${i}/${g.id}`)||0;
       if(q<g.min_selecoes||q>g.max_selecoes) fail('limite_grupo',{produto_id:p.produto_id,grupo_id:g.id,minimo:g.min_selecoes,maximo:g.max_selecoes});
     }));
+    const bordas=registros.filter(m=>resolvidos.some(p=>p.grupos.some(g=>g.id===m.grupo_id&&g.uso_pizza==='borda'))).reduce((n,m)=>n+m.quantidade,0);
+    if(c.max_bordas!=null&&bordas>c.max_bordas)fail('limite_bordas',{maximo:c.max_bordas});
     const centavos=(total*2n+unidade)/(unidade*2n);
     if(centavos*BigInt(quantidade)>BigInt(Number.MAX_SAFE_INTEGER)) fail('total_fora_do_limite');
     const composicao=ordenar(resolvidos.map(p=>({produto_id:p.produto_id,variacao_id:p.variacao_id,nome:p.nome,

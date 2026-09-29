@@ -14,19 +14,25 @@
   <div class="intro"><strong>Configure o que o cliente pode escolher.</strong><p>Crie uma escolha como “Borda” ou “Adicionais”, cadastre as opções e indique em quais produtos ela aparece. O sistema organiza essas escolhas por trás; você pode começar só com nome, opções e limite.</p></div>
   <div class="notice">Ambiente de teste: as escolhas e opções cadastradas aqui podem aparecer nos testes do motor. Antes de usar o cardápio real, revise e limpe os dados de teste.</div>
   <div id="aviso" class="notice" role="status" aria-live="polite">Carregando o catálogo…</div>
-  <section class="card"><h2>1. Criar uma escolha</h2><p class="muted">Uma escolha reúne um título, as opções que o cliente verá e um limite. Exemplo: “Borda” com Catupiry e Cheddar.</p><form id="form-grupo" class="grid"><div><label for="tipo-personalizacao">Modelo <span class="help-tip" tabindex="0" title="O modelo só preenche uma sugestão. Você pode editar o nome e os limites.">i</span></label><select id="tipo-personalizacao"><option value="borda">Borda</option><option value="adicionais">Adicionais</option><option value="outra">Outra personalização</option></select></div><div><label for="grupo-nome">Nome da escolha <span class="help-tip" tabindex="0" title="Exemplos: Borda, Adicionais ou Ponto da carne.">i</span></label><input id="grupo-nome" value="Borda" required maxlength="120" placeholder="Borda"></div><div><label for="grupo-min">Mínimo de opções <span class="help-tip" tabindex="0" title="Use zero quando a escolha for opcional.">i</span></label><input id="grupo-min" type="number" min="0" value="0" required></div><div><label for="grupo-max">Máximo de opções <span class="help-tip" tabindex="0" title="Quantas opções diferentes o cliente pode escolher nesta escolha.">i</span></label><input id="grupo-max" type="number" min="0" value="1" required></div><div class="right"><button type="submit">Criar escolha</button></div></form></section>
+  <section class="card"><h2>1. Criar uma escolha</h2><p class="muted">Uma escolha reúne um título, as opções que o cliente verá e um limite. Exemplo: “Borda” com Catupiry e Cheddar.</p><form id="form-grupo" class="grid"><div><label for="tipo-personalizacao">Modelo <span class="help-tip" tabindex="0" title="O modelo só preenche uma sugestão. Você pode editar o nome e os limites.">i</span></label><select id="tipo-personalizacao"><option value="borda">Borda</option><option value="adicionais">Adicionais</option><option value="outra">Outra personalização</option></select></div><div><label for="grupo-nome">Nome da escolha <span class="help-tip" tabindex="0" title="Exemplos: Borda, Adicionais ou Ponto da carne.">i</span></label><input id="grupo-nome" value="Borda" required maxlength="120" placeholder="Borda"></div><div><label for="grupo-min">Mínimo de opções <span class="help-tip" tabindex="0" title="Use zero quando a escolha for opcional.">i</span></label><input id="grupo-min" type="number" min="0" value="0" required></div><div><label for="grupo-max">Máximo de opções <span class="help-tip" tabindex="0" title="Quantas unidades o cliente pode escolher neste grupo. Duas unidades do mesmo adicional contam como duas escolhas.">i</span></label><input id="grupo-max" type="number" min="0" value="1" required></div><div class="right"><button type="submit">Criar escolha</button></div></form></section>
   <section class="card"><div class="row"><div><h2>Suas escolhas</h2><p id="resumo-grupos" class="muted">Carregando…</p></div><div class="summary-actions"><button id="expandir-todos" type="button" class="secondary">Expandir todos</button><button id="recolher-todos" type="button" class="secondary">Recolher todos</button></div></div><p class="muted">As escolhas começam recolhidas. Abra uma escolha para editar opções, ver onde aparece ou excluir.</p><div id="lista-grupos"></div></section>
   <section class="card"><h2>2. Cadastrar as opções</h2><p class="muted">Exemplo: escolha “Borda” → opções “Catupiry” e “Cheddar”. Preço zero significa sem acréscimo. Você pode definir outro preço por tamanho depois.</p><div class="grid"><div><label for="opcao-grupo">Escolha <span class="help-tip" tabindex="0" title="Selecione em qual escolha esta opção será exibida.">i</span></label><select id="opcao-grupo"></select></div><div><label for="opcao-nome">Nome da opção</label><input id="opcao-nome" maxlength="120" placeholder="Catupiry"></div><div><label for="opcao-preco">Acréscimo padrão (R$) <span class="help-tip" tabindex="0" title="Valor adicional quando não houver preço definido para o tamanho escolhido.">i</span></label><input id="opcao-preco" type="number" min="0" step="0.01" value="0"></div><div><label><input id="opcao-repetivel" type="checkbox"> Permitir repetir</label><label for="opcao-max">Máximo por opção</label><input id="opcao-max" type="number" min="1" value="1"></div><div class="right"><button id="btn-criar-opcao" type="button">Adicionar opção</button></div></div></section>
   <section class="card"><h2>3. Escolher onde aparece</h2><p class="muted">Aplique a escolha a uma categoria inteira ou ajuste um produto específico. Uma regra do produto pode incluir ou excluir o que herdou da categoria.</p><div class="grid"><div><label for="associar-grupo">Escolha</label><select id="associar-grupo"></select></div><div><label for="associar-categoria">Categoria</label><select id="associar-categoria"></select></div><div class="right"><button id="btn-vincular-categoria" type="button" class="secondary">Alternar vínculo da categoria</button></div></div><p id="estado-categoria" class="muted"></p><hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0"><div class="grid"><div><label for="produto-direto">Produto</label><select id="produto-direto"></select></div><div><label for="grupo-direto">Escolha <span class="help-tip" tabindex="0" title="A mesma escolha pode ser aplicada a vários produtos ou categorias.">i</span></label><select id="grupo-direto"></select></div><div><label for="modo-direto">Regra do produto</label><select id="modo-direto"><option value="incluir">Incluir esta escolha no produto</option><option value="excluir">Ocultar escolha herdada neste produto</option></select></div><div class="right"><button id="btn-vincular-produto" type="button" class="secondary">Salvar regra do produto</button></div></div></section>
   <details class="card"><summary class="advanced-summary">Ajustes opcionais <span class="help-tip" tabindex="0" title="Use só quando precisar esconder uma opção em um produto ou definir preço diferente para cada tamanho.">i</span></summary><div class="advanced-content"><section class="card"><h2>4. Ocultar uma opção em um produto</h2><p class="muted">Oculta uma opção somente neste produto; não reativa opções indisponíveis no catálogo.</p><div class="grid"><div><label for="excecao-produto">Produto</label><select id="excecao-produto"></select></div><div><label for="excecao-grupo">Escolha</label><select id="excecao-grupo"></select></div><div><label for="excecao-opcao">Opção</label><select id="excecao-opcao"></select></div><div class="right"><button id="btn-excecao" class="secondary" type="button">Alternar exceção</button></div></div></section>
   <section class="card"><h2>5. Ajustar o preço por tamanho</h2><div class="grid"><div><label for="preco-produto">Produto</label><select id="preco-produto"></select></div><div><label for="preco-variacao">Tamanho/variação</label><select id="preco-variacao"></select></div><div><label for="preco-grupo">Escolha</label><select id="preco-grupo"></select></div><div><label for="preco-opcao">Opção</label><select id="preco-opcao"></select></div><div><label for="preco-especifico">Preço específico (R$)</label><input id="preco-especifico" type="number" min="0" step="0.01"></div><div class="right"><button id="btn-preco" type="button">Salvar preço</button><button id="btn-fallback" type="button" class="secondary">Usar padrão</button></div></div></section></div></details>
 </main>
+<script src="../assets/cadastro-ui.js"></script>
 <script>
 'use strict';
 const URL_ACAO='https://n8n.orbbotia.com/webhook/produtos-acao';
-const params=new URLSearchParams(location.search);let accountId=params.get('account_id')||'';let segmento=params.get('segmento')||'restaurante';let versao=null;let catalogo=null;let ocupado=false;
+const params=new URLSearchParams(location.search);let accountId=params.get('account_id')||'';let segmento=params.get('segmento')||'restaurante';let versao=null;let catalogo=null;let ocupado=false;let alteracoesPendentes=false;
+function pendente(value){alteracoesPendentes=value;if(window.parent!==window)window.parent.postMessage({type:'cadastro-dirty',dirty:value},location.origin);}
+document.addEventListener('input',e=>{if(e.target.matches('input'))pendente(true);});
+window.addEventListener('beforeunload',e=>{if(alteracoesPendentes){e.preventDefault();e.returnValue='';}});
 const $=id=>document.getElementById(id);
-function mostrar(msg,erro=false){const n=$('aviso');n.textContent=msg;n.className='notice'+(erro?' error':'');n.scrollIntoView?.({block:'nearest',behavior:'smooth'});}
+const modoAdicionais=params.get('modo')==='adicionais';
+const gruposVisiveis=()=>(catalogo?.personalizacao_grupos||[]).filter(g=>!modoAdicionais||g.uso_cadastro==='adicional'||g.uso_pizza==='adicional');
+function mostrar(msg,erro=false){const n=$('aviso');n.textContent=msg;n.className='notice'+(erro?' error':'');CadastroUI.notify(msg,erro);}
 function texto(tag,value,cls=''){const n=document.createElement(tag);n.textContent=value??'';if(cls)n.className=cls;return n;}
 function botao(label,fn,cls='secondary'){const b=document.createElement('button');b.type='button';b.textContent=label;b.className=cls;b.addEventListener('click',fn);return b;}
 function option(select,label,value){const n=document.createElement('option');n.textContent=label;n.value=value;select.appendChild(n);}
@@ -36,10 +42,10 @@ window.addEventListener('message',e=>{let d=e.data;try{if(typeof d==='string')d=
 if(!accountId)window.parent.postMessage('chatwoot-dashboard-app:fetch-info','*');
 else iniciar();
 function iniciar(){ $('contexto').textContent=`Conta ${accountId} · ${segmento}`;$('voltar').href=`novo.html?account_id=${encodeURIComponent(accountId)}&segmento=${encodeURIComponent(segmento)}`;carregar(); }
-async function requisitar(operacao,dados={},expected=versao){if(ocupado)throw Error('Aguarde a operação atual.');ocupado=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{const r=await fetch(URL_ACAO,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'personalizacao',account_id:accountId,segmento,operacao,dados,versao_esperada:expected})});let body;try{body=await r.json();}catch{throw Error('O servidor não retornou JSON.');}if(!r.ok)throw Error(body.message||body.error||'Falha ao falar com o servidor.');const result=body.resultado||body;if(result.status==='error'||result.status==='pendencia')throw Error(result.message||result.codigo||'O servidor recusou a alteração.');if(Number.isSafeInteger(result.versao))versao=result.versao;return result;}finally{ocupado=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
-async function carregar(){if(!accountId){mostrar('Abra esta página pelo painel autenticado para carregar a conta.',true);return;}try{const r=await requisitar('consultar',{},null);catalogo=r.catalogo;versao=r.versao;renderizar();mostrar('Catálogo carregado. Alterações ficam isoladas na conta e segmento atuais.');}catch(e){mostrar(`Não consegui carregar personalizações: ${e.message}`,true);}}
+async function requisitar(operacao,dados={},expected=versao){if(ocupado)throw Error('Aguarde a operação atual.');ocupado=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);try{const r=await fetch(URL_ACAO,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'personalizacao',account_id:accountId,segmento,operacao,dados,versao_esperada:expected})});let body;try{body=await r.json();}catch{throw Error('O servidor não retornou JSON.');}if(!r.ok)throw Error(body.message||body.error||'Falha ao falar com o servidor.');const result=body.resultado||body;if(['error','erro','pendencia'].includes(result.status))throw Error(result.message||result.codigo||'O servidor recusou a alteração.');if(Number.isSafeInteger(result.versao))versao=result.versao;return result;}finally{ocupado=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}}
+async function carregar(){if(!accountId){mostrar('Abra esta página pelo painel autenticado para carregar a conta.',true);return;}try{const r=await requisitar('consultar',{},null);catalogo=r.catalogo;versao=r.versao;renderizar();atualizarReuso();mostrar('Catálogo carregado. Alterações ficam isoladas na conta e segmento atuais.');}catch(e){mostrar(`Não consegui carregar personalizações: ${e.message}`,true);}}
 function preencher(sel,rows,label){options($(sel),rows,label);}
-function renderizar(){if(!catalogo)return;const grupos=catalogo.personalizacao_grupos||[],cats=(catalogo.categorias||[]).filter(c=>c.ativo),prods=(catalogo.produtos||[]).filter(p=>!p.deletado);for(const id of ['associar-grupo','grupo-direto','opcao-grupo','excecao-grupo','preco-grupo'])preencher(id,grupos,g=>rotuloGrupo(g));for(const id of ['associar-categoria'])preencher(id,cats,c=>c.nome);for(const id of ['produto-direto','excecao-produto','preco-produto'])preencher(id,prods,p=>`${p.nome} · ${p.categoria||'sem categoria'}`);for(const id of ['excecao-opcao','preco-opcao'])atualizarOpcoes(id);atualizarEstadoCategoria();atualizarVariacoes();renderizarGrupos();}
+function renderizar(){if(!catalogo)return;const grupos=gruposVisiveis(),cats=(catalogo.categorias||[]).filter(c=>c.ativo),prods=(catalogo.produtos||[]).filter(p=>!p.deletado);for(const id of ['associar-grupo','grupo-direto','opcao-grupo','excecao-grupo','preco-grupo'])preencher(id,grupos,g=>rotuloGrupo(g));for(const id of ['associar-categoria'])preencher(id,cats,c=>c.nome);for(const id of ['produto-direto','excecao-produto','preco-produto'])preencher(id,prods,p=>`${p.nome} · ${p.categoria||'sem categoria'}`);for(const id of ['excecao-opcao','preco-opcao'])atualizarOpcoes(id);atualizarEstadoCategoria();atualizarVariacoes();renderizarGrupos();}
 function vinculoCategoria(cat,group){return (catalogo.categoria_personalizacao_grupos||[]).some(x=>x.categoria_id===cat&&x.grupo_id===group);}
 function atualizarEstadoCategoria(){if(!catalogo)return;const ok=vinculoCategoria($('associar-categoria').value,$('associar-grupo').value);$('estado-categoria').textContent=ok?'Esta escolha aparece nos produtos da categoria.':'Esta escolha ainda não aparece nesta categoria.';$('btn-vincular-categoria').textContent=ok?'Remover da categoria':'Aplicar à categoria';}
 function atualizarOpcoes(id){if(!catalogo)return;const gid=id==='excecao-opcao'?$('excecao-grupo').value:id==='preco-opcao'?$('preco-grupo').value:$('opcao-grupo').value;const rows=(catalogo.personalizacao_opcoes||[]).filter(o=>o.grupo_id===gid);preencher(id,rows,o=>`${o.nome}${o.ativo?'':' (inativa)'}`);}
@@ -48,7 +54,7 @@ function atualizarPrecoAtual(){if(!catalogo)return;const x=(catalogo.variacao_pe
 function campoRotulado(label,value,type='text'){const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement('input');input.type=type;input.value=value??'';if(type==='number'){input.min='0';input.step='1';}wrap.append(input);return {wrap,input};}
 function renderizarGrupos(){
  const root=$('lista-grupos');root.replaceChildren();
- for(const g of catalogo.personalizacao_grupos||[]){
+ for(const g of gruposVisiveis()){
   const os=(catalogo.personalizacao_opcoes||[]).filter(o=>o.grupo_id===g.id),active=os.filter(o=>o.ativo).length;
   const box=document.createElement('details');box.className='group';box.dataset.groupId=g.id;
   const summary=document.createElement('summary');summary.append(texto('span',rotuloGrupo(g)));summary.append(texto('span',active+' opção(ões) ativa(s) · '+(g.min_selecoes?'obrigatória':'opcional'),'muted'));box.append(summary);
@@ -68,13 +74,15 @@ function renderizarGrupos(){
   const regras=(catalogo.produto_personalizacao_grupos||[]).filter(x=>x.grupo_id===g.id);content.append(texto('p','Regras específicas de produto: '+(regras.map(x=>((catalogo.produtos||[]).find(p=>p.id===x.produto_id)?.nome||'Produto')+' ('+x.modo+')').join(', ')||'nenhuma'),'muted'));
   box.append(content);root.append(box);
  }
- const resumo=$('resumo-grupos'),gs=catalogo.personalizacao_grupos||[],no=catalogo.personalizacao_opcoes||[];resumo.textContent=gs.length?gs.length+' escolha(s) cadastrada(s) · '+no.length+' opção(ões). Abra uma escolha para editar.':'Nenhuma escolha cadastrada ainda.';
+ const resumo=$('resumo-grupos'),gs=gruposVisiveis(),no=(catalogo.personalizacao_opcoes||[]).filter(o=>gs.some(g=>g.id===o.grupo_id));resumo.textContent=gs.length?gs.length+' escolha(s) cadastrada(s) · '+no.length+' opção(ões). Abra uma escolha para editar.':'Nenhuma escolha cadastrada ainda.';
 }
 function rotuloGrupo(g){const same=(catalogo?.personalizacao_grupos||[]).filter(x=>x.nome.trim().toLowerCase()===g.nome.trim().toLowerCase()).length;return g.nome+(same>1?' · '+g.id.slice(0,8):'')+(g.ativo?'':' (inativa)');}
 async function excluirGrupo(g){if(!confirm('Excluir “'+rotuloGrupo(g)+'”? Isso também apagará opções, vínculos e preços por tamanho ligados a ela.'))return;await mutar('excluir_grupo',{id:g.id});}
 async function excluirOpcao(o){if(!confirm('Excluir a opção “'+o.nome+'”? Isso também apagará exceções e preços por tamanho ligados a ela.'))return;await mutar('excluir_opcao',{id:o.id});}
-async function atualizarDepois(){const r=await requisitar('consultar',{},null);catalogo=r.catalogo;versao=r.versao;renderizar();}
+async function atualizarDepois(){const view=CadastroUI.capture();const r=await requisitar('consultar',{},null);catalogo=r.catalogo;versao=r.versao;renderizar();atualizarReuso();CadastroUI.restore(view);}
 async function mutar(op,dados){
+  const view=CadastroUI.capture();
+  if(modoAdicionais&&op==='salvar_grupo')dados.uso_cadastro='adicional';
   const vincula=(op==='vincular_categoria'&&!dados.remover)||(op==='vincular_produto'&&dados.modo==='incluir');
   const grupo=catalogo?.personalizacao_grupos?.find(g=>g.id===dados.grupo_id);
   if(vincula&&grupo?.ativo&&grupo.min_selecoes>0&&!(catalogo.personalizacao_opcoes||[]).some(o=>o.grupo_id===grupo.id&&o.ativo)){
@@ -89,12 +97,13 @@ async function mutar(op,dados){
     const mensagem=erro.includes('grupo_obrigatorio_impossivel')
       ? 'Não salvei: essa alteração deixaria uma escolha obrigatória sem opções suficientes. Ajuste o mínimo ou mantenha opções ativas.'
       : erro.includes('versao_catalogo_divergente')
-        ? 'O catálogo mudou desde que esta página foi aberta. Atualizei a lista; confira os dados antes de tentar novamente.'
+        ? 'O catálogo mudou desde que esta página foi aberta. Seus campos foram preservados; recarregue o catálogo antes de tentar novamente.'
         : erro.includes('personalizacao_excluir')
           ? 'A exclusão ainda não está habilitada no workflow/banco. Publique a migration e o workflow de exclusão.'
           : erro;
     mostrar(`Não foi possível confirmar a gravação: ${mensagem}. Confira o cadastro antes de tentar novamente.`,true);
-    try{await atualizarDepois();}catch{}
+    // Preservar os campos em caso de falha; não substituir a edição pelo catálogo remoto.
+    CadastroUI.restore(view);
     return false;
   }
   try{
@@ -103,12 +112,14 @@ async function mutar(op,dados){
   }catch(e){
     mostrar(`Alteração salva, mas não foi possível atualizar a tela: ${e.message}. Recarregue a página; não é necessário cadastrar novamente.`,true);
   }
+  CadastroUI.restore(view);pendente(false);
+  if(window.parent!==window)window.parent.postMessage({type:'cadastro-atualizado',accountId},location.origin);
   return true;
 }
 $('expandir-todos').addEventListener('click',()=>document.querySelectorAll('#lista-grupos details.group').forEach(x=>x.open=true));
 $('recolher-todos').addEventListener('click',()=>document.querySelectorAll('#lista-grupos details.group').forEach(x=>x.open=false));
 $('tipo-personalizacao').addEventListener('change',()=>{const t=$('tipo-personalizacao').value;if(t==='borda'){$('grupo-nome').value='Borda';$('grupo-max').value=1;}else if(t==='adicionais'){$('grupo-nome').value='Adicionais';$('grupo-max').value=3;}else{$('grupo-nome').value='';$('grupo-max').value=1;$('grupo-nome').focus();}});
-$('form-grupo').addEventListener('submit',async e=>{e.preventDefault();const salvo=await mutar('salvar_grupo',{nome:$('grupo-nome').value.trim(),min_selecoes:Number($('grupo-min').value),max_selecoes:Number($('grupo-max').value),ativo:true});if(!salvo)return;e.target.reset();$('grupo-min').value=0;$('grupo-max').value=1;});
+$('form-grupo').addEventListener('submit',async e=>{e.preventDefault();const salvo=await mutar('salvar_grupo',{nome:$('grupo-nome').value.trim(),min_selecoes:Number($('grupo-min').value),max_selecoes:Number($('grupo-max').value),ativo:true});if(!salvo)return;e.target.reset();$('grupo-min').value=0;$('grupo-max').value=modoAdicionais?3:1;if(modoAdicionais)$('grupo-nome').value='Adicionais';});
 async function salvarGrupo(g){await mutar('salvar_grupo',{id:g.id,nome:g.nome,min_selecoes:g.min_selecoes,max_selecoes:g.max_selecoes,ativo:g.ativo});}
 $('btn-criar-opcao').addEventListener('click',async ()=>{const nome=$('opcao-nome').value.trim(),grupo_id=$('opcao-grupo').value;if(!nome||!grupo_id)return mostrar('Informe o grupo e o nome da opção.',true);const permite_quantidade=$('opcao-repetivel').checked;const salvo=await mutar('salvar_opcao',{grupo_id,nome,preco_padrao:Number($('opcao-preco').value),permite_quantidade,max_quantidade:permite_quantidade?Number($('opcao-max').value):1,ativo:true});if(salvo)$('opcao-nome').value='';});
 async function salvarOpcao(o){await mutar('salvar_opcao',{id:o.id,nome:o.nome,preco_padrao:Number(o.preco_padrao),permite_quantidade:o.permite_quantidade,max_quantidade:o.max_quantidade,ativo:o.ativo});}
@@ -121,6 +132,28 @@ $('btn-excecao').addEventListener('click',()=>{const produto_id=$('excecao-produ
 for(const id of ['preco-produto'])$(id).addEventListener('change',atualizarVariacoes);for(const id of ['preco-grupo'])$(id).addEventListener('change',()=>{atualizarOpcoes('preco-opcao');atualizarPrecoAtual();});$('preco-opcao').addEventListener('change',atualizarPrecoAtual);$('preco-variacao').addEventListener('change',atualizarPrecoAtual);
 $('btn-preco').addEventListener('click',()=>{const produto_id=$('preco-produto').value,variacao_id=$('preco-variacao').value,grupo_id=$('preco-grupo').value,opcao_id=$('preco-opcao').value,preco=$('preco-especifico').value;if(!produto_id||!variacao_id||!opcao_id||preco==='')return mostrar('Selecione produto, tamanho, grupo, opção e preço.',true);mutar('preco_variacao',{produto_id,variacao_id,grupo_id,opcao_id,preco:Number(preco)});});
 $('btn-fallback').addEventListener('click',()=>{const variacao_id=$('preco-variacao').value,opcao_id=$('preco-opcao').value;if(!variacao_id||!opcao_id)return mostrar('Selecione o tamanho e a opção.',true);mutar('preco_variacao',{variacao_id,opcao_id,remover:true});});
+
+function atualizarReuso(){
+ if(!modoAdicionais||!catalogo)return;
+ const select=$('reuso-adicional');select.replaceChildren(new Option('Escolha um grupo existente',''));
+ for(const g of catalogo.personalizacao_grupos.filter(g=>!g.uso_cadastro&&!g.uso_pizza))option(select,g.nome,g.id);
+}
+if(modoAdicionais){
+ document.querySelector('h1').textContent='Adicionais';
+ document.querySelector('.intro').textContent='Cadastre adicionais como bacon ou queijo e escolha onde oferecer. Cada conjunto pode ter seu próprio limite.';
+ const model=$('tipo-personalizacao');model.replaceChildren(new Option('Adicionais','adicionais'));model.disabled=true;
+ $('grupo-nome').value='Adicionais';$('grupo-max').value=3;
+ document.querySelector('#form-grupo').closest('section').querySelector('p').textContent='Dê um nome ao conjunto e defina quantas unidades o cliente pode adicionar. Depois cadastre as opções e escolha os produtos ou categorias.';
+ const reuse=document.createElement('details');reuse.className='card';
+ const summary=texto('summary','Usar adicionais já cadastrados');reuse.append(summary);
+ const select=document.createElement('select');select.id='reuso-adicional';select.setAttribute('aria-label','Grupo existente');reuse.append(select);
+ reuse.append(botao('Usar como adicionais',()=>{const g=catalogo.personalizacao_grupos.find(x=>x.id===select.value);if(g)mutar('salvar_grupo',{...g,uso_cadastro:'adicional'});}));
+ document.querySelector('main').append(reuse);
+ if(params.get('embedded')==='1'){
+  $('voltar').hidden=true;document.body.style.padding='0';
+  new ResizeObserver(()=>window.parent.postMessage({type:'cadastro-altura',height:document.querySelector('main').scrollHeight+32},location.origin)).observe(document.querySelector('main'));
+ }
+}
 
 </script>
 </body>

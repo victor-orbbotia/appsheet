@@ -65,9 +65,7 @@
                 <a id="link-menu-studio" href="./menu_studio_pro_mobile_first.html" class="py-2.5 text-sm font-medium text-slate-400 hover:text-slate-700 border-b-2 border-transparent whitespace-nowrap transition-colors">
                     🎨 Gerador de PDF (Menu Studio)
                 </a>
-                <a id="link-personalizacoes" href="./personalizacoes.html" class="py-2.5 text-sm font-medium text-slate-400 hover:text-indigo-700 border-b-2 border-transparent whitespace-nowrap transition-colors">
-                    🧩 Personalizações
-                </a>
+
             </div>
         </div>
 
@@ -80,8 +78,10 @@
 <section class="pizza-ui pc-row" aria-label="Tipo de cadastro">
 <button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span>Produto comum<span>Nome, preço e variações para os demais produtos.</span></button>
 <button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span>Pizza<span>Sabores, tamanhos, bordas e combinações em um só lugar.</span></button>
+<button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span>Adicionais<span>Opções, quantidades e onde oferecer.</span></button>
 </section>
-<div class="pizza-ui"><button id="pc-manage-categories" type="button">Gerenciar categorias</button></div>
+<section id="pc-addons" hidden><iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe></section>
+<div class="pizza-ui pc-row"><button id="pc-manage-categories" type="button">Gerenciar categorias</button><a id="link-personalizacoes" href="./personalizacoes.html" style="font-size:13px;color:#64748b">Personalizações avançadas</a></div>
 <section id="pc-editor" class="pizza-ui" hidden>
 <div class="pc-card"><h2>Cadastro de pizzas</h2><p>Cadastre um tamanho uma vez e informe o preço de cada sabor. A categoria padrão Pizzas é protegida.</p>
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
@@ -95,7 +95,7 @@
 <details><summary>Usar bordas ou adicionais já cadastrados</summary><p>Escolha a função desta personalização. Os produtos que já a utilizam mantêm o mesmo vínculo.</p><select id="pc-existing-group" aria-label="Escolha existente"></select><select id="pc-existing-kind" aria-label="Usar como"><option value="borda">Borda</option><option value="adicional">Adicional</option></select><button id="pc-reuse" type="button">Configurar escolha existente</button></details></section>
 <section id="pc-category-section" class="pc-card pc-section"><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. A categoria padrão Pizzas permanece no cadastro mesmo sem produtos.</p><div id="pc-categories"></div></section>
 </fieldset></section>
-<section class="pizza-ui"><div class="pc-card"><h2>Pizzas cadastradas</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></section>
+<section id="pc-pizza-list-section" class="pizza-ui" hidden><div class="pc-card"><h2>Pizzas cadastradas</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></section>
 
             <!-- BLOCO 1: FORMULÁRIO -->
             <div id="pc-common" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
@@ -175,7 +175,7 @@
             </div>
 
             <!-- BLOCO 2: LISTA DE PRODUTOS -->
-            <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col">
+            <div id="pc-common-list" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col">
                 <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-wrap gap-3">
                     <h2 class="text-md font-bold text-slate-800">Itens Cadastrados</h2>
                     
@@ -405,7 +405,8 @@
 
     </div>
 
-    <script src="pizzas-produtos.js"></script>
+    <script src="../assets/cadastro-ui.js"></script>
+<script src="pizzas-produtos.js"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -572,7 +573,7 @@
             const p3 = document.getElementById('upsell_prioridade_3').value;
 
             if (upsellAtivo && gatilhosSelecionados.length === 0) {
-                return alert("Selecione pelo menos uma categoria gatilho para ativar o recurso!");
+                return CadastroUI.notify("Selecione pelo menos uma categoria gatilho para ativar o recurso!");
             }
 
             btn.innerText = "⏳ Salvando...";
@@ -601,12 +602,12 @@
                     configEmpresaCache.upsell_prioridade_1 = p1;
                     configEmpresaCache.upsell_prioridade_2 = p2;
                     configEmpresaCache.upsell_prioridade_3 = p3;
-                    alert("Configurações de sugestões salvas com sucesso!");
+                    CadastroUI.notify("Configurações de sugestões salvas com sucesso!");
                 } else {
                     throw new Error();
                 }
             } catch (error) {
-                alert("Erro ao salvar configurações no servidor.");
+                CadastroUI.notify("Erro ao salvar configurações no servidor.");
             } finally {
                 btn.innerText = "💾 Salvar Configurações";
                 btn.disabled = false;
@@ -707,7 +708,7 @@
             const input = document.getElementById('entrega_outros_valor');
             const btn = document.getElementById('btnSalvarOutros');
             const valor = Number(input.value);
-            if (!Number.isFinite(valor) || valor < 0) return alert('Informe um valor válido para a taxa estimada de Outros.');
+            if (!Number.isFinite(valor) || valor < 0) return CadastroUI.notify('Informe um valor válido para a taxa estimada de Outros.');
 
             btn.innerText = '⏳ Salvando...';
             btn.disabled = true;
@@ -726,7 +727,7 @@
                 sincronizarTaxaOutrosUI();
                 renderizarTabelaTaxas();
             } catch (error) {
-                alert('Erro ao salvar a taxa estimada de Outros.');
+                CadastroUI.notify('Erro ao salvar a taxa estimada de Outros.');
             } finally {
                 btn.innerText = 'Salvar Outros';
                 btn.disabled = false;
@@ -748,7 +749,7 @@
                 sincronizarTaxaOutrosUI();
                 renderizarTabelaTaxas();
             } catch (error) {
-                alert('Erro ao remover a taxa de Outros.');
+                CadastroUI.notify('Erro ao remover a taxa de Outros.');
             }
         }
 
@@ -760,10 +761,10 @@
             const bairro = inputBairro.value.trim();
             const valor = parseFloat(inputValor.value);
 
-            if (!bairro) return alert("Digite o nome do bairro ou região!");
-            if (normalizarTaxaTexto(bairro) === TAXA_OUTROS_KEY) return alert('Use o campo separado “Taxa para Outros Locais”.');
-            if (listaTaxas.some(t => normalizarTaxaTexto(t?.bairro) === normalizarTaxaTexto(bairro))) return alert('Este bairro/região já está cadastrado.');
-            if (isNaN(valor) || valor < 0) return alert("Digite um valor válido para a entrega!");
+            if (!bairro) return CadastroUI.notify("Digite o nome do bairro ou região!");
+            if (normalizarTaxaTexto(bairro) === TAXA_OUTROS_KEY) return CadastroUI.notify('Use o campo separado “Taxa para Outros Locais”.');
+            if (listaTaxas.some(t => normalizarTaxaTexto(t?.bairro) === normalizarTaxaTexto(bairro))) return CadastroUI.notify('Este bairro/região já está cadastrado.');
+            if (isNaN(valor) || valor < 0) return CadastroUI.notify("Digite um valor válido para a entrega!");
 
             btn.innerText = "⏳ Salvando...";
             btn.disabled = true;
@@ -788,7 +789,7 @@
                 renderizarTabelaTaxas();
 
             } catch (error) {
-                alert("Erro ao salvar taxa no servidor.");
+                CadastroUI.notify("Erro ao salvar taxa no servidor.");
             } finally {
                 btn.innerText = "+ Adicionar Taxa";
                 btn.disabled = false;
@@ -817,7 +818,7 @@
                 renderizarTabelaTaxas();
 
             } catch (error) {
-                alert("Erro ao remover taxa no servidor.");
+                CadastroUI.notify("Erro ao remover taxa no servidor.");
             }
         }
 
@@ -876,7 +877,7 @@
 
         async function carregarLista() {
             const tbody = document.getElementById('lista-produtos');
-            tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
+            const view=CadastroUI.capture();
             try {
                 const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error("Erro");
@@ -888,6 +889,7 @@
                 renderizarFiltros();
                 renderizarTabela();
                 preencherDropdownsUpsell(configEmpresaCache);
+                CadastroUI.restore(view);
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
             }
@@ -898,7 +900,7 @@
             const categoriasUnicas = new Set();
             listaAtual.forEach(prod => {
                 const p = prod.json || prod;
-                if (p.categoria && p.categoria.trim() !== '') categoriasUnicas.add(p.categoria.trim());
+                if (!window.pizzasCadastro.isPizza(p) && p.categoria && p.categoria.trim() !== '') categoriasUnicas.add(p.categoria.trim());
             });
             datalist.innerHTML = '';
             Array.from(categoriasUnicas).sort().forEach(cat => datalist.appendChild(new Option(cat)));
@@ -909,7 +911,7 @@
             const categoriasUnicas = new Set();
             listaAtual.forEach(prod => {
                 const p = prod.json || prod;
-                if (p.deletado !== true && p.categoria) categoriasUnicas.add(p.categoria.trim());
+                if (p.deletado !== true && !window.pizzasCadastro.isPizza(p) && p.categoria) categoriasUnicas.add(p.categoria.trim());
             });
 
             const catOrdenadas = Array.from(categoriasUnicas).sort();
@@ -1110,30 +1112,22 @@
         }
 
         async function enviarAcao(payload, btnElement, txtSucesso) {
-            const txtOriginal = btnElement.innerText;
-            btnElement.innerText = '⏳';
-            btnElement.disabled = true;
-
+            const original=btnElement.innerText, view=CadastroUI.capture();
+            btnElement.disabled=true;btnElement.innerText='Salvando…';
             try {
-                const response = await fetch(urlAcao, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                if (response.ok) {
-                    btnElement.innerText = txtSucesso;
-                    setTimeout(() => {
-                        btnElement.innerText = txtOriginal;
-                        limparFormulario();
-                        carregarLista(); 
-                        btnElement.disabled = false;
-                    }, 800);
-                } else throw new Error();
-            } catch (error) {
-                alert("Erro ao salvar no banco de dados.");
-                btnElement.innerText = txtOriginal;
-                btnElement.disabled = false;
-            }
+                const response=await fetch(urlAcao,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+                const result=await response.json();
+                if(!response.ok||['erro','error','pendencia'].includes(result.status))throw Error(result.mensagem||'Não foi possível salvar.');
+                await carregarLista();
+                if(payload.action==='criar') {
+                    const created=result.id||result.resultado?.id;
+                    if(created)document.getElementById('produto_id').value=created;
+                    else {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                }
+                if(payload.action==='excluir') {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                CadastroUI.notify(txtSucesso||'Alteração salva.');
+            } catch(e){CadastroUI.notify(e.message,true);}
+            finally {btnElement.innerText=original;btnElement.disabled=false;CadastroUI.restore(view);}
         }
 
         function alternarStatus() {
@@ -1157,7 +1151,7 @@
             const categoria = document.getElementById('categoria').value.trim();
             const tipo = document.getElementById('tipo_venda').value;
 
-            if (!nome || !categoria) return alert("Nome e Categoria são obrigatórios!");
+            if (!nome || !categoria) return CadastroUI.notify("Nome e Categoria são obrigatórios!");
 
             let precoBase = 0.00;
             let metadata = {};
@@ -1196,14 +1190,14 @@
                         });
                     }
                 }
-                if (arrayVariacoes.length === 0) return alert("Adicione pelo menos uma opção de variação de preço!");
+                if (arrayVariacoes.length === 0) return CadastroUI.notify("Adicione pelo menos uma opção de variação de preço!");
                 
                 metadata.tipo = 'com_variacoes';
                 metadata.variacoes = arrayVariacoes;
                 metadata.tamanhos = arrayVariacoes;
             }
 
-            if (categoria.trim().toLowerCase() === 'pizzas') { alert('Use o card Pizza para cadastrar sabores e tamanhos na categoria padrão Pizzas.'); return; }
+            if (categoria.trim().toLowerCase() === 'pizzas') { CadastroUI.notify('Use o card Pizza para cadastrar sabores e tamanhos na categoria padrão Pizzas.'); return; }
             enviarAcao({
                 action: id ? 'editar' : 'criar',
                 id: id,

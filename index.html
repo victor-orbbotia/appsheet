@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
+<script src="assets/contexto-conta.js"></script><script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script><script src="assets/admin-session.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orbbotia Workspace</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,7 +23,7 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        
+
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
@@ -75,14 +77,6 @@
     <main id="area-modulos"
         class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden fade-in">
 
-        <!-- MÓDULO 1: KANBAN -->
-        <a href="kanban-chatwoot/index.html" id="mod-kanban"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-indigo-300">
-            <div class="text-3xl mb-4">📊</div>
-            <h2 class="text-lg font-bold text-slate-800 mb-1">Funil Kanban</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Gerencie atendimentos, prioridades e acompanhe as conversas em tempo real.</p>
-        </a>
-
         <!-- MÓDULO 2: PROFISSIONAIS -->
         <a href="profissionais/novo.html" id="mod-profissionais"
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
@@ -123,16 +117,6 @@
             <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
         </a>
 
-        <!-- MÓDULO 7: CONFIGURAÇÕES AVANÇADAS -->
-        <a href="configuracoes/avancado.html" id="mod-avancado"
-            class="card-modulo hidden bg-slate-900 text-white p-6 rounded-xl border border-slate-800 shadow-sm hover:border-indigo-500">
-            <div class="text-3xl mb-4">🛡️</div>
-            <h2 class="text-lg font-bold text-indigo-300 mb-1 flex items-center gap-2">
-                Avançado
-            </h2>
-            <p class="text-sm text-slate-400 leading-relaxed">Chaves de API, reset de banco de dados e funções avançadas.</p>
-        </a>
-
     </main>
 
     <script>
@@ -149,6 +133,8 @@
 
         // 1. Escuta Handshake do Chatwoot
         window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
@@ -156,22 +142,21 @@
                 clearInterval(handshakeInterval);
                 const payload = eventData.data;
                 globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
-                
+
                 buscarConfiguracoesDaEmpresa();
             }
         });
 
         handshakeInterval = setInterval(() => {
-            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            if (!globalAccountId) ContextoConta.solicitar();
         }, 500);
 
-        // Fallback para testes
-        setTimeout(() => {
-            if (!globalAccountId) {
-                globalAccountId = '3';
-                buscarConfiguracoesDaEmpresa();
-            }
-        }, 1500);
+
+
+        if (globalAccountId) {
+            clearInterval(handshakeInterval);
+            buscarConfiguracoesDaEmpresa();
+        }
 
         // 2. Busca Configurações no n8n
         async function buscarConfiguracoesDaEmpresa() {
@@ -192,8 +177,8 @@
                     nome_empresa: "Empresa Padrão",
                     segmento: segmentoAtual,
                     modulos: {
-                        kanban: false, profissionais: false, produtos: true,
-                        conhecimento: true, pedidos: true, configuracoes: true, avancado: true
+                        profissionais: false, produtos: true,
+                        conhecimento: true, pedidos: true, configuracoes: true
                     }
                 };
                 aplicarModulos(configFake);
@@ -207,25 +192,21 @@
             document.getElementById('seletor-segmento').value = segmentoAtual;
 
             const params = `account_id=${globalAccountId}&segmento=${segmentoAtual}`;
-            document.getElementById('mod-kanban').href = `kanban-chatwoot/index.html?${params}`;
             document.getElementById('mod-profissionais').href = `profissionais/novo.html?${params}`;
             document.getElementById('mod-produtos').href = `produtos/novo.html?${params}`;
             document.getElementById('mod-conhecimento').href = `conhecimento/novo.html?${params}`;
             document.getElementById('mod-pedidos').href = `pedidos/index.html?${params}`;
             document.getElementById('mod-configuracoes').href = `configuracoes/index.html?${params}`;
-            document.getElementById('mod-avancado').href = `configuracoes/avancado.html?${params}`;
 
             const cards = document.querySelectorAll('.card-modulo');
             cards.forEach(c => c.classList.add('hidden'));
 
             if (config.modulos) {
-                if (config.modulos.kanban) document.getElementById('mod-kanban').classList.remove('hidden');
                 if (config.modulos.profissionais) document.getElementById('mod-profissionais').classList.remove('hidden');
                 if (config.modulos.produtos) document.getElementById('mod-produtos').classList.remove('hidden');
                 if (config.modulos.conhecimento) document.getElementById('mod-conhecimento').classList.remove('hidden');
                 if (config.modulos.pedidos) document.getElementById('mod-pedidos').classList.remove('hidden');
                 if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
-                if (config.modulos.avancado !== false) document.getElementById('mod-avancado').classList.remove('hidden');
             }
 
             document.getElementById('area-loading').classList.add('hidden');
@@ -241,13 +222,13 @@
 
             try {
                 await fetch(urlConfigSalvar, {
-                    method: 'POST', 
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ account_id: globalAccountId.toString(), segmento: novoSegmento })
                 });
 
                 segmentoAtual = novoSegmento;
-                
+
                 setTimeout(async () => {
                     await buscarConfiguracoesDaEmpresa();
                 }, 500);
@@ -263,6 +244,6 @@
     </script>
 </body>
 
-    
+
 
 </html>

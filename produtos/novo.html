@@ -3,9 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Produtos e Entregas</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../assets/contexto-conta.js"></script>
     <style>
         body {
             background-color: #f8fafc;
@@ -37,7 +40,7 @@
 
     <!-- Alerta Chatwoot -->
     <div id="alerta-chatwoot" class="max-w-5xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm transition-all">
-        ⏳ Autenticando com o painel Chatwoot...
+        ⏳ Carregando o contexto do estabelecimento...
     </div>
 
     <div id="app-container" class="max-w-5xl mx-auto hidden transition-all">
@@ -81,19 +84,20 @@
 <button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span>Adicionais<span>Opções, quantidades e onde oferecer.</span></button>
 </section>
 <section id="pc-addons" hidden><iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe></section>
-<div class="pizza-ui pc-row"><button id="pc-manage-categories" type="button">Gerenciar categorias</button><a id="link-personalizacoes" href="./personalizacoes.html" style="font-size:13px;color:#64748b">Personalizações avançadas</a></div>
+<details class="pizza-ui pc-card" id="pc-advanced"><summary>Configurações avançadas</summary><p>Organização do catálogo e regras específicas de produtos.</p><div class="pc-row"><button id="pc-manage-categories" type="button">Organização do catálogo · Categorias</button><a id="link-personalizacoes" href="./personalizacoes.html" style="font-size:13px;color:#64748b">Personalizações avançadas</a></div><section id="pc-category-section" class="pc-card pc-section" hidden><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. A categoria padrão Pizzas permanece no cadastro mesmo sem produtos.</p><div id="pc-categories"></div></section></details>
 <section id="pc-editor" class="pizza-ui" hidden>
 <div class="pc-card"><h2>Cadastro de pizzas</h2><p>Cadastre um tamanho uma vez e informe o preço de cada sabor. A categoria padrão Pizzas é protegida.</p>
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
-<p>A chave é a mesma do cadastro anterior e permanece somente enquanto esta página estiver aberta.</p><div id="pc-status" role="status" aria-live="polite"></div></div>
+<p id="pc-key-help">A chave é a mesma do cadastro anterior e permanece somente enquanto esta página estiver aberta.</p><div id="pc-status" role="status" aria-live="polite"></div></div>
 <fieldset id="pc-content" disabled>
-<nav class="pc-row" aria-label="Seções do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button><button type="button" data-pc-section="category-section">Categorias</button></nav>
-<section id="pc-sizes" class="pc-card pc-section"><h2>1. Tamanhos</h2><p>Pequena, Média e Grande são sugestões. Crie os tamanhos vendidos pelo seu estabelecimento; cada um pode permitir apenas inteira ou também combinar sabores.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-list"></div><div id="pc-size-form" hidden></div></section>
-<section id="pc-flavors" class="pc-card pc-section"><h2>2. Sabores e preços</h2><p>O preço informado é o da pizza inteira. As combinações usam a regra configurada no tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
-<section id="pc-borders" class="pc-card pc-section"><h2>3. Bordas</h2><p>Defina as opções e os preços por tamanho. Escolha se são opcionais ou obrigatórias e onde podem ser usadas.</p><button id="pc-new-borda" type="button">Nova escolha de borda</button><div id="pc-borda-list"></div><div id="pc-borda-form" hidden></div></section>
-<section id="pc-extras" class="pc-card pc-section"><h2>4. Adicionais</h2><p>Configure quantidades e cobrança na pizza inteira ou em cada sabor.</p><button id="pc-new-adicional" type="button">Nova escolha de adicionais</button><div id="pc-adicional-list"></div><div id="pc-adicional-form" hidden></div>
+<nav class="pc-row" aria-label="Seções do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Linhas</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav>
+<section id="pc-sizes" class="pc-card pc-section"><h2>Tamanhos</h2><p>Pequena, Média e Grande são sugestões. Crie os tamanhos vendidos pelo seu estabelecimento; cada um pode permitir apenas inteira ou também combinar sabores.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-list"></div><div id="pc-size-form" hidden></div></section>
+<section id="pc-lines" class="pc-card pc-section"><h2>Linhas de pizzas</h2><p>Separe Tradicionais e Especiais quando os sabores só puderem combinar dentro da mesma linha. Os tamanhos continuam compartilhados.</p><button id="pc-new-line" type="button">Nova linha</button><div id="pc-line-list"></div><div id="pc-line-form" hidden></div></section>
+<section id="pc-flavors" class="pc-card pc-section"><h2>Sabores e preços</h2><p>O preço informado é o da pizza inteira. As combinações usam a regra configurada no tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
+<section id="pc-borders" class="pc-card pc-section"><h2>Bordas</h2><p>Defina as opções e os preços por tamanho. Escolha se são opcionais ou obrigatórias e onde podem ser usadas.</p><button id="pc-new-borda" type="button">Adicionar borda</button><details><summary>Organizar bordas em conjuntos</summary><p>Exemplos: Bordas recheadas e Bordas premium. Cada conjunto tem suas opções e limites.</p><button id="pc-new-group-borda" type="button">Criar conjunto de bordas</button></details><div id="pc-borda-list"></div><div id="pc-borda-form" hidden></div></section>
+<section id="pc-extras" class="pc-card pc-section"><h2>Adicionais</h2><p>Configure quantidades e cobrança na pizza inteira ou em cada sabor.</p><button id="pc-new-adicional" type="button">Adicionar adicional</button><details><summary>Organizar adicionais em conjuntos</summary><button id="pc-new-group-adicional" type="button">Criar conjunto de adicionais</button></details><div id="pc-adicional-list"></div><div id="pc-adicional-form" hidden></div>
 <details><summary>Usar bordas ou adicionais já cadastrados</summary><p>Escolha a função desta personalização. Os produtos que já a utilizam mantêm o mesmo vínculo.</p><select id="pc-existing-group" aria-label="Escolha existente"></select><select id="pc-existing-kind" aria-label="Usar como"><option value="borda">Borda</option><option value="adicional">Adicional</option></select><button id="pc-reuse" type="button">Configurar escolha existente</button></details></section>
-<section id="pc-category-section" class="pc-card pc-section"><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. A categoria padrão Pizzas permanece no cadastro mesmo sem produtos.</p><div id="pc-categories"></div></section>
+
 </fieldset></section>
 <section id="pc-pizza-list-section" class="pizza-ui" hidden><div class="pc-card"><h2>Pizzas cadastradas</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></section>
 
@@ -433,18 +437,16 @@
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
         window.addEventListener('message', function (event) {
-            let eventData = {};
-            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
-
-            if (eventData.event === 'appContext' && eventData.data) {
-                clearInterval(handshakeInterval);
-                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id) || globalAccountId;
-                iniciarApp();
-            }
+            const context = ContextoConta.mensagemDoPainel(event);
+            if (!context) return;
+            clearInterval(handshakeInterval);
+            const segment = typeof context.segmento === 'string' ? context.segmento : (urlParams.get('segmento') || 'restaurante');
+            if (String(globalAccountId || '') === context.account && segment === (urlParams.get('segmento') || 'restaurante')) return;
+            if (globalAccountId && !confirm('Trocar de estabelecimento descarta alterações não salvas nesta tela. Continuar?')) return;
+            ContextoConta.navegar(context.account, segment);
         });
-
         handshakeInterval = setInterval(() => {
-            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            if (!globalAccountId) ContextoConta.solicitar();
         }, 500);
 
         setTimeout(() => {

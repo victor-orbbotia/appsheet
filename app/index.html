@@ -351,6 +351,7 @@
     .pizza-live-total { min-height:1.2rem; margin:.45rem 0; color:#8be9a4; font-size:.82rem; font-weight:700; }
     .stepper { display: flex; align-items: center; overflow: hidden; border: 1px solid var(--border-strong); border-radius: .78rem; background: #0d110e; }
     .stepper button { width: 44px; height: 48px; border: 0; background: transparent; color: #fff; font-size: 1.3rem; cursor: pointer; }
+    .stepper button:disabled { opacity:.35;cursor:not-allowed; }
     .stepper button:hover { background: rgba(255,255,255,.05); }
     .stepper output { width: 30px; color: #fff; font-weight: 800; text-align: center; }
     .cart-line { display: flex; align-items: center; gap: .75rem; padding: .85rem 0; border-bottom: 1px solid var(--border); }
@@ -1153,14 +1154,6 @@
             card.addEventListener("click", () => openPizzaJourney(product, card));
             items.append(card);
           });
-          const configs = tamanhosDaPizza().filter(c => categoriaPizza(c) === category);
-          if (configs.length) {
-            const card = element('button', 'menu-cell'); card.type = 'button';
-            const info = element('div', 'menu-info');
-            info.append(element('h3', '', 'Escolha sua pizza'), element('p', '', 'Escolha o tamanho e peça um sabor ou combine seus favoritos.'));
-            card.append(info, element('span', 'add-indicator', '+'));
-            card.addEventListener('click', () => openPizzaJourney(null, card, configs)); items.prepend(card);
-          }
           section.append(items);
           menu.append(section);
         });
@@ -1264,6 +1257,23 @@
         );
       }
 
+      // Quantidades não editáveis: o limite considera a opção e a capacidade do grupo.
+      function refreshQuantityControls() {
+        for(const control of document.querySelectorAll('[data-quantity-control],[data-group-counter]'))control.refresh();
+      }
+      function quantityControl(input, maximum) {
+        input.type='hidden';
+        const wrap=element('div','stepper');wrap.dataset.quantityControl='1';
+        const minus=element('button','','−'),value=element('output'),plus=element('button','','+');
+        minus.type=plus.type='button';
+        const name=input.getAttribute('aria-label')||'adicional';
+        minus.setAttribute('aria-label','Diminuir '+name);plus.setAttribute('aria-label','Aumentar '+name);
+        value.setAttribute('aria-live','polite');
+        wrap.refresh=()=>{const n=Number(input.value)||0;value.textContent=String(n);minus.disabled=n<=0;plus.disabled=n>=Math.max(0,Number(maximum()));};
+        const change=delta=>{const old=Number(input.value)||0,next=old+delta;if(next<0||(delta>0&&next>Number(maximum())))return;input.value=String(next);input.dispatchEvent(new Event('input',{bubbles:true}));refreshQuantityControls();};
+        minus.onclick=()=>change(-1);plus.onclick=()=>change(1);wrap.append(minus,value,plus,input);wrap.refresh();return wrap;
+      }
+      const modifierCount=(mods,group)=>(mods||[]).filter(m=>m.grupo_id===group).reduce((n,m)=>n+Number(m.quantidade||0),0);
       function coletarModificadores(container) {
         return $$('input[data-grupo][data-opcao]', container).map(input => ({
           grupo_id: input.dataset.grupo,
@@ -1283,6 +1293,7 @@
           box.append(element('h4', '', group.nome));
           box.append(element('p', 'modifier-hint', group.min_selecoes
             ? `Escolha de ${group.min_selecoes} a ${group.max_selecoes}.` : `Opcional · até ${group.max_selecoes} escolha(s).`));
+          const counter=element('p','modifier-hint','0 de '+group.max_selecoes+' escolhidos');box.append(counter);
           for (const option of group.opcoes) {
             const row = element('label', 'modifier-option');
             const copy = element('span', '', `${option.nome} · ${money(option.preco_centavos / 100)} cada`);
@@ -1291,11 +1302,12 @@
             input.value = String(selected.get(`${group.id}/${option.id}`) || 0);
             input.dataset.grupo = group.id; input.dataset.opcao = option.id;
             input.setAttribute('aria-label', `Quantidade de ${option.nome}`);
-            input.addEventListener('input', onChange);
-            row.append(copy, input); box.append(row);
+            input.addEventListener('input',()=>{onChange();counter.textContent=$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0)+' de '+group.max_selecoes+' escolhidos';});
+            row.append(copy, quantityControl(input,()=>Math.min(option.max_quantidade,Number(input.value)+group.max_selecoes-$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0)))); box.append(row);
           }
-          container.append(box);
+          counter.textContent=$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0)+' de '+group.max_selecoes+' escolhidos';container.append(box);
         }
+        refreshQuantityControls();
       }
 
       function atualizarCotacaoProduto() {
@@ -1334,6 +1346,9 @@
           container.replaceChildren(element('p', 'error-text', 'Não foi possível carregar as escolhas deste item. Reabra o cardápio.'));
           container.classList.remove('hide'); state.current.quoteError = result?.codigo || 'catalogo_indisponivel'; renderItemPrice(); return;
         }
+        const previous=state.current.modificadores||[];
+        const incompatible=previous.some(m=>{const g=result.catalogo.grupos.find(g=>g.id===m.grupo_id),o=g?.opcoes.find(o=>o.id===m.opcao_id);return !o||m.quantidade>o.max_quantidade||modifierCount(previous,g.id)>g.max_selecoes;});
+        if(incompatible){state.current.modificadores=[];showToast('Alguns adicionais não estão disponíveis neste tamanho. Escolha os adicionais novamente.');}
         state.current.catalog = result.catalogo;
         state.current.basePrice = result.catalogo.preco_base_centavos / 100;
         renderGruposModificadores(container, result.catalogo.grupos, atualizarCotacaoProduto, state.current.modificadores || []);
@@ -1373,9 +1388,9 @@
           const c = entry?.config, options = c ? pizzaOpcoesSabor(c) : [];
           if (c && c.permite_dividir !== false) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n+' sabores',String(n)));
           flavor.replaceChildren(new Option('Escolha o primeiro sabor',''));
-          if (c) options.forEach(f=>flavor.add(new Option(f.produto.nome+' · '+money(Number(f.variation.preco)),f.produto.id)));
+          if (c) options.filter(f=>f.produto.id===product?.id).forEach(f=>flavor.add(new Option(f.produto.nome+' · '+money(Number(f.variation.preco)),f.produto.id)));
           else if (product) flavor.add(new Option(product.nome,product.id));
-          flavor.value=product?.id||'';
+          flavor.value=product?.id||'';flavor.disabled=true;
           $('#pizza-journey-next').disabled=!entry || !flavor.value;
         }
         sizes.onchange=updateChoices;
@@ -1407,6 +1422,7 @@
       }
       function renderPizzaModal() {
         const current = state.pizzaCurrent;
+        const modalBody=$('#pizza-partes').parentElement, previousScroll=modalBody.scrollTop;
         const config = current?.config;
         if (!config) return;
         const flavors = pizzaOpcoesSabor(config);
@@ -1415,7 +1431,7 @@
         current.partes.forEach((part, index) => {
           const box = element('section', 'modifier-group');
           const title = element('h3', '', `Sabor ${index + 1}`);
-          if (current.partes.length > config.minimo) {
+          if (index>0 && current.partes.length > config.minimo) {
             const removePart=element('button','btn btn-secondary','Remover sabor');removePart.type='button';
             removePart.addEventListener('click',()=>{current.partes.splice(index,1);if(config.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal();});
             box.append(title,removePart);
@@ -1423,10 +1439,10 @@
           const select = document.createElement('select');
           select.setAttribute('aria-label', `Escolha o sabor ${index + 1}`);
           select.add(new Option('Selecione um sabor', ''));
-          for (const flavor of flavors) { const option = new Option(flavor.label, flavor.produto.id); option.disabled = current.partes.some((p,i)=>i!==index && p.produto_id===flavor.produto.id); select.add(option); }
+          for (const flavor of flavors.filter(f=>!current.partes.some((p,i)=>i!==index&&p.produto_id===f.produto.id))) select.add(new Option(flavor.label,flavor.produto.id));
           select.value = part.produto_id || '';
-          select.addEventListener('change', () => { current.partes[index].produto_id = select.value; current.partes[index].modificadores = []; current.globais=[]; renderPizzaModal(); });
-          box.append(select);
+          select.addEventListener('change', () => { if(current.globais.length||current.partes[index].modificadores.length)showToast('Confira novamente os adicionais após trocar o sabor.');current.partes[index].produto_id = select.value; current.partes[index].modificadores = [];current.globais=[]; renderPizzaModal(); });
+          if(index===0){box.append(element('p','',flavors.find(f=>f.produto.id===part.produto_id)?.label||'Sabor escolhido no cardápio'));}else box.append(select);
           if (config.divisao === 'personalizada') {
             const fractionLabel = element('label', 'field-label', 'Parte da pizza (%)');
             const fraction = document.createElement('input'); fraction.type = 'number'; fraction.min = '5'; fraction.max = '95'; fraction.step = '5';
@@ -1444,12 +1460,13 @@
                 const selected = new Map((part.modificadores || []).map(m => [m.opcao_id, m.quantidade]));
                 const groupBox = element('section', 'modifier-group');
                 groupBox.append(element('h4', '', `${group.nome} nesta parte`));
+                const counter=element('p','modifier-hint');counter.dataset.groupCounter='1';counter.refresh=()=>counter.textContent=(modifierCount(part.modificadores,group.id)+modifierCount(current.globais,group.id))+' de '+group.max_selecoes+' escolhidos'+(group.min_selecoes?' · mínimo '+group.min_selecoes:'');groupBox.append(counter);
                 for (const option of group.opcoes) {
                   const label = element('label', 'modifier-option');
                   label.append(element('span', '', `${option.nome} · ${money(option.preco_centavos / 100)}`));
                   const input = document.createElement('input'); input.type='number'; input.min='0'; input.max=String(option.max_quantidade); input.step='1'; input.value=String(selected.get(option.id)||0);
                   input.addEventListener('input', () => { current.partes[index].modificadores = $$('input[data-pizza-part-mod]', box).map(i=>({grupo_id:i.dataset.grupo,opcao_id:i.dataset.opcao,quantidade:Number(i.value||0)})).filter(m=>m.quantidade>0); atualizarCotacaoPizza(); });
-                  input.dataset.pizzaPartMod='1'; input.dataset.grupo=group.id; input.dataset.opcao=option.id; label.append(input); groupBox.append(label);
+                  input.dataset.pizzaPartMod='1'; input.dataset.grupo=group.id; input.dataset.opcao=option.id;input.setAttribute('aria-label',option.nome+' nesta parte'); label.append(quantityControl(input,()=>Math.min(option.max_quantidade,Number(input.value)+group.max_selecoes-modifierCount(current.partes[index].modificadores,group.id)-modifierCount(current.globais,group.id)))); groupBox.append(label);
                 }
                 box.append(groupBox);
               }
@@ -1461,7 +1478,7 @@
         $('#pizza-add-parte').disabled = current.partes.length >= Math.min(config.maximo, flavors.length);
         renderPizzaGlobais();
         $('#pizza-qty').textContent = String(current.quantidade);
-        atualizarCotacaoPizza();
+        atualizarCotacaoPizza();refreshQuantityControls();modalBody.scrollTop=previousScroll;
       }
       function renderPizzaGlobais() {
         const current = state.pizzaCurrent, config = current.config, mount = $('#pizza-globais');
@@ -1481,6 +1498,7 @@
           const common = groups[0].opcoes.filter(o => groups.every(g => g.opcoes.some(x => x.id === o.id)));
           if (!common.length) continue;
           const box = element('section', 'modifier-group'); box.append(element('h4', '', groups[0].nome));
+          const counter=element('p','modifier-hint');counter.dataset.groupCounter='1';counter.refresh=()=>counter.textContent=modifierCount(current.globais,rule.grupo_id)+' escolhidos · até '+Math.min(...groups.map(g=>g.max_selecoes))+(groups.some(g=>g.min_selecoes)?' · escolha obrigatória':'');box.append(counter);
           for (const option of common) {
             const label = element('label', 'modifier-option');
             label.append(element('span', '', `${option.nome} · cobrança ${rule.cobranca === 'proporcional' ? 'proporcional' : rule.cobranca === 'integral' ? 'integral' : rule.cobranca}`));
@@ -1488,7 +1506,7 @@
             input.value=String((current.globais||[]).find(m=>m.grupo_id===rule.grupo_id&&m.opcao_id===option.id)?.quantidade||0);
             input.dataset.pizzaGlobal='1'; input.dataset.grupo=rule.grupo_id; input.dataset.opcao=option.id;
             input.addEventListener('input', () => { current.globais=$$('input[data-pizza-global]',mount).map(i=>({grupo_id:i.dataset.grupo,opcao_id:i.dataset.opcao,quantidade:Number(i.value||0)})).filter(m=>m.quantidade>0); atualizarCotacaoPizza(); });
-            label.append(input); box.append(label);
+            input.setAttribute('aria-label',option.nome+' na pizza inteira');label.append(quantityControl(input,()=>Math.min(Number(input.max),...groups.map((g,i)=>Number(input.value)+g.max_selecoes-modifierCount(current.globais,g.id)-modifierCount(selectedParts[i].modificadores,g.id))))); box.append(label);
           }
           mount.append(box);
         }

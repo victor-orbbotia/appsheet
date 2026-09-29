@@ -3,3 +3,6 @@
 #app-container [hidden] { display: none !important; }
 
 .pizza-ui.pc-row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+
+/* Controles consistentes para teclado e toque. */
+.pizza-ui button,.pizza-ui summary{min-height:44px}.pizza-ui button:focus-visible,.pizza-ui select:focus-visible,.pizza-ui summary:focus-visible{outline:3px solid #6366f1;outline-offset:3px}.pizza-ui fieldset{min-width:0}.pizza-ui button:disabled{cursor:not-allowed}.pizza-ui details>summary{padding:10px 0}.pizza-ui select{max-width:100%}

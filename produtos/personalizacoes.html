@@ -257,6 +257,11 @@ if(modoAdicionais){
   new ResizeObserver(()=>window.parent.postMessage({type:'cadastro-altura',height:document.querySelector('main').scrollHeight+32},location.origin)).observe(document.querySelector('main'));
  }
 }
+if(params.get('embedded')==='1'&&!modoAdicionais){
+ document.body.classList.add('embedded');$('voltar').hidden=true;document.body.style.padding='0';
+ document.querySelector('.top').hidden=true;
+ new ResizeObserver(()=>window.parent.postMessage({type:'cadastro-altura',height:document.querySelector('main').scrollHeight+32},location.origin)).observe(document.querySelector('main'));
+}
 
 </script>
 </body>

@@ -349,6 +349,19 @@
     .pizza-part-head strong { color:#fff; }
     .pizza-part select, .pizza-part input[type="number"] { margin-bottom:.65rem; }
     .pizza-live-total { min-height:1.2rem; margin:.45rem 0; color:#8be9a4; font-size:.82rem; font-weight:700; }
+    .pizza-stage-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+    .pizza-stage-copy { min-width:0; }
+    .pizza-stage-copy h2 { margin:.2rem 0; }
+    .pizza-stage-label { font-size:.72rem; color:#8be9a4; font-weight:700; }
+    .pizza-diagram { width:86px; height:86px; flex:0 0 86px; }
+    .pizza-diagram svg { width:100%; height:100%; }
+    .pizza-flavor-field { margin:.8rem 0; padding:.8rem; border:1px solid var(--border); border-radius:.8rem; }
+    .pizza-flavor-field h3 { margin:0 0 .55rem; color:#fff; font-size:.92rem; }
+    .pizza-flavor-field:focus-within,.modifier-group:focus-within { border-color:#8be9a4; }
+    .pizza-journey-total { flex:1; text-align:right; color:#8be9a4; font-size:.88rem; font-weight:700; }
+    #pizza-modal .modal-footer { display:grid; grid-template-columns:auto minmax(0,1fr); }
+    #pizza-back-flavors { grid-column:1/-1; justify-self:start; padding:.55rem .75rem; }
+    #pizza-add-cart { min-width:0; line-height:1.25; }
     .stepper { display: flex; align-items: center; overflow: hidden; border: 1px solid var(--border-strong); border-radius: .78rem; background: #0d110e; }
     .stepper button { width: 44px; height: 48px; border: 0; background: transparent; color: #fff; font-size: 1.3rem; cursor: pointer; }
     .stepper button:disabled { opacity:.35;cursor:not-allowed; }
@@ -550,11 +563,12 @@
   <section id="item-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-item-title" aria-hidden="true">
     <div class="modal-panel">
       <header class="modal-header">
-        <h2 id="modal-item-title">Item</h2>
+        <div class="pizza-stage-header"><div class="pizza-stage-copy"><span id="item-pizza-stage" class="pizza-stage-label" hidden>Etapa 2 de 2 · Bordas e adicionais</span><h2 id="modal-item-title">Item</h2></div><div id="pizza-diagram-whole" class="pizza-diagram" aria-hidden="true" hidden></div></div>
         <button class="icon-btn" type="button" data-close-modal aria-label="Fechar detalhes do item">×</button>
       </header>
       <div class="modal-content">
         <p id="modal-item-desc" class="modal-description"></p>
+        <button id="item-back-flavors" type="button" class="btn btn-secondary" hidden>Voltar aos sabores</button>
         <div id="variation-field" class="field hide"><label class="field-label" for="item-variation">Escolha a opção</label><select id="item-variation"><option value="">Selecione...</option></select></div>
         <div id="item-personalizacoes" class="options-group hide"></div>
         <div class="options-group">
@@ -574,23 +588,22 @@
   </section>
 
   <section id="pizza-journey" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-journey-title" aria-hidden="true">
-    <div class="modal-panel"><header class="modal-header"><h2 id="pizza-journey-title">Escolha sua pizza</h2><button class="icon-btn" type="button" data-close-modal aria-label="Fechar escolha da pizza">×</button></header>
+    <div class="modal-panel"><header class="modal-header"><div class="pizza-stage-header"><div class="pizza-stage-copy"><span class="pizza-stage-label">Etapa 1 de 2 · Sabores</span><h2 id="pizza-journey-title">Escolha sua pizza</h2></div><div id="pizza-diagram-flavors" class="pizza-diagram" aria-hidden="true"></div></div><button class="icon-btn" type="button" data-close-modal aria-label="Fechar escolha da pizza">×</button></header>
     <div class="modal-content"><p>Escolha o tamanho e os sabores. Depois você poderá adicionar bordas e acompanhamentos.</p>
     <div class="options-group"><label class="field-label" for="pizza-size-choice">Tamanho</label><select id="pizza-size-choice"></select></div>
     <div class="options-group"><label class="field-label" for="pizza-flavor-count">Quantos sabores?</label><select id="pizza-flavor-count"></select></div>
-    <div class="options-group"><label class="field-label" for="pizza-first-flavor">Primeiro sabor</label><select id="pizza-first-flavor"></select></div></div>
-    <footer class="modal-footer"><button id="pizza-journey-next" type="button" class="btn btn-grow" disabled>Continuar para personalizar</button></footer></div>
+    <div id="pizza-journey-flavors"></div></div>
+    <footer class="modal-footer"><div id="pizza-journey-total" class="pizza-journey-total" aria-live="polite">Escolha o tamanho</div><button id="pizza-journey-next" type="button" class="btn btn-grow" disabled>Continuar</button></footer></div>
   </section>
   <section id="pizza-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-modal-title" aria-hidden="true">
     <div class="modal-panel">
       <header class="modal-header">
-        <h2 id="pizza-modal-title">Monte sua pizza</h2>
+        <div class="pizza-stage-header"><div class="pizza-stage-copy"><span class="pizza-stage-label">Etapa 2 de 2 · Bordas e adicionais</span><h2 id="pizza-modal-title">Monte sua pizza</h2></div><div id="pizza-diagram-modifiers" class="pizza-diagram" aria-hidden="true"></div></div>
         <button class="icon-btn" type="button" data-close-modal aria-label="Fechar montagem da pizza">×</button>
       </header>
       <div class="modal-content">
         <p id="pizza-modal-desc" class="modal-description"></p>
         <div id="pizza-partes"></div>
-        <button id="pizza-add-parte" class="btn btn-secondary" type="button">Adicionar sabor</button>
         <div id="pizza-globais" class="options-group"></div>
         <div class="options-group">
           <label class="field-label" for="pizza-obs">Observação</label>
@@ -598,6 +611,7 @@
         </div>
       </div>
       <footer class="modal-footer">
+        <button id="pizza-back-flavors" class="btn btn-secondary" type="button">Voltar aos sabores</button>
         <div class="stepper" aria-label="Quantidade de pizzas">
           <button id="pizza-qty-minus" type="button" aria-label="Diminuir quantidade">−</button>
           <output id="pizza-qty">1</output>
@@ -1300,9 +1314,12 @@
         for (const group of groups) {
           const box = element('section', 'modifier-group');
           box.append(element('h4', '', group.nome));
-          box.append(element('p', 'modifier-hint', group.min_selecoes
-            ? `Escolha de ${group.min_selecoes} a ${group.max_selecoes}.` : `Opcional · até ${group.max_selecoes} escolha(s).`));
-          const counter=element('p','modifier-hint','0 de '+group.max_selecoes+' escolhidos');box.append(counter);
+          if(container.id==='item-personalizacoes'&&!$('#pizza-diagram-whole').hidden)box.addEventListener('focusin',()=>desenharEtapaPizza('pizza-diagram-whole',[1],group.nome.toLowerCase().includes('borda')?-1:0,group.nome.toLowerCase().includes('borda')));
+          box.append(element('p', 'modifier-hint', group.sem_limite_total
+            ? 'Opcional · respeite o limite de cada opção.' : group.min_selecoes
+              ? `Escolha de ${group.min_selecoes} a ${group.max_selecoes}.` : `Opcional · até ${group.max_selecoes} escolha(s).`));
+          const contador=()=>{const total=$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0);return group.sem_limite_total?`${total} escolhido(s)`:`${total} de ${group.max_selecoes} escolhidos`;};
+          const counter=element('p','modifier-hint',group.sem_limite_total?'0 escolhidos':'0 de '+group.max_selecoes+' escolhidos');box.append(counter);
           for (const option of group.opcoes) {
             const row = element('label', 'modifier-option');
             const copy = element('span', '', `${option.nome} · ${money(option.preco_centavos / 100)} cada`);
@@ -1311,10 +1328,10 @@
             input.value = String(selected.get(`${group.id}/${option.id}`) || 0);
             input.dataset.grupo = group.id; input.dataset.opcao = option.id;
             input.setAttribute('aria-label', `Quantidade de ${option.nome}`);
-            input.addEventListener('input',()=>{onChange();counter.textContent=$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0)+' de '+group.max_selecoes+' escolhidos';});
+            input.addEventListener('input',()=>{onChange();counter.textContent=contador();});
             row.append(copy, quantityControl(input,()=>Math.min(option.max_quantidade,borderCapacity(group.id,input.value),Number(input.value)+group.max_selecoes-$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0)))); box.append(row);
           }
-          counter.textContent=$$('input[data-grupo]',box).reduce((sum,i)=>sum+Number(i.value||0),0)+' de '+group.max_selecoes+' escolhidos';container.append(box);
+          counter.textContent=contador();container.append(box);
         }
         refreshQuantityControls();
       }
@@ -1377,10 +1394,36 @@
           p.categoria_id === config.categoria_id || (config.sabores || []).some(f => f.produto_id === p.id));
         return p?.categoria || 'Pizzas';
       }
-      function openPizzaJourney(product, trigger, configs = null) {
+      function desenharEtapaPizza(destino, partes, ativa = 0, borda = false) {
+        const total = partes.reduce((n, valor) => n + valor, 0) || 1;
+        let inicio = -Math.PI / 2;
+        const ponto = angulo => `${50 + 36 * Math.cos(angulo)} ${50 + 36 * Math.sin(angulo)}`;
+        const fatias = partes.map((valor, indice) => {
+          const fim = inicio + (Math.PI * 2 * valor / total);
+          const destaque = indice === ativa;
+          const cor = destaque && !borda ? '#efa94e' : '#59645c';
+          const caminho = partes.length === 1
+            ? `<circle cx="50" cy="50" r="36" fill="${cor}" stroke="#17231b" stroke-width="2"/>`
+            : `<path d="M 50 50 L ${ponto(inicio)} A 36 36 0 ${fim-inicio>Math.PI?1:0} 1 ${ponto(fim)} Z" fill="${cor}" stroke="#17231b" stroke-width="2"/>`;
+          const bordaAtiva = borda && (ativa < 0 || destaque);
+          const meio=(inicio+fim)/2;
+          const cobertura=fim-inicio>.35
+            ? `<circle cx="${50+18*Math.cos(meio)}" cy="${50+18*Math.sin(meio)}" r="3.2" fill="${destaque&&!borda?'#b85c39':'#353e37'}"/><circle cx="${50+27*Math.cos(meio-.18)}" cy="${50+27*Math.sin(meio-.18)}" r="2.4" fill="${destaque&&!borda?'#b85c39':'#353e37'}"/>`
+            : '';
+          const aro = bordaAtiva ? (partes.length === 1 || ativa < 0
+            ? '<circle cx="50" cy="50" r="43" fill="none" stroke="#8be9a4" stroke-width="8"/>'
+            : `<path d="M ${50+43*Math.cos(inicio)} ${50+43*Math.sin(inicio)} A 43 43 0 ${fim-inicio>Math.PI?1:0} 1 ${50+43*Math.cos(fim)} ${50+43*Math.sin(fim)}" fill="none" stroke="#8be9a4" stroke-width="8"/>`) : '';
+          inicio = fim;
+          return caminho + cobertura + aro;
+        }).join('');
+        $(`#${destino}`).innerHTML = `<svg viewBox="0 0 100 100" focusable="false"><circle cx="50" cy="50" r="47" fill="#8d6744" opacity=".7"/>${fatias}</svg>`;
+      }
+      function pesosVisuaisPizza(config, partes) { return config.divisao==='personalizada'?partes.map(p=>p.percentual):partes.map(()=>1); }
+      function openPizzaJourney(product, trigger, configs = null, draft = null) {
         const available = configs || tamanhosDaPizza().filter(c => (c.sabores || []).some(f => f.produto_id === product?.id));
         if (!available.length) return product ? openItemModal(product, trigger) : undefined;
-        const sizes = $('#pizza-size-choice'), counts = $('#pizza-flavor-count'), flavor = $('#pizza-first-flavor');
+        const sizes = $('#pizza-size-choice'), counts = $('#pizza-flavor-count'), mount = $('#pizza-journey-flavors');
+        let escolhas = [], fracoes = [];
         sizes.replaceChildren(new Option('Selecione o tamanho', ''));
         const entries = available.map(c => ({config:c, label:c.tamanho, value:c.id}));
         // Preserve tamanhos de pizzas inteiras que ainda não participam de montagens.
@@ -1396,25 +1439,79 @@
           counts.replaceChildren(new Option('1 sabor — pizza inteira', '1'));
           const c = entry?.config, options = c ? pizzaOpcoesSabor(c) : [];
           if (c && c.permite_dividir !== false) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n+' sabores',String(n)));
-          flavor.replaceChildren(new Option('Escolha o primeiro sabor',''));
-          if (c) options.filter(f=>f.produto.id===product?.id).forEach(f=>flavor.add(new Option(f.produto.nome+' · '+money(Number(f.variation.preco)),f.produto.id)));
-          else if (product) flavor.add(new Option(product.nome,product.id));
-          flavor.value=product?.id||'';flavor.disabled=true;
-          $('#pizza-journey-next').disabled=!entry || !flavor.value;
+          escolhas = Array.from({length:Number(counts.value)||1},(_,i)=>escolhas[i]||'');
+          fracoes=[];
+          escolhas[0]=product?.id||'';
+          renderEscolhas();
+        }
+        function renderEscolhas() {
+          const entry=entries.find(e=>e.value===sizes.value), config=entry?.config;
+          const amount=Number(counts.value)||1;
+          escolhas=Array.from({length:amount},(_,i)=>i===0?product?.id||'':escolhas[i]||'');
+          const base=Math.floor(100/amount/5)*5;
+          fracoes=Array.from({length:amount},(_,i)=>fracoes.length===amount?fracoes[i]:(i===amount-1?100-base*(amount-1):base));
+          mount.replaceChildren();
+          $('#pizza-journey-title').textContent=product?.nome||'Escolha sua pizza';
+          if(!entry){$('#pizza-journey-total').textContent='Escolha o tamanho';$('#pizza-journey-next').disabled=true;desenharEtapaPizza('pizza-diagram-flavors',[1]);return;}
+          const options=config?pizzaOpcoesSabor(config):[];
+          if(amount>1) escolhas.forEach((id,index)=>{
+            if(index===0&&config?.divisao!=='personalizada')return;
+            const box=element('section','pizza-flavor-field');
+            box.append(element('h3','',index===0?`Parte de ${product.nome}`:`Sabor ${index+1}`));
+            if(index>0){
+              const select=document.createElement('select');select.setAttribute('aria-label',`Escolha o sabor ${index+1}`);
+              select.add(new Option('Selecione um sabor',''));
+              for(const option of options.filter(f=>f.produto.id===id||!escolhas.includes(f.produto.id)))select.add(new Option(option.produto.nome,option.produto.id));
+              select.value=id;
+              select.addEventListener('focus',()=>desenharEtapaPizza('pizza-diagram-flavors',config.divisao==='personalizada'?fracoes:Array(amount).fill(1),index));
+              select.addEventListener('change',()=>{escolhas[index]=select.value;renderEscolhas();});
+              box.append(select);
+            }
+            if(config?.divisao==='personalizada'){
+              const label=element('label','field-label',`Parte do sabor ${index+1} (%)`);
+              const fraction=document.createElement('input');fraction.type='number';fraction.min='5';fraction.max='95';fraction.step='5';
+              fraction.value=String(fracoes[index]);
+              fraction.dataset.fracao=String(index);fraction.addEventListener('focus',()=>desenharEtapaPizza('pizza-diagram-flavors',fracoes,index));
+              fraction.addEventListener('input',()=>{fracoes[index]=Number(fraction.value);atualizarResumo();desenharEtapaPizza('pizza-diagram-flavors',fracoes,index);});box.append(label,fraction);
+            }
+            mount.append(box);
+          });
+          desenharEtapaPizza('pizza-diagram-flavors',config?.divisao==='personalizada'?fracoes:Array(amount).fill(1),0);
+          atualizarResumo();
+        }
+        function partesEscolhidas(){return escolhas.map((produto_id,i)=>({produto_id,percentual:fracoes[i]||100/escolhas.length,modificadores:[]}));}
+        function atualizarResumo(){
+          const entry=entries.find(e=>e.value===sizes.value), amount=Number(counts.value)||1;
+          const valid=Boolean(entry&&escolhas.length===amount&&escolhas.every(Boolean)&&new Set(escolhas).size===amount&&(!entry.config?.divisao||entry.config.divisao!=='personalizada'||(fracoes.every(n=>Number.isInteger(n)&&n>=5&&n<=95&&n%5===0)&&fracoes.reduce((n,i)=>n+i,0)===100)));
+          $('#pizza-journey-next').disabled=!valid;
+          if(!valid){$('#pizza-journey-total').textContent='Complete os sabores e as partes';return;}
+          if(amount===1){const option=entry.option||opcoesDisponiveis(product).find(o=>o.variacao_id===(entry.config?.sabores.find(f=>f.produto_id===product.id)?.variacao_id));$('#pizza-journey-total').textContent=option?money(option.preco):'Preço no próximo passo';return;}
+          const quote=window.cotarMeiaPizza({configuracoes:state.composicoesPizza,catalogo:state.catalogoComposto?.personalizacoes},{account_id:String(ACCOUNT_ID),segmento:state.catalogoComposto?.segmento||'restaurante'},{composicao_id:(entry.config.composicao||entry.config).id,quantidade:1,partes:partesEscolhidas(),globais:[]});
+          if(quote.status==='orcamento'){$('#pizza-journey-total').textContent=money(quote.total_centavos/100);return;}
+          const valores=escolhas.map(id=>{const link=entry.config.sabores.find(f=>f.produto_id===id);return Number((state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.id===link?.variacao_id)?.preco);});
+          const formula=(entry.config.composicao||entry.config).formula;
+          const base=valores.every(Number.isFinite)?(formula==='maior'?Math.max(...valores):formula==='media'?valores.reduce((a,b)=>a+b,0)/valores.length:valores.reduce((sum,price,i)=>sum+price*fracoes[i]/100,0)):null;
+          $('#pizza-journey-total').textContent=base===null?'Total após personalizar':`A partir de ${money(base)}`;
         }
         sizes.onchange=updateChoices;
-        flavor.onchange=()=>{$('#pizza-journey-next').disabled=!sizes.value||!flavor.value;};
+        counts.onchange=()=>{escolhas=[];fracoes=[];renderEscolhas();};
         $('#pizza-journey-next').onclick=()=>{
-          const entry=entries.find(e=>e.value===sizes.value), selected=state.produtos.find(p=>p.id===flavor.value);
+          const entry=entries.find(e=>e.value===sizes.value), selected=state.produtos.find(p=>p.id===escolhas[0]);
           if (!entry || !selected) return;
-          if (Number(counts.value)>1) return openPizzaModal(entry.config.composicao||entry.config,trigger,selected.id,Number(counts.value));
+          if (Number(counts.value)>1) return openPizzaModal(entry.config.composicao||entry.config,trigger,partesEscolhidas());
           const link=entry.config?.sabores.find(f=>f.produto_id===selected.id);
           const variant=(state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.id===link?.variacao_id);
           openItemModal(selected,trigger);
           $('#item-variation').value=variant?.nome||entry.option?.variacao||'';
           $('#item-variation').dispatchEvent(new Event('change'));
+          $('#variation-field').classList.add('hide');
+          $('#item-back-flavors').hidden=false;
+          state.current.pizzaJourneyConfig=entry.config||null;
         };
-        updateChoices(); openModal($('#pizza-journey'),trigger);
+        if(draft){const match=entries.find(e=>e.config?.id===draft.config.id||e.config?.composicao?.id===draft.config.id);if(match)sizes.value=match.value;}
+        updateChoices();
+        if(draft){counts.value=String(draft.partes.length);escolhas=draft.partes.map(p=>p.produto_id);fracoes=draft.partes.map(p=>p.percentual);renderEscolhas();}
+        openModal($('#pizza-journey'),trigger);
       }
       function pizzaProdutoVinculado(config, produtoId) {
         const vinculo = (config.sabores || []).find(s => s.produto_id === produtoId);
@@ -1439,26 +1536,11 @@
         partsMount.replaceChildren();
         current.partes.forEach((part, index) => {
           const box = element('section', 'modifier-group');
-          const title = element('h3', '', `Sabor ${index + 1}`);
-          if (index>0 && current.partes.length > config.minimo) {
-            const removePart=element('button','btn btn-secondary','Remover sabor');removePart.type='button';
-            removePart.addEventListener('click',()=>{current.partes.splice(index,1);if(config.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal();});
-            box.append(title,removePart);
-          } else box.append(title);
-          const select = document.createElement('select');
-          select.setAttribute('aria-label', `Escolha o sabor ${index + 1}`);
-          select.add(new Option('Selecione um sabor', ''));
-          for (const flavor of flavors.filter(f=>!current.partes.some((p,i)=>i!==index&&p.produto_id===f.produto.id))) select.add(new Option(flavor.label,flavor.produto.id));
-          select.value = part.produto_id || '';
-          select.addEventListener('change', () => { if(current.globais.length||current.partes[index].modificadores.length)showToast('Confira novamente os adicionais após trocar o sabor.');current.partes[index].produto_id = select.value; current.partes[index].modificadores = [];current.globais=[]; renderPizzaModal(); });
-          if(index===0){box.append(element('p','',flavors.find(f=>f.produto.id===part.produto_id)?.label||'Sabor escolhido no cardápio'));}else box.append(select);
-          if (config.divisao === 'personalizada') {
-            const fractionLabel = element('label', 'field-label', 'Parte da pizza (%)');
-            const fraction = document.createElement('input'); fraction.type = 'number'; fraction.min = '5'; fraction.max = '95'; fraction.step = '5';
-            fraction.value = String(part.percentual || Math.floor(100 / config.minimo / 5) * 5);
-            fraction.addEventListener('input', () => { current.partes[index].percentual = Number(fraction.value); atualizarCotacaoPizza(); });
-            box.append(fractionLabel, fraction);
-          } else box.append(element('p', 'modifier-hint', 'Os sabores terão partes iguais.'));
+          const nome=flavors.find(f=>f.produto.id===part.produto_id)?.label||'Sabor indisponível';
+          const title = element('h3', '', `Sabor ${index + 1} · ${nome}`);
+          box.append(title);
+          box.addEventListener('focusin',()=>desenharEtapaPizza('pizza-diagram-modifiers',pesosVisuaisPizza(config,current.partes),index));
+          if(config.divisao==='personalizada')box.append(element('p','modifier-hint',`${part.percentual}% da pizza`));
           if (part.produto_id) {
             const vinculo = (config.sabores || []).find(v => v.produto_id === part.produto_id);
             const consulta = consultarProdutoPersonalizado(part.produto_id, vinculo?.variacao_id);
@@ -1468,8 +1550,9 @@
                 if (!rule) continue;
                 const selected = new Map((part.modificadores || []).map(m => [m.opcao_id, m.quantidade]));
                 const groupBox = element('section', 'modifier-group');
-                groupBox.append(element('h4', '', `${group.nome} nesta parte`));
-                const counter=element('p','modifier-hint');counter.dataset.groupCounter='1';counter.refresh=()=>counter.textContent=(modifierCount(part.modificadores,group.id)+modifierCount(current.globais,group.id))+' de '+group.max_selecoes+' escolhidos'+(group.min_selecoes?' · mínimo '+group.min_selecoes:'');groupBox.append(counter);
+                groupBox.append(element('h4', '', `${group.nome} no sabor ${index+1} · ${nome}`));
+                groupBox.addEventListener('focusin',()=>desenharEtapaPizza('pizza-diagram-modifiers',pesosVisuaisPizza(config,current.partes),index,group.nome.toLowerCase().includes('borda')));
+                const counter=element('p','modifier-hint');counter.dataset.groupCounter='1';counter.refresh=()=>{const total=modifierCount(part.modificadores,group.id)+modifierCount(current.globais,group.id);counter.textContent=group.sem_limite_total?total+' escolhido(s) · limite por opção':total+' de '+group.max_selecoes+' escolhidos'+(group.min_selecoes?' · mínimo '+group.min_selecoes:'');};groupBox.append(counter);
                 for (const option of group.opcoes) {
                   const label = element('label', 'modifier-option');
                   label.append(element('span', '', `${option.nome} · ${money(option.preco_centavos / 100)}`));
@@ -1483,8 +1566,7 @@
           }
           partsMount.append(box);
         });
-        $('#pizza-add-parte').classList.toggle('hide', current.partes.length >= Math.min(config.maximo, flavors.length));
-        $('#pizza-add-parte').disabled = current.partes.length >= Math.min(config.maximo, flavors.length);
+        desenharEtapaPizza('pizza-diagram-modifiers',pesosVisuaisPizza(config,current.partes),0);
         renderPizzaGlobais();
         $('#pizza-qty').textContent = String(current.quantidade);
         atualizarCotacaoPizza();refreshQuantityControls();modalBody.scrollTop=previousScroll;
@@ -1507,8 +1589,9 @@
           if (groups.some(g => !g)) continue;
           const common = groups[0].opcoes.filter(o => groups.every(g => g.opcoes.some(x => x.id === o.id)));
           if (!common.length) continue;
-          const box = element('section', 'modifier-group'); box.append(element('h4', '', groups[0].nome));
-          const counter=element('p','modifier-hint');counter.dataset.groupCounter='1';counter.refresh=()=>counter.textContent=modifierCount(current.globais,rule.grupo_id)+' escolhidos · até '+Math.min(...groups.map(g=>g.max_selecoes))+(groups.some(g=>g.min_selecoes)?' · escolha obrigatória':'');box.append(counter);
+          const box = element('section', 'modifier-group'); box.append(element('h4', '', `${groups[0].nome} na pizza inteira`));
+          box.addEventListener('focusin',()=>desenharEtapaPizza('pizza-diagram-modifiers',pesosVisuaisPizza(config,current.partes),-1,groups[0].nome.toLowerCase().includes('borda')));
+          const counter=element('p','modifier-hint');counter.dataset.groupCounter='1';counter.refresh=()=>counter.textContent=groups.every(g=>g.sem_limite_total)?modifierCount(current.globais,rule.grupo_id)+' escolhido(s) · limite por opção':modifierCount(current.globais,rule.grupo_id)+' escolhidos · até '+Math.min(...groups.map(g=>g.max_selecoes))+(groups.some(g=>g.min_selecoes)?' · escolha obrigatória':'');box.append(counter);
           for (const option of common) {
             const label = element('label', 'modifier-option');
             const prices=groups.map(g=>g.opcoes.find(o=>o.id===option.id).preco_centavos);
@@ -1537,12 +1620,11 @@
         const button=$('#pizza-add-cart'); button.disabled=!current.quote;
         $('#pizza-price').textContent=current.quote?`${money(current.quote.preco_unitario_centavos/100)} cada · ${money(current.quote.total_centavos/100)}`:current.quoteError;
       }
-      function openPizzaModal(config, trigger, primeiroSabor = '', quantidadeSabores = config.minimo) {
+      function openPizzaModal(config, trigger, partesEscolhidas) {
         if (!state.composicaoMotor || !state.catalogoComposto?.personalizacoes) return showToast('As opções de montagem não carregaram. Recarregue o cardápio.', 'error');
-        const basePercentual=Math.floor(100/quantidadeSabores/5)*5;
-        state.pizzaCurrent={item_id:crypto.randomUUID(),config,quantidade:1,partes:Array.from({length:quantidadeSabores},(_,i)=>({produto_id:i===0?primeiroSabor:'',percentual:i===quantidadeSabores-1?100-basePercentual*(quantidadeSabores-1):basePercentual,modificadores:[]})),globais:[],observacao:'',quote:null};
+        state.pizzaCurrent={item_id:crypto.randomUUID(),config,quantidade:1,partes:partesEscolhidas.map(p=>({...p,modificadores:[]})),globais:[],observacao:'',quote:null};
         $('#pizza-modal-title').textContent=`Sua pizza · ${config.tamanho}`;
-        $('#pizza-modal-desc').textContent=`${config.minimo===Math.min(config.maximo,pizzaOpcoesSabor(config).length)?'Escolha '+config.minimo:'Escolha de '+config.minimo+' a '+Math.min(config.maximo,pizzaOpcoesSabor(config).length)} sabores.${config.divisao==='personalizada'?' Distribua as partes em intervalos de 5%, somando 100%.':' Os sabores serão divididos igualmente.'}`;
+        $('#pizza-modal-desc').textContent='Personalize os sabores escolhidos. Para trocar sabores ou partes, volte à etapa anterior.';
         $('#pizza-obs').value=''; renderPizzaModal(); openModal($('#pizza-modal'),trigger);
       }
       function addPizzaToCart() {
@@ -1560,6 +1642,11 @@
         const options = opcoesDisponiveis(product).filter(o => {const v=(state.catalogoComposto?.personalizacoes?.produto_variacoes||[]).find(v=>v.id===o.variacao_id);return v?.pizza_tamanho_ativo!==false;});
         if (!options.length) return showToast("Produto indisponível.", "error");
         state.current = { item_id: crypto.randomUUID(), produto_id: product.id || '', produto: product, nome: String(product.nome || "Item"), basePrice: options[0].variacao ? null : options[0].preco, variacao: '', variacao_id: '', qty: 1, options, modificadores: [] };
+        const categoriaPizzaProduto=(state.catalogoComposto?.personalizacoes?.categorias||[]).find(c=>c.id===product.categoria_id)?.tipo_padrao==='pizza';
+        const pizzaInteira=product.metadata?.tipo_cadastro==='pizza'||categoriaPizzaProduto;
+        $('#item-pizza-stage').hidden=!pizzaInteira;$('#pizza-diagram-whole').hidden=!pizzaInteira;
+        $('#item-back-flavors').hidden=true;
+        if(pizzaInteira)desenharEtapaPizza('pizza-diagram-whole',[1]);
         $("#modal-item-title").textContent = state.current.nome;
         $("#modal-item-desc").textContent = product.descricao || "";
         $("#item-obs").value = "";
@@ -2026,7 +2113,8 @@
         carregarGruposProduto();
       });
       $('#item-qty').addEventListener('change', () => { if (state.current) { state.current.qty = Math.max(1,Math.min(99,Number($('#item-qty').value)||1)); atualizarCotacaoProduto(); } });
-      $('#pizza-add-parte').addEventListener('click', () => { const current=state.pizzaCurrent,c=current?.config;if(!c||current.partes.length>=Math.min(c.maximo,pizzaOpcoesSabor(c).length))return;current.partes.push({produto_id:'',percentual:0,modificadores:[]});if(c.divisao==='personalizada'){const base=Math.floor(100/current.partes.length/5)*5;current.partes.forEach((p,i)=>p.percentual=i===current.partes.length-1?100-base*(current.partes.length-1):base);}renderPizzaModal(); });
+      $('#pizza-back-flavors').addEventListener('click',()=>{const current=state.pizzaCurrent;if(!current)return;const first=state.produtos.find(p=>p.id===current.partes[0].produto_id);if(first)openPizzaJourney(first,$('#pizza-back-flavors'),null,current);});
+      $('#item-back-flavors').addEventListener('click',()=>{const current=state.current;if(!current)return;const config=current.pizzaJourneyConfig;openPizzaJourney(current.produto,$('#item-back-flavors'),null,config?{config:config.composicao||config,partes:[{produto_id:current.produto_id,percentual:100}]}:null);});
       $('#pizza-qty-minus').addEventListener('click',()=>{if(state.pizzaCurrent){state.pizzaCurrent.quantidade=Math.max(1,state.pizzaCurrent.quantidade-1);atualizarCotacaoPizza();$('#pizza-qty').textContent=String(state.pizzaCurrent.quantidade);}});
       $('#pizza-qty-plus').addEventListener('click',()=>{if(state.pizzaCurrent){state.pizzaCurrent.quantidade=Math.min(99,state.pizzaCurrent.quantidade+1);atualizarCotacaoPizza();$('#pizza-qty').textContent=String(state.pizzaCurrent.quantidade);}});
       $('#pizza-obs').addEventListener('input',()=>{if(state.pizzaCurrent)state.pizzaCurrent.observacao=$('#pizza-obs').value.trim();});

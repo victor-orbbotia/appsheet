@@ -2,10 +2,10 @@
 window.CadastroUI = (() => {
  let timer;
  function notify(message, error=false) {
+  if(window.parent!==window){window.parent.postMessage({type:'cadastro-aviso',message,error},location.origin==='null'?'*':location.origin);return;}
   let box=document.getElementById('cadastro-toast');
   if(!box){box=document.createElement('div');box.id='cadastro-toast';box.setAttribute('role','status');box.setAttribute('aria-live','polite');document.body.append(box);}
   box.style.cssText='position:fixed;bottom:20px;right:20px;max-width:min(420px,90vw);padding:14px 18px;border-radius:12px;z-index:10000;box-shadow:0 4px 22px #0002;font:14px system-ui;background:'+(error?'#fff1f2;color:#9f1239':'#ecfdf5;color:#065f46');
-  if(window.parent!==window)window.parent.postMessage({type:'cadastro-aviso',message,error},location.origin);
   box.textContent=message;box.hidden=false;clearTimeout(timer);if(!error)timer=setTimeout(()=>box.hidden=true,4500);
  }
  function capture(root=document) {

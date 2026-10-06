@@ -205,7 +205,7 @@ window.pizzasCadastro = (() => {
  function open(id){choose('pizza');if($('pc-editor').hidden)return;setSection('flavors');pendingProduct=id||null;if(!data){notice('Carregue o cadastro para continuar.');$('pc-load').focus();return;}if(id){const p=flavors().find(p=>p.id===id);if(p)editorFlavor(p);else notice('Recarregue: este sabor não está disponível.',true);}else editorFlavor();}
  function init(a,s='restaurante'){
    if(account&&(account!==String(a)||segment!==s)){
-     $('pc-addons-frame').removeAttribute('src');addonDirty=false;dirty=false;editor=null;pendingProduct=null;
+     $('pc-addons-frame').removeAttribute('src');$('pc-rules-frame').removeAttribute('src');addonDirty=false;dirty=false;editor=null;pendingProduct=null;
      for(const id of ['pc-size-form','pc-flavor-form','pc-borda-form','pc-adicional-form','pc-line-form']){$(id).replaceChildren();$(id).hidden=true;}data=null;key='';$('pc-key').value='';$('pc-load').hidden=false;if(!window.AdminSession?.enabled){$('pc-key').closest('label').hidden=false;$('pc-key-help').hidden=false;}$('pc-content').disabled=true;renderList([]);}
    account=String(a);segment=s;
    $('pc-type-addons').onclick=()=>choose('addons');$('pc-type-common').onclick=()=>choose('common');$('pc-type-pizza').onclick=()=>choose('pizza');
@@ -220,12 +220,15 @@ window.pizzasCadastro = (() => {
    choose(new URLSearchParams(location.search).get('tipo')==='pizza'?'pizza':'common');
  }
  window.addEventListener('message',async e=>{
-   if(e.source!==$('pc-addons-frame')?.contentWindow||e.origin!==location.origin)return;
+   const rulesFrame=e.source===$('pc-rules-frame')?.contentWindow;
+   if(!rulesFrame&&e.source!==$('pc-addons-frame')?.contentWindow||e.origin!==location.origin)return;
    if(e.data?.type==='cadastro-aviso')CadastroUI.notify(String(e.data.message),Boolean(e.data.error));
    if(e.data?.type==='cadastro-dirty')addonDirty=Boolean(e.data.dirty);
    if(e.data?.type==='cadastro-pronto'&&String(e.data.accountId)===account)window.switchAddonTab?.(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab||'new');
-   if(e.data?.type==='cadastro-altura')$('pc-addons-frame').style.height=Math.min(30000,Math.max(600,Number(e.data.height)||600))+'px';
+   if(e.data?.type==='cadastro-altura')(rulesFrame?$('pc-rules-frame'):$('pc-addons-frame')).style.height=Math.min(30000,Math.max(600,Number(e.data.height)||600))+'px';
    if(e.data?.type==='cadastro-atualizado'&&String(e.data.accountId)===account&&data){
+     const outra=rulesFrame?$('pc-addons-frame'):$('pc-rules-frame');
+     if(!addonDirty&&outra.getAttribute('src'))outra.contentWindow?.location.reload();
      if(dirty)return notice('Adicionais atualizados. Salve ou descarte sua edição e recarregue o cadastro de pizzas.',true);
      await run(async()=>{const view=CadastroUI.capture();data=await request('consultar');render();CadastroUI.restore(view);});
    }
@@ -236,6 +239,7 @@ window.pizzasCadastro = (() => {
    if(addonDirty&&!confirm('Há alterações não salvas nos adicionais. Deseja atualizar e descartá-las?'))return false;
    dirty=false;addonDirty=false;
    try{$('pc-addons-frame').contentWindow?.CadastroAdicionais?.descartarParaAtualizar();}catch{}
+   try{$('pc-rules-frame').contentWindow?.CadastroAdicionais?.descartarParaAtualizar();}catch{}
    return true;
  }
  return {init,open,isPizza,renderList,canReload};

@@ -2,7 +2,7 @@
 // Cadastro especializado integrado à página Produtos. A chave permanece em memória.
 window.pizzasCadastro = (() => {
  const endpoint='https://n8n.orbbotia.com/webhook/meia-pizza-admin';
- let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, pendingCategories=false, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='sizes', pizzaSource=[], pizzaGroupFilter='Todas';
+ let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='sizes', pizzaSource=[], pizzaGroupFilter='Todas';
  const $=id=>document.getElementById(id);
  const node=(tag,text,cls)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;if(cls)x.className=cls;return x;};
  const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -55,8 +55,6 @@ window.pizzasCadastro = (() => {
    const name=field(grid,'Nome do tamanho',t.nome||'');name.placeholder='Pequena, Média, Grande…';name.maxLength=60;
    const slices=field(grid,'Quantidade de fatias (opcional)',t.fatias||'','number');slices.step='1';slices.max='100';
    const diameter=field(grid,'Diâmetro em cm (opcional)',t.diametro||'','number');diameter.max='200';
-   const borderLimit=select(f,'Máximo de bordas por pizza', [['','Usar somente os limites de cada conjunto'],...Array.from({length:5},(_,i)=>[i,String(i)])],t.max_bordas??'');
-   f.append(node('p','O limite total soma as unidades de borda de todos os conjuntos, inclusive escolhidas por parte. Em branco, permanecem os limites individuais.'));
    const active=checkbox(f,'Disponível para venda',t.ativo!==false);active.closest('label').classList.add('pc-availability');const divide=checkbox(f,'Permitir combinar sabores neste tamanho',t.permite_dividir||false);
    f.append(node('p','O mesmo tamanho vale para inteira e dividida. Fatias não determinam a quantidade de sabores.'));
    const rules=node('div',undefined,'pc-grid');f.append(rules);
@@ -66,7 +64,7 @@ window.pizzasCadastro = (() => {
    const division=select(rules,'Como dividir?',[['iguais','Partes iguais'],['personalizada','Cliente escolhe proporções de 5% em 5%']],t.divisao||'iguais');
    const example=node('p');rules.append(example);function explain(){example.textContent=formula.value==='maior'?'Ex.: sabores de R$30 e R$50 → R$50.':formula.value==='media'?'Ex.: sabores de R$30 e R$50 → R$40.':'Ex.: 25% de R$30 + 75% de R$50 → R$45.';}formula.onchange=explain;explain();
    rules.hidden=!divide.checked;divide.onchange=()=>{rules.hidden=!divide.checked;};
-   f.append(button('Salvar tamanho',()=>{if(!name.value.trim())return notice('Informe o nome do tamanho.',true);if(Number(max.value)<Number(min.value))return notice('O máximo precisa ser igual ou maior que o mínimo.',true);save('salvar_tamanho',{id:t.id,max_bordas:borderLimit.value===''?null:Number(borderLimit.value),nome:name.value.trim(),fatias:slices.value||null,diametro:diameter.value||null,ativo:active.checked,permite_dividir:divide.checked,minimo:Number(min.value),maximo:Number(max.value),formula:formula.value,divisao:division.value});},'primary'));
+   f.append(button('Salvar tamanho',()=>{if(!name.value.trim())return notice('Informe o nome do tamanho.',true);if(Number(max.value)<Number(min.value))return notice('O máximo precisa ser igual ou maior que o mínimo.',true);save('salvar_tamanho',{id:t.id,max_bordas:null,nome:name.value.trim(),fatias:slices.value||null,diametro:diameter.value||null,ativo:active.checked,permite_dividir:divide.checked,minimo:Number(min.value),maximo:Number(max.value),formula:formula.value,divisao:division.value});},'primary'));
  }
  function editorFlavor(p={}){
    if(!discard())return;dirty=false;editor=()=>editorFlavor(p);const f=formSlot('pc-flavor-form');f.append(node('h3',p.id?'Editar sabor':'Novo sabor'));
@@ -123,36 +121,34 @@ window.pizzasCadastro = (() => {
  function editorGroup(kind,g={}){
    if(!discard())return;dirty=false;const f=formSlot('pc-'+kind+'-form');f.append(node('h3',g.id?'Editar conjunto':'Novo conjunto de opções'));
    const name=field(f,kind==='borda'?'Nome do conjunto (ex.: Bordas recheadas)':'Nome do conjunto (ex.: Molhos)',g.nome||(kind==='borda'?'Borda':'Adicionais'));
-   const required=checkbox(f,'Escolha obrigatória',Number(g.min_selecoes)>0),limit=field(f,'Máximo de escolhas',g.max_selecoes||(kind==='borda'?1:3),'number');limit.step='1';limit.min='1';
-   const minimum=field(f,'Mínimo de escolhas quando obrigatório',g.min_selecoes||1,'number');minimum.min='1';minimum.step='1';minimum.disabled=!required.checked;required.onchange=()=>{minimum.disabled=!required.checked;};
    const scope=select(f,'Aplicar em',[['inteira','Pizza inteira'],['parte','Cada sabor/parte']],g.escopo_pizza||'inteira');
    const charge=select(f,'Como cobrar?',[],undefined);
    function update(){charge.replaceChildren();(scope.value==='inteira'?[['maior','Maior preço entre os sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']]:[['integral','Valor integral por parte'],['proporcional','Proporcional à parte']]).forEach(([v,t])=>charge.add(new Option(t,v)));}scope.onchange=update;update();charge.value=g.cobranca_pizza||charge.value;
-   f.append(node('p','As opções são aplicadas à categoria padrão Pizzas, incluindo novos sabores. Uma escolha obrigatória só fica disponível quando tiver opções suficientes.'));
+   f.append(node('p','Cada opção conserva seu próprio limite de quantidade. Neste cadastro não há mínimo ou máximo total de escolhas.'));
    if(g.id)f.append(node('p','Editar esta escolha também altera os produtos que já a utilizam. Confira suas associações antes de salvar.'));
    const scopeLines=node('fieldset');scopeLines.append(node('legend','Onde oferecer este conjunto?'));
-   const lineChecks=lines().map(l=>({id:l.id,input:checkbox(scopeLines,l.nome,(data.linha_grupos||[]).some(x=>x.grupo_id===g.id&&x.linha_id===l.id))}));
-   scopeLines.append(node('p','Sem agrupamento marcado: disponível em todos. Marque os agrupamentos para restringir.'));f.append(scopeLines);
-   f.append(button('Salvar conjunto',()=>save('salvar_grupo',{id:g.id,linhas_ids:lineChecks.filter(x=>x.input.checked).map(x=>x.id),nome:name.value.trim(),min_selecoes:required.checked?Number(minimum.value):0,max_selecoes:Number(limit.value),ativo:true,uso_pizza:kind,escopo_pizza:scope.value,cobranca_pizza:charge.value}),'primary'));
+   const lineChecks=lines().map(l=>({id:l.id,input:checkbox(scopeLines,l.nome,!g.id||(data.linha_grupos||[]).some(x=>x.grupo_id===g.id&&x.linha_id===l.id))}));
+   scopeLines.append(node('p','Todos começam marcados em um conjunto novo. Se desmarcar todos, este conjunto não aparecerá em nenhum agrupamento.'));f.append(scopeLines);
+   f.append(button('Salvar conjunto',()=>save('salvar_grupo',{id:g.id,linhas_ids:lineChecks.filter(x=>x.input.checked).map(x=>x.id),nome:name.value.trim(),min_selecoes:0,max_selecoes:2147483647,ativo:true,uso_pizza:kind,escopo_pizza:scope.value,cobranca_pizza:charge.value}),'primary'));
  }
  function editorOption(kind,g,o={}){
    if(!discard())return;dirty=false;const f=formSlot('pc-'+kind+'-form');f.append(node('h3',(o.id?'Editar opção de ':'Nova opção de ')+g.nome));
    const name=field(f,'Nome',o.nome||''),price=field(f,'Acréscimo padrão (R$)',o.preco_padrao??0,'number');
-   const repeat=kind==='borda'?null:checkbox(f,'Permitir repetir esta opção',o.permite_quantidade||false),max=kind==='borda'?null:field(f,'Quantidade máxima',o.max_quantidade||1,'number');if(max){max.step='1';max.min='1';}
+   const repeat=kind==='borda'?null:checkbox(f,'Permitir repetir esta opção',o.permite_quantidade||false),max=field(f,kind==='borda'?'Máximo desta borda por pizza':'Quantidade máxima',kind==='borda'?Math.max(2,Number(o.max_quantidade)||2):o.max_quantidade||1,'number');max.step='1';max.min=kind==='borda'?'2':'1';
    const active=checkbox(f,'Opção disponível',o.ativo!==false);active.closest('label').classList.add('pc-availability');f.append(node('p','Preço vazio usa o padrão; zero é gratuito.'));
    const grid=node('div',undefined,'pc-grid');f.append(grid);
    const exceptionChecks=[];
    const prices=sizes().map(t=>{const saved=data.precos_tamanhos.find(x=>x.tamanho_id===t.id&&x.opcao_id===o.id);const box=node('div');grid.append(box);const available=checkbox(box,'Disponível em '+t.nome,!(data.bloqueios_tamanhos||[]).some(x=>x.tamanho_id===t.id&&x.opcao_id===o.id));return {t,available,original:saved?.preco??'',input:field(box,'Acréscimo em '+t.nome,saved?.preco??'','number')};});
-   f.append(button('Salvar opção',()=>{if(!name.value.trim())return notice('Informe o nome da opção.',true);save(g.id?'salvar_opcao':'salvar_opcao_guiada',{uso_pizza:kind,id:o.id,grupo_id:g.id,nome:name.value.trim(),preco_padrao:price.value,permite_quantidade:kind==='borda'?Boolean(o.permite_quantidade):repeat.checked,max_quantidade:kind==='borda'?Number(o.max_quantidade||1):repeat.checked?Number(max.value):1,ativo:active.checked,excecoes_sabores:exceptionChecks.filter(x=>x.check.checked!==x.original).map(x=>({produto_id:x.id,remover:x.check.checked})),disponibilidade_tamanhos:prices.map(x=>({tamanho_id:x.t.id,disponivel:x.available.checked})),precos_tamanhos:prices.filter(x=>(x.input.value===''?null:Number(x.input.value))!==(x.original===''?null:Number(x.original))).map(x=>({tamanho_id:x.t.id,preco:x.input.value}))});},'primary'));
+   f.append(button('Salvar opção',()=>{if(!name.value.trim())return notice('Informe o nome da opção.',true);if(kind==='borda'&&(!Number.isInteger(Number(max.value))||Number(max.value)<2))return notice('Informe quantas unidades desta borda podem ser escolhidas (mínimo 2).',true);save(g.id?'salvar_opcao':'salvar_opcao_guiada',{uso_pizza:kind,id:o.id,grupo_id:g.id,nome:name.value.trim(),preco_padrao:price.value,permite_quantidade:kind==='borda'?true:repeat.checked,max_quantidade:kind==='borda'?Number(max.value):repeat.checked?Number(max.value):1,ativo:active.checked,excecoes_sabores:exceptionChecks.filter(x=>x.check.checked!==x.original).map(x=>({produto_id:x.id,remover:x.check.checked})),disponibilidade_tamanhos:prices.map(x=>({tamanho_id:x.t.id,disponivel:x.available.checked})),precos_tamanhos:prices.filter(x=>(x.input.value===''?null:Number(x.input.value))!==(x.original===''?null:Number(x.original))).map(x=>({tamanho_id:x.t.id,preco:x.input.value}))});},'primary'));
 
  }
  function renderGroups(kind){
    const mount=$('pc-'+kind+'-list');mount.replaceChildren();
    for(const g of catalog().personalizacao_grupos.filter(g=>g.uso_pizza===kind)){
-     const d=node('details');d.dataset.uiKey='grupo-'+g.id;d.append(node('summary',g.nome+' · '+(g.min_selecoes?'Obrigatória':'Opcional')+' · até '+g.max_selecoes));
+     const d=node('details');d.dataset.uiKey='grupo-'+g.id;d.append(node('summary',g.nome+' · escolha por opção'));
      d.append(button('Editar regras',()=>editorGroup(kind,g)),button('Adicionar opção',()=>editorOption(kind,g)),button('Excluir conjunto',()=>{if(confirm('Excluir esta escolha e seus vínculos? Produtos que também usam esta escolha serão afetados.'))save('excluir_grupo',{id:g.id});},'danger'));
      for(const o of catalog().personalizacao_opcoes.filter(o=>o.grupo_id===g.id)){const row=node('div',undefined,'pc-row');row.append(node('p',o.nome+' · '+money(o.preco_padrao)+(o.ativo?'':' · Indisponível')),button('Editar',()=>editorOption(kind,g,o)),button('Excluir',()=>{if(confirm('Excluir a opção '+o.nome+' e seus preços?'))save('excluir_opcao',{id:o.id});},'danger'));d.append(row);}
-     if(!catalog().categoria_personalizacao_grupos.some(x=>x.grupo_id===g.id&&x.categoria_id===data.categoria_padrao))d.append(node('p','Esta escolha ainda não foi aplicada à categoria padrão. Cadastre opções suficientes para atender ao mínimo.'));
+     if(!catalog().categoria_personalizacao_grupos.some(x=>x.grupo_id===g.id&&x.categoria_id===data.categoria_padrao))d.append(node('p','Esta escolha ainda não foi aplicada à categoria padrão. Cadastre ao menos uma opção disponível.'));
      mount.append(d);
    }
  }
@@ -213,8 +209,7 @@ window.pizzasCadastro = (() => {
      for(const id of ['pc-size-form','pc-flavor-form','pc-borda-form','pc-adicional-form','pc-line-form']){$(id).replaceChildren();$(id).hidden=true;}data=null;key='';$('pc-key').value='';$('pc-load').hidden=false;if(!window.AdminSession?.enabled){$('pc-key').closest('label').hidden=false;$('pc-key-help').hidden=false;}$('pc-content').disabled=true;renderList([]);}
    account=String(a);segment=s;
    $('pc-type-addons').onclick=()=>choose('addons');$('pc-type-common').onclick=()=>choose('common');$('pc-type-pizza').onclick=()=>choose('pizza');
-   $('pc-load').onclick=()=>{if(!discard())return;run(async()=>{key=$('pc-key').value.trim();if(!key&&!window.AdminSession?.enabled)throw Error('Informe a chave administrativa de pizzas.');data=await request('consultar');dirty=false;render();$('pc-load').hidden=true;$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;notice('Cadastro carregado.');if(pendingProduct){const id=pendingProduct;pendingProduct=null;open(id);}if(pendingCategories){pendingCategories=false;choose('addons');window.switchAddonTab?.('advanced');$('pc-category-section').hidden=false;$('pc-category-section').scrollIntoView({behavior:'smooth'});}});};
-   $('pc-manage-categories').onclick=()=>{window.switchAddonTab?.('advanced');$('pc-category-section').hidden=false;if(data)$('pc-category-section').scrollIntoView({behavior:'smooth'});else {choose('pizza');pendingCategories=true;notice('Carregue o cadastro para gerenciar as categorias.');$('pc-load').focus();}};
+   $('pc-load').onclick=()=>{if(!discard())return;run(async()=>{key=$('pc-key').value.trim();if(!key&&!window.AdminSession?.enabled)throw Error('Informe a chave administrativa de pizzas.');data=await request('consultar');dirty=false;render();$('pc-load').hidden=true;$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;notice('Cadastro carregado.');if(pendingProduct){const id=pendingProduct;pendingProduct=null;open(id);}});};
    $('pc-new-line').onclick=()=>editorLine();
    $('pc-new-size').onclick=()=>editorSize();$('pc-new-flavor').onclick=()=>editorFlavor();
    for(const kind of ['borda','adicional']){ $('pc-new-'+kind).onclick=()=>newOption(kind);$('pc-new-group-'+kind).onclick=()=>editorGroup(kind);}

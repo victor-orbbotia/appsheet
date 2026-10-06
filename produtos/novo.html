@@ -102,8 +102,8 @@
 </section>
 <section id="pc-addons" hidden>
 <nav id="pc-addon-tabs" class="catalog-tabs" aria-label="Etapas dos adicionais"><button type="button" data-addon-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-addon-tab="list" aria-selected="false">Lista de itens</button><button type="button" data-addon-tab="where" aria-selected="false">Onde oferecer</button><button type="button" data-addon-tab="advanced" aria-selected="false">Configurações avançadas</button></nav>
-<section class="pizza-ui pc-card" id="pc-advanced" hidden><h2>Configurações avançadas do catálogo</h2><p>Escolha a configuração que deseja revisar.</p><nav class="catalog-tabs" aria-label="Configurações avançadas dos adicionais"><button type="button" data-advanced-tab="prices" aria-selected="true">Preços por tamanho</button><button type="button" data-advanced-tab="rules" aria-selected="false">Regras completas</button></nav><div id="pc-advanced-rules" hidden><p>Edite exceções por produto, vínculos especiais e outras regras do catálogo.</p><a id="link-personalizacoes" class="pc-link" href="./personalizacoes.html">Abrir personalizações completas</a></div><section id="pc-category-section" hidden><div id="pc-categories"></div></section></section>
-<iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe></section>
+<section class="pizza-ui pc-card" id="pc-advanced" hidden><h2>Configurações avançadas do catálogo</h2><p>Escolha a configuração que deseja revisar.</p><nav class="catalog-tabs" aria-label="Configurações avançadas dos adicionais"><button type="button" data-advanced-tab="prices" aria-selected="true">Preços por tamanho</button><button type="button" data-advanced-tab="rules" aria-selected="false">Regras completas</button></nav><div id="pc-advanced-rules" hidden><p>Edite exceções por produto, vínculos especiais e outras regras do catálogo abaixo.</p></div><section id="pc-category-section" hidden><div id="pc-categories"></div></section></section>
+<iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe><iframe id="pc-rules-frame" title="Regras completas das personalizações" style="width:100%;height:1800px;border:0" loading="lazy" hidden></iframe></section>
 <nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-common-tab="list" aria-selected="false">Lista de itens</button></nav>
 <section id="pc-editor" class="pizza-ui" hidden>
 <div class="pc-card"><div class="pc-row section-heading"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" class="help-control" aria-expanded="false" aria-controls="pc-help">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
@@ -479,7 +479,6 @@
             document.getElementById('app-container').classList.remove('hidden');
             
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
-            document.getElementById('link-personalizacoes').href = `./personalizacoes.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
             window.pizzasCadastro.init(globalAccountId, urlParams.get('segmento') || 'restaurante');
             document.querySelectorAll('[data-common-tab]').forEach(button => button.addEventListener('click', () => switchCommonTab(button.dataset.commonTab)));
             document.querySelectorAll('[data-addon-tab]').forEach(button => button.addEventListener('click', () => switchAddonTab(button.dataset.addonTab)));
@@ -510,7 +509,10 @@
             document.querySelectorAll('[data-addon-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.addonTab === tab)));
             document.getElementById('pc-advanced').hidden = tab !== 'advanced';
             const frame = document.getElementById('pc-addons-frame');
-            frame.hidden = tab === 'advanced' && document.querySelector('[data-advanced-tab][aria-selected="true"]')?.dataset.advancedTab !== 'prices';
+            const rules = tab === 'advanced' && document.querySelector('[data-advanced-tab][aria-selected="true"]')?.dataset.advancedTab === 'rules';
+            frame.hidden = rules;
+            document.getElementById('pc-rules-frame').hidden = !rules;
+            if (rules) carregarRegrasCompletas();
             if (frame?.contentWindow && frame.getAttribute('src')) frame.contentWindow.postMessage({type: 'cadastro-aba', tab, accountId: String(globalAccountId)}, location.origin);
         }
 
@@ -518,7 +520,15 @@
             if (!['prices', 'rules'].includes(tab)) return;
             document.querySelectorAll('[data-advanced-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.advancedTab === tab)));
             document.getElementById('pc-advanced-rules').hidden = tab !== 'rules';
-            document.getElementById('pc-addons-frame').hidden = tab === 'rules' && !document.getElementById('pc-advanced').hidden;
+            const rules = tab === 'rules' && !document.getElementById('pc-advanced').hidden;
+            document.getElementById('pc-addons-frame').hidden = rules;
+            document.getElementById('pc-rules-frame').hidden = !rules;
+            if (rules) carregarRegrasCompletas();
+        }
+
+        function carregarRegrasCompletas() {
+            const frame = document.getElementById('pc-rules-frame');
+            if (!frame.getAttribute('src')) frame.src = `./personalizacoes.html?embedded=1&account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
         }
 
         function switchDeliveryTab(tab) {

@@ -17,7 +17,14 @@
 
         .card-modulo {
             transition: all 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            min-height: 156px;
         }
+        .card-modulo.hidden { display: none; }
+        .card-modulo-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: #eef2ff; font-size: 27px; line-height: 1; }
+        .card-modulo-copy { min-width: 0; }
 
         .card-modulo:hover {
             transform: translateY(-4px);
@@ -80,41 +87,31 @@
         <!-- MÓDULO 2: PROFISSIONAIS -->
         <a href="profissionais/novo.html" id="mod-profissionais"
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
-            <div class="text-3xl mb-4">🩺</div>
-            <h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou especialistas e controle quem está ativo.</p>
+            <span class="card-modulo-icon" aria-hidden="true">🩺</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2><p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou especialistas e controle quem está ativo.</p></span>
         </a>
 
         <!-- MÓDULO 3: PRODUTOS / CARDÁPIO -->
         <a href="produtos/novo.html" id="mod-produtos"
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
-            <div class="text-3xl mb-4">🍔</div>
-            <h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Configure itens, preços, tamanhos e variáveis para vendas estruturadas.</p>
+            <span class="card-modulo-icon" aria-hidden="true">🍔</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo / Cardápio</h2><p class="text-sm text-slate-500 leading-relaxed">Organize produtos, pizzas, adicionais, entregas e sugestões.</p></span>
         </a>
 
         <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
         <a href="conhecimento/novo.html" id="mod-conhecimento"
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
-            <div class="text-3xl mb-4">🧠</div>
-            <h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras, FAQ e informações gerais do seu negócio.</p>
+            <span class="card-modulo-icon" aria-hidden="true">🧠</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2><p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras, FAQ e informações gerais do seu negócio.</p></span>
         </a>
 
         <!-- MÓDULO 5: PEDIDOS / DELIVERY -->
         <a href="pedidos/index.html" id="mod-pedidos"
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
-            <div class="text-3xl mb-4">📦</div>
-            <h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de comprovantes PIX em tempo real.</p>
+            <span class="card-modulo-icon" aria-hidden="true">📦</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2><p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de comprovantes PIX em tempo real.</p></span>
         </a>
 
         <!-- MÓDULO 6: CONFIGURAÇÕES DA EMPRESA -->
         <a href="configuracoes/index.html" id="mod-configuracoes"
             class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
-            <div class="text-3xl mb-4">⚙️</div>
-            <h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2>
-            <p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p>
+            <span class="card-modulo-icon" aria-hidden="true">⚙️</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2><p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p></span>
         </a>
 
     </main>

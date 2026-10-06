@@ -59,3 +59,5 @@
 .pizza-ui .pc-scroll-hint{display:none;margin:10px 0 0;font-size:12px}
 @media(max-width:760px){.pizza-ui .pc-scroll-hint{display:block}}
 @media(max-width:760px){.pizza-ui.pc-type-cards{grid-template-columns:1fr}.pizza-ui .pc-choice{min-height:86px}}
+.pizza-ui .pc-row.section-heading{justify-content:space-between}
+.pizza-ui button.help-control{display:inline-flex;align-items:center;flex:none;min-height:32px;padding:6px 10px;border:1px solid #c7d2fe;border-radius:999px;background:#eef2ff;color:#3730a3;font:600 12px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}

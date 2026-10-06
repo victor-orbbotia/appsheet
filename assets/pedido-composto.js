@@ -108,9 +108,11 @@ function criarMotorPersonalizacoes(dados) {
       const grupo = unico(linhas('personalizacao_grupos', escopo).filter(g => g.id === id), 'configuracao_invalida');
       if (!grupo.ativo) continue;
       const especifico = vinculos.find(v => v.grupo_id === id);
-      const min = especifico?.min_selecoes ?? grupo.min_selecoes;
-      const max = especifico?.max_selecoes ?? grupo.max_selecoes;
-      limites(min, max);
+      const pizza = produto.metadata?.tipo_cadastro === 'pizza' || categoria?.tipo_padrao === 'pizza';
+      const limiteTotalConfigurado = especifico?.max_selecoes ?? grupo.max_selecoes;
+      const semLimiteTotal = pizza || limiteTotalConfigurado === 2147483647;
+      const min = semLimiteTotal ? 0 : especifico?.min_selecoes ?? grupo.min_selecoes;
+      limites(min, limiteTotalConfigurado);
       const excluidas = linhas('produto_personalizacao_opcoes', escopo)
         .filter(v => v.produto_id === produto.id && v.grupo_id === id && v.excluida).map(v => v.opcao_id);
       const opcoes = linhas('personalizacao_opcoes', escopo)
@@ -126,10 +128,12 @@ function criarMotorPersonalizacoes(dados) {
           return { id: o.id, nome: o.nome, permite_quantidade: o.permite_quantidade,
             max_quantidade: o.max_quantidade, preco_centavos: centavos(overrides.length ? overrides[0].preco : o.preco_padrao) };
         });
-      if (opcoes.reduce((s, o) => seguro(s + o.max_quantidade), 0) < min) {
+      const capacidadeIndividual = opcoes.reduce((s, o) => seguro(s + o.max_quantidade), 0);
+      if (capacidadeIndividual < min) {
         falhar('grupo_obrigatorio_indisponivel', { grupo_id: id });
       }
-      grupos.push({ id, uso_pizza: grupo.uso_pizza || null, nome: grupo.nome, min_selecoes: min, max_selecoes: max, opcoes });
+      grupos.push({ id, uso_pizza: grupo.uso_pizza || null, nome: grupo.nome, min_selecoes: min,
+        max_selecoes: semLimiteTotal ? capacidadeIndividual : limiteTotalConfigurado, sem_limite_total: semLimiteTotal, opcoes });
     }
     const catalogo = { max_bordas: variacao?.pizza_max_bordas ?? null, produto_id: produto.id, nome: produto.nome, categoria_id: produto.categoria_id || null,
       variacao_id: variacao?.id || null, variacao: variacao?.nome || '', preco_base_centavos: precoBase, grupos };

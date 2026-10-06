@@ -24,8 +24,9 @@
         #ativo_produto:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
         body {
             background-color: #f8fafc;
-            font-family: system-ui, sans-serif;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
         }
+        button, input, select, textarea { font-family: inherit; }
 
         .input-field {
             width: 100%;
@@ -93,27 +94,28 @@
         <div id="view-produtos" class="space-y-6 block">
             
 
-<section class="pizza-ui pc-row" aria-label="Tipo de cadastro">
-<button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span>Produto comum<span>Nome, preço e variações para os demais produtos.</span></button>
-<button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span>Pizza<span>Sabores, tamanhos, bordas e combinações em um só lugar.</span></button>
-<button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span>Adicionais<span>Opções, quantidades e onde oferecer.</span></button>
+<section class="pizza-ui pc-type-cards" aria-label="Tipo de cadastro">
+<button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span><span class="pc-choice-copy"><strong>Produto comum</strong><small>Nome, preço e variações.</small></span></button>
+<button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button>
+<button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span><span class="pc-choice-copy"><strong>Adicionais</strong><small>Opções, preços e disponibilidade.</small></span></button>
 </section>
 <section id="pc-addons" hidden><iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe></section>
 <nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-common-tab="list" aria-selected="false">Lista de itens</button><button type="button" data-common-tab="advanced" aria-selected="false">Configurações avançadas</button></nav>
 <section class="pizza-ui pc-card" id="pc-advanced" hidden><h2>Configurações avançadas</h2><p>Organização do catálogo e regras específicas.</p><div class="pc-row"><button id="pc-manage-categories" type="button">Gerenciar categorias</button><a id="link-personalizacoes" href="./personalizacoes.html" style="font-size:13px;color:#64748b">Personalizações avançadas</a></div><section id="pc-category-section" class="pc-card pc-section" hidden><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. Pizzas é protegida.</p><div id="pc-categories"></div></section></section>
 <section id="pc-editor" class="pizza-ui" hidden>
 <div class="pc-card"><div class="pc-row"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" aria-expanded="false" aria-controls="pc-help">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
-<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e regra de preço da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> mantenha juntos os sabores que podem combinar entre si.</li><li><strong>Sabores e preços:</strong> informe o preço da pizza inteira para cada tamanho.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se precisar, limite a oferta a determinados agrupamentos.</li></ol><p>O estoque é escolhido na lista de sabores. Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
+<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e regra de preço da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> mantenha juntos os sabores que podem combinar entre si.</li><li><strong>Sabores e preços:</strong> informe o preço da pizza inteira para cada tamanho.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se precisar, limite a oferta a determinados agrupamentos.</li><li><strong>Lista de itens:</strong> confira pizzas cadastradas, disponibilidade e estoque.</li></ol><p>Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
-<p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" role="status" aria-live="polite"></div></div>
+<p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" hidden></div></div>
 <fieldset id="pc-content" disabled>
-<nav class="pc-row pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav>
+<nav class="pc-row pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button><button type="button" data-pc-section="items">Lista de itens</button></nav>
 <section id="pc-sizes" class="pc-card pc-section"><h2>Tamanhos</h2><p>Medidas e regras de combinação.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-form" hidden></div><div id="pc-size-list"></div></section>
 <section id="pc-lines" class="pc-card pc-section" hidden><h2>Agrupamentos de pizzas</h2><p>Separe sabores que podem combinar entre si.</p><button id="pc-new-line" type="button">Novo agrupamento</button><div id="pc-line-form" hidden></div><div id="pc-line-list"></div></section>
-<section id="pc-flavors" class="pc-card pc-section" hidden><h2>Sabores e preços</h2><p>Informe o preço da pizza inteira por tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div><div id="pc-pizza-list-section" class="pizza-ui"><div class="pc-card"><h2>Sabores cadastrados</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></div></section>
+<section id="pc-flavors" class="pc-card pc-section" hidden><h2>Sabores e preços</h2><p>Informe o preço da pizza inteira por tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
 <section id="pc-borders" class="pc-card pc-section" hidden><h2>Bordas</h2><p>Opções e preços por tamanho.</p><button id="pc-new-borda" type="button">Adicionar borda</button><details><summary>Organizar bordas em conjuntos</summary><p>Ex.: recheadas e premium.</p><button id="pc-new-group-borda" type="button">Criar conjunto de bordas</button></details><div id="pc-borda-form" hidden></div><div id="pc-borda-list"></div></section>
 <section id="pc-extras" class="pc-card pc-section" hidden><h2>Adicionais</h2><p>Opções, quantidade e cobrança.</p><button id="pc-new-adicional" type="button">Adicionar adicional</button><details><summary>Organizar adicionais em conjuntos</summary><button id="pc-new-group-adicional" type="button">Criar conjunto de adicionais</button></details><div id="pc-adicional-form" hidden></div><div id="pc-adicional-list"></div>
 <details><summary>Usar bordas ou adicionais já cadastrados</summary><p>Escolha a função desta personalização. Os produtos que já a utilizam mantêm o mesmo vínculo.</p><select id="pc-existing-group" aria-label="Escolha existente"></select><select id="pc-existing-kind" aria-label="Usar como"><option value="borda">Borda</option><option value="adicional">Adicional</option></select><button id="pc-reuse" type="button">Configurar escolha existente</button></details></section>
+<section id="pc-items" class="pc-card pc-section" hidden><div id="pc-pizza-list-section"><div class="pc-list-head"><h2>Itens cadastrados</h2><label><input type="checkbox" id="pc-show-inactive"> Mostrar desativados</label></div><div id="pc-pizza-filters" class="pc-filter-row" aria-label="Filtrar pizzas por agrupamento"></div><p class="pc-scroll-hint">Deslize a tabela para ver preços, estoque e ações →</p><div id="pc-pizza-list"></div></div></section>
 
 </fieldset></section>
 

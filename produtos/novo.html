@@ -10,6 +10,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="../assets/contexto-conta.js"></script>
     <style>
+        #admin-session-bar { width: fit-content !important; max-width: calc(100% - 16px); margin: 0 8px 8px auto !important; padding: 5px 9px !important; gap: 8px !important; font-size: 12px !important; }
+        #admin-session-bar button { min-height: 32px !important; padding: 4px 9px !important; margin-left: 0 !important; }
+        .catalog-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+        .catalog-tabs button { border: 1px solid #c7d2fe; background: white; color: #475569; border-radius: 9px; padding: 10px 14px; font-weight: 600; }
+        .catalog-tabs button[aria-selected="true"] { background: #eef2ff; color: #3730a3; border-color: #6366f1; }
+        .edit-focus { animation: edit-pulse 1.7s ease-out; }
+        @keyframes edit-pulse { 0%, 45% { box-shadow: 0 0 0 4px #a5b4fc; } 100% { box-shadow: 0 0 0 0 transparent; } }
+        #ativo_produto { appearance: none; width: 44px; height: 24px; flex: none; border-radius: 24px; background: #94a3b8; position: relative; cursor: pointer; }
+        #ativo_produto::before { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform .18s; }
+        #ativo_produto:checked { background: #4f46e5; }
+        #ativo_produto:checked::before { transform: translateX(20px); }
+        #ativo_produto:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
         body {
             background-color: #f8fafc;
             font-family: system-ui, sans-serif;
@@ -47,12 +59,15 @@
 
         <!-- Header e Navegação das Abas -->
         <div class="mb-6">
-            <a id="link-voltar-menu" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors mb-4">
+            <div class="flex items-center justify-between gap-3 mb-4">
+            <a id="link-voltar-menu" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
                 Voltar ao Menu Principal
             </a>
+            <button id="refresh-catalog" type="button" onclick="atualizarPagina()" title="Atualizar dados da página" aria-label="Atualizar dados da página" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50"><span aria-hidden="true">⟳</span><span class="hidden sm:inline">Atualizar</span></button>
+            </div>
             
             <!-- Barra de Submenu (Abas) -->
             <div class="flex space-x-6 border-b border-slate-200 px-2 overflow-x-auto hide-scroll">
@@ -84,41 +99,40 @@
 <button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span>Adicionais<span>Opções, quantidades e onde oferecer.</span></button>
 </section>
 <section id="pc-addons" hidden><iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe></section>
-<details class="pizza-ui pc-card" id="pc-advanced"><summary>Configurações avançadas</summary><p>Organização do catálogo e regras específicas de produtos.</p><div class="pc-row"><button id="pc-manage-categories" type="button">Organização do catálogo · Categorias</button><a id="link-personalizacoes" href="./personalizacoes.html" style="font-size:13px;color:#64748b">Personalizações avançadas</a></div><section id="pc-category-section" class="pc-card pc-section" hidden><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. A categoria padrão Pizzas permanece no cadastro mesmo sem produtos.</p><div id="pc-categories"></div></section></details>
+<nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-common-tab="list" aria-selected="false">Lista de itens</button><button type="button" data-common-tab="advanced" aria-selected="false">Configurações avançadas</button></nav>
+<section class="pizza-ui pc-card" id="pc-advanced" hidden><h2>Configurações avançadas</h2><p>Organização do catálogo e regras específicas.</p><div class="pc-row"><button id="pc-manage-categories" type="button">Gerenciar categorias</button><a id="link-personalizacoes" href="./personalizacoes.html" style="font-size:13px;color:#64748b">Personalizações avançadas</a></div><section id="pc-category-section" class="pc-card pc-section" hidden><h2>Categorias</h2><p>Categorias comuns vazias podem ser excluídas. Pizzas é protegida.</p><div id="pc-categories"></div></section></section>
 <section id="pc-editor" class="pizza-ui" hidden>
-<div class="pc-card"><h2>Cadastro de pizzas</h2><p>Cadastre um tamanho uma vez e informe o preço de cada sabor. A categoria padrão Pizzas é protegida.</p>
+<div class="pc-card"><div class="pc-row"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" aria-expanded="false" aria-controls="pc-help">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
+<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e regra de preço da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> mantenha juntos os sabores que podem combinar entre si.</li><li><strong>Sabores e preços:</strong> informe o preço da pizza inteira para cada tamanho.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se precisar, limite a oferta a determinados agrupamentos.</li></ol><p>O estoque é escolhido na lista de sabores. Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
-<p id="pc-key-help">A chave é a mesma do cadastro anterior e permanece somente enquanto esta página estiver aberta.</p><div id="pc-status" role="status" aria-live="polite"></div></div>
+<p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" role="status" aria-live="polite"></div></div>
 <fieldset id="pc-content" disabled>
-<nav class="pc-row" aria-label="Seções do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Linhas</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav>
-<section id="pc-sizes" class="pc-card pc-section"><h2>Tamanhos</h2><p>Pequena, Média e Grande são sugestões. Crie os tamanhos vendidos pelo seu estabelecimento; cada um pode permitir apenas inteira ou também combinar sabores.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-list"></div><div id="pc-size-form" hidden></div></section>
-<section id="pc-lines" class="pc-card pc-section"><h2>Linhas de pizzas</h2><p>Separe Tradicionais e Especiais quando os sabores só puderem combinar dentro da mesma linha. Os tamanhos continuam compartilhados.</p><button id="pc-new-line" type="button">Nova linha</button><div id="pc-line-list"></div><div id="pc-line-form" hidden></div></section>
-<section id="pc-flavors" class="pc-card pc-section"><h2>Sabores e preços</h2><p>O preço informado é o da pizza inteira. As combinações usam a regra configurada no tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
-<section id="pc-borders" class="pc-card pc-section"><h2>Bordas</h2><p>Defina as opções e os preços por tamanho. Escolha se são opcionais ou obrigatórias e onde podem ser usadas.</p><button id="pc-new-borda" type="button">Adicionar borda</button><details><summary>Organizar bordas em conjuntos</summary><p>Exemplos: Bordas recheadas e Bordas premium. Cada conjunto tem suas opções e limites.</p><button id="pc-new-group-borda" type="button">Criar conjunto de bordas</button></details><div id="pc-borda-list"></div><div id="pc-borda-form" hidden></div></section>
-<section id="pc-extras" class="pc-card pc-section"><h2>Adicionais</h2><p>Configure quantidades e cobrança na pizza inteira ou em cada sabor.</p><button id="pc-new-adicional" type="button">Adicionar adicional</button><details><summary>Organizar adicionais em conjuntos</summary><button id="pc-new-group-adicional" type="button">Criar conjunto de adicionais</button></details><div id="pc-adicional-list"></div><div id="pc-adicional-form" hidden></div>
+<nav class="pc-row pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav>
+<section id="pc-sizes" class="pc-card pc-section"><h2>Tamanhos</h2><p>Medidas e regras de combinação.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-form" hidden></div><div id="pc-size-list"></div></section>
+<section id="pc-lines" class="pc-card pc-section" hidden><h2>Agrupamentos de pizzas</h2><p>Separe sabores que podem combinar entre si.</p><button id="pc-new-line" type="button">Novo agrupamento</button><div id="pc-line-form" hidden></div><div id="pc-line-list"></div></section>
+<section id="pc-flavors" class="pc-card pc-section" hidden><h2>Sabores e preços</h2><p>Informe o preço da pizza inteira por tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div><div id="pc-pizza-list-section" class="pizza-ui"><div class="pc-card"><h2>Sabores cadastrados</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></div></section>
+<section id="pc-borders" class="pc-card pc-section" hidden><h2>Bordas</h2><p>Opções e preços por tamanho.</p><button id="pc-new-borda" type="button">Adicionar borda</button><details><summary>Organizar bordas em conjuntos</summary><p>Ex.: recheadas e premium.</p><button id="pc-new-group-borda" type="button">Criar conjunto de bordas</button></details><div id="pc-borda-form" hidden></div><div id="pc-borda-list"></div></section>
+<section id="pc-extras" class="pc-card pc-section" hidden><h2>Adicionais</h2><p>Opções, quantidade e cobrança.</p><button id="pc-new-adicional" type="button">Adicionar adicional</button><details><summary>Organizar adicionais em conjuntos</summary><button id="pc-new-group-adicional" type="button">Criar conjunto de adicionais</button></details><div id="pc-adicional-form" hidden></div><div id="pc-adicional-list"></div>
 <details><summary>Usar bordas ou adicionais já cadastrados</summary><p>Escolha a função desta personalização. Os produtos que já a utilizam mantêm o mesmo vínculo.</p><select id="pc-existing-group" aria-label="Escolha existente"></select><select id="pc-existing-kind" aria-label="Usar como"><option value="borda">Borda</option><option value="adicional">Adicional</option></select><button id="pc-reuse" type="button">Configurar escolha existente</button></details></section>
 
 </fieldset></section>
-<section id="pc-pizza-list-section" class="pizza-ui" hidden><div class="pc-card"><h2>Pizzas cadastradas</h2><div class="pc-row"><button id="pc-expand" type="button">Expandir</button><button id="pc-collapse" type="button">Recolher</button></div><div id="pc-pizza-list"></div></div></section>
 
             <!-- BLOCO 1: FORMULÁRIO -->
             <div id="pc-common" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
                 <div class="flex flex-wrap justify-between items-center p-4 md:p-5 border-b border-slate-100 bg-slate-50/80 gap-4">
                     <div class="flex items-center gap-3">
                         <button id="btnToggleFormProduto" onclick="toggleSection('form-produto-wrapper', this)" title="Expandir/Recolher formulário" class="flex items-center justify-center w-8 h-8 bg-white border border-slate-300 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 rounded-lg shadow-sm transition-all focus:outline-none">
-                            <svg class="w-5 h-5 transition-transform duration-300 transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 transition-transform duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
                         <h1 id="titulo-form" class="text-lg font-bold text-slate-800">Adicionar Novo Produto</h1>
+                        <button type="button" onclick="toggleAjudaProduto()" id="common-help-toggle" aria-expanded="false" aria-controls="common-help" class="text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-full">ℹ️ Como funciona?</button>
                     </div>
 
                     <div class="flex gap-2 flex-wrap">
                         <button type="button" id="btnExcluir" onclick="excluirProduto()" class="hidden px-3 py-2 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors shadow-sm">
                             🗑️ Excluir
-                        </button>
-                        <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 py-2 text-xs font-bold text-white rounded-lg transition-colors shadow-sm">
-                            Desativar
                         </button>
                         <button type="button" onclick="limparFormulario()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
                             Limpar
@@ -129,9 +143,12 @@
                     </div>
                 </div>
 
-                <div id="form-produto-wrapper" class="hidden">
+                <div id="common-help" hidden class="p-4 text-xs text-slate-600 bg-slate-50 border-b border-slate-200"><p>Cadastre nome, categoria e preço em “Adicionar novo”. Confira os produtos em “Lista de itens” e escolha o estoque ali. Use “Configurações avançadas” para categorias e regras especiais. “Disponível para venda” tira o item do cardápio sem excluí-lo; o estoque informa se o item disponível pode ser pedido agora.</p></div>
+
+                <div id="form-produto-wrapper">
                     <form id="formProduto" class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input type="hidden" id="produto_id" value="">
+                        <label class="md:col-span-2 flex items-center justify-between gap-3 p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 cursor-pointer"><span><strong class="block text-sm text-indigo-900">Disponível para venda</strong><small class="text-xs text-indigo-700">Desative para tirar do cardápio sem excluir o cadastro.</small></span><input type="checkbox" id="ativo_produto" checked class="w-5 h-5 accent-indigo-600"></label>
 
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome do Produto <span class="text-rose-500">*</span></label>
@@ -179,7 +196,7 @@
             </div>
 
             <!-- BLOCO 2: LISTA DE PRODUTOS -->
-            <div id="pc-common-list" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col">
+            <div id="pc-common-list" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col" hidden>
                 <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-wrap gap-3">
                     <h2 class="text-md font-bold text-slate-800">Itens Cadastrados</h2>
                     
@@ -190,9 +207,6 @@
                             Mostrar desativados
                         </label>
 
-                        <button onclick="carregarLista()" class="flex items-center text-[11px] font-bold text-slate-500 hover:text-indigo-600 px-3 py-1.5 border border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-colors shadow-sm">
-                            🔄 Sincronizar
-                        </button>
                     </div>
                 </div>
                 
@@ -427,6 +441,7 @@
         let listaAtual = [];
         let statusAtualEdicao = true;
         let categoriaSelecionadaFiltro = 'Todas';
+        let commonDirty = false;
 
         // ESTADOS (ENTREGAS E CONFIGS)
         let listaTaxas = [];
@@ -461,10 +476,32 @@
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
             document.getElementById('link-personalizacoes').href = `./personalizacoes.html?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
             window.pizzasCadastro.init(globalAccountId, urlParams.get('segmento') || 'restaurante');
+            document.querySelectorAll('[data-common-tab]').forEach(button => button.addEventListener('click', () => switchCommonTab(button.dataset.commonTab)));
+            document.getElementById('formProduto').addEventListener('input', () => { commonDirty = true; });
+            switchCommonTab('new');
 
             carregarLista();
             carregarTaxasEntrega();
             if (document.getElementById('lista-de-variacoes').children.length === 0) adicionarVariacao();
+        }
+
+        function switchCommonTab(tab) {
+            document.getElementById('pc-common').hidden = tab !== 'new';
+            document.getElementById('pc-common-list').hidden = tab !== 'list';
+            document.getElementById('pc-advanced').hidden = tab !== 'advanced';
+            document.querySelectorAll('[data-common-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.commonTab === tab)));
+            if (tab === 'new') document.getElementById('form-produto-wrapper').classList.remove('hidden');
+        }
+
+        function atualizarPagina() {
+            if (commonDirty && !confirm('Há alterações não salvas no produto. Deseja atualizar a página e descartá-las?')) return;
+            window.location.reload();
+        }
+
+        function toggleAjudaProduto() {
+            const help = document.getElementById('common-help');
+            help.hidden = !help.hidden;
+            document.getElementById('common-help-toggle').setAttribute('aria-expanded', String(!help.hidden));
         }
 
         // ==========================================
@@ -966,14 +1003,7 @@
 
                 let statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
 
-                let badgeEstoque = '';
-                if (statusEstoque === 'disponivel') {
-                    badgeEstoque = `<button onclick="proximoStatusEstoque('${p.id}', 'disponivel', this)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 transition-colors shadow-sm whitespace-nowrap">✅ Disponível</button>`;
-                } else if (statusEstoque === 'em_falta') {
-                    badgeEstoque = `<button onclick="proximoStatusEstoque('${p.id}', 'em_falta', this)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 transition-colors shadow-sm whitespace-nowrap">⚠️ Em Falta</button>`;
-                } else {
-                    badgeEstoque = `<button onclick="proximoStatusEstoque('${p.id}', 'esgotado', this)" class="text-[10px] font-bold px-2.5 py-1 rounded-lg border bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 transition-colors shadow-sm whitespace-nowrap">❌ Esgotado</button>`;
-                }
+                const badgeEstoque = `<select aria-label="Estoque do produto" onchange="alterarStatusEstoque('${p.id}', this)" class="text-xs font-semibold px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-700"><option value="disponivel" ${statusEstoque === 'disponivel' ? 'selected' : ''}>Disponível</option><option value="em_falta" ${statusEstoque === 'em_falta' ? 'selected' : ''}>Em falta</option><option value="esgotado" ${statusEstoque === 'esgotado' ? 'selected' : ''}>Esgotado</option></select>`;
 
                 let precoDisplay = `<span class="font-mono font-bold text-emerald-700">${formatarMoeda(p.preco_base)}</span>`;
                 const listaOpcoes = meta?.variacoes || meta?.tamanhos;
@@ -1010,28 +1040,20 @@
             });
         }
 
-        function proximoStatusEstoque(id, statusAtual, btnElement) {
+        async function alterarStatusEstoque(id, control) {
             if (!id) return;
 
             const prodObj = listaAtual.find(i => (i.json || i).id == id);
             if (!prodObj) return;
             const p = prodObj.json || prodObj;
 
-            const proximaEtapa = {
-                'disponivel': 'em_falta',
-                'em_falta': 'esgotado',
-                'esgotado': 'disponivel'
-            };
-
-            const novoStatus = proximaEtapa[statusAtual] || 'disponivel';
-
             let meta = p.metadata || {};
             if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
-
-            meta.status_estoque = novoStatus;
-            meta.esgotado = novoStatus !== 'disponivel';
-
-            enviarAcao({
+            const previous = meta.status_estoque || (meta.esgotado ? 'esgotado' : 'disponivel');
+            control.disabled = true;
+            const updated = { ...meta, status_estoque: control.value, esgotado: control.value !== 'disponivel' };
+            try {
+            const response = await fetch(urlAcao, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                 action: 'editar',
                 id: p.id,
                 account_id: globalAccountId.toString(),
@@ -1039,8 +1061,14 @@
                 descricao: p.descricao,
                 categoria: p.categoria,
                 preco_base: p.preco_base,
-                metadata: meta
-            }, btnElement, '🔄');
+                metadata: updated
+            }) });
+            const result = await response.json();
+            if (!response.ok || ['erro','error','pendencia'].includes(result.status || result.resultado?.status)) throw Error(result.mensagem || 'Não foi possível alterar o estoque.');
+            await carregarLista();
+            CadastroUI.notify('Estoque atualizado.');
+            } catch (error) { control.value = previous; CadastroUI.notify(error.message, true); }
+            finally { control.disabled = false; }
         }
 
         function editarProduto(id) {
@@ -1073,15 +1101,7 @@
             alternarCamposPreco();
 
             statusAtualEdicao = p.ativo !== false && p.ativo !== "false";
-            const btnStatus = document.getElementById('btnStatus');
-            btnStatus.classList.remove('hidden', 'bg-slate-600', 'bg-emerald-600');
-            if (statusAtualEdicao) {
-                btnStatus.innerText = "Desativar";
-                btnStatus.classList.add('bg-slate-600');
-            } else {
-                btnStatus.innerText = "Reativar 🟢";
-                btnStatus.classList.add('bg-emerald-600');
-            }
+            document.getElementById('ativo_produto').checked = statusAtualEdicao;
 
             document.getElementById('btnExcluir').classList.remove('hidden');
             document.getElementById('titulo-form').innerText = "Editando Produto";
@@ -1091,7 +1111,14 @@
             if (formWrapper.classList.contains('hidden')) {
                 toggleSection('form-produto-wrapper', document.getElementById('btnToggleFormProduto'));
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            switchCommonTab('new');
+            const header = document.getElementById('titulo-form');
+            header.closest('#pc-common').classList.remove('edit-focus');
+            void header.closest('#pc-common').offsetWidth;
+            header.closest('#pc-common').classList.add('edit-focus');
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('nome').focus({ preventScroll: true });
+            commonDirty = false;
         }
 
         function limparFormulario() {
@@ -1099,8 +1126,8 @@
             document.getElementById('produto_id').value = '';
             document.getElementById('titulo-form').innerText = "Adicionar Novo Produto";
             document.getElementById('btnSalvar').innerText = "Salvar Produto";
-            document.getElementById('btnStatus').classList.add('hidden');
             document.getElementById('btnExcluir').classList.add('hidden');
+            document.getElementById('ativo_produto').checked = true;
 
             document.getElementById('tipo_venda').value = 'simples';
             document.getElementById('lista-de-variacoes').innerHTML = '';
@@ -1108,9 +1135,8 @@
             alternarCamposPreco();
 
             const formWrapper = document.getElementById('form-produto-wrapper');
-            if (!formWrapper.classList.contains('hidden')) {
-                toggleSection('form-produto-wrapper', document.getElementById('btnToggleFormProduto'));
-            }
+            formWrapper.classList.remove('hidden');
+            commonDirty = false;
         }
 
         async function enviarAcao(payload, btnElement, txtSucesso) {
@@ -1127,15 +1153,10 @@
                     else {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
                 }
                 if(payload.action==='excluir') {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                commonDirty = false;
                 CadastroUI.notify(txtSucesso||'Alteração salva.');
             } catch(e){CadastroUI.notify(e.message,true);}
             finally {btnElement.innerText=original;btnElement.disabled=false;CadastroUI.restore(view);}
-        }
-
-        function alternarStatus() {
-            const id = document.getElementById('produto_id').value;
-            if (!id) return;
-            enviarAcao({ action: 'status', account_id: globalAccountId.toString(), id: id, ativo: !statusAtualEdicao }, document.getElementById('btnStatus'), '✓');
         }
 
         function excluirProduto() {
@@ -1208,6 +1229,7 @@
                 descricao: descricao,
                 categoria: categoria,
                 preco_base: precoBase,
+                ativo: document.getElementById('ativo_produto').checked,
                 metadata: metadata
             }, document.getElementById('btnSalvar'), '✓ Salvo');
         }

@@ -290,7 +290,7 @@
                         <input type="number" id="entrega_outros_valor" class="input-field font-mono font-bold text-emerald-700" placeholder="Ex: 15.00" step="0.01" min="0">
                         <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
                             Se não houver valor salvo, a opção “Outro” não aparece para o cliente.
-                            Esta configuração é armazenada junto das demais taxas, sem criar coluna nova no banco.
+                            Esta opção é salva junto das demais taxas de entrega.
                         </p>
                         <p id="entrega-outros-status" class="text-[11px] font-semibold text-slate-500 mt-2"></p>
                     </div>
@@ -348,12 +348,11 @@
                 <!-- Painel Expansível de Instruções / Tooltip -->
                 <div id="painel-instrucoes-upsell" class="hidden p-4 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 space-y-2">
                     <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
-                        💡 Regra de Negócio do Agente de Vendas
+                        💡 Como organizar as sugestões
                     </div>
-                    <p><strong>Gatilhos:</strong> Quando o cliente seleciona itens das categorias de pratos/comidas e solicita o fechamento do pedido.</p>
-                    <p><strong>Configuração atual:</strong> As categorias complementares elegíveis são apresentadas juntas, em uma pergunta breve. Categorias já presentes no carrinho ou sem produtos disponíveis são ignoradas.</p>
-                    <p><strong>Novas regras:</strong> A ordem das regras preparadas definirá qual vence quando o pedido tiver mais de uma categoria gatilho. Elas ainda não são usadas pelo agente.</p>
-                    <p class="text-slate-500 italic pt-1">⚠️ <strong>Importante:</strong> A sugestão ocorre no máximo <u>uma vez por pedido</u> para evitar insistência.</p>
+                    <p>Escolha o tipo de pedido e as categorias que combinam com ele, como bebidas ou sobremesas.</p>
+                    <p>Se mais de uma regra combinar com o pedido, a primeira da lista terá prioridade. Você pode mudar essa ordem a qualquer momento.</p>
+                    <p>As sugestões cadastradas aqui ainda não mudam as ofertas feitas durante o atendimento.</p>
                 </div>
 
                 <div class="p-5 md:p-6 space-y-6">
@@ -366,7 +365,7 @@
                             </div>
                             <button id="upsell-rule-new" type="button" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">+ Nova regra</button>
                         </div>
-                        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Estas regras ficam salvas para a próxima etapa. O agente ainda usa a configuração atual abaixo; esta página não muda as ofertas enviadas ao cliente.</p>
+                        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">As sugestões cadastradas aqui ainda não mudam as ofertas feitas durante o atendimento.</p>
                         <form id="upsell-rule-form" class="hidden rounded-xl border border-slate-200 bg-white p-4 space-y-4" novalidate>
                             <h4 id="upsell-rule-form-title" class="font-bold text-slate-800">Nova regra</h4>
                             <div class="grid gap-4 md:grid-cols-2">
@@ -378,13 +377,13 @@
                                 <label class="text-sm font-semibold text-slate-700">2ª categoria (opcional)<select id="upsell-rule-offer-2" class="input-field mt-1"></select></label>
                                 <label class="text-sm font-semibold text-slate-700">3ª categoria (opcional)<select id="upsell-rule-offer-3" class="input-field mt-1"></select></label>
                             </div>
-                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input id="upsell-rule-active" type="checkbox" checked>Regra disponível para a próxima etapa</label>
+                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input id="upsell-rule-active" type="checkbox" checked>Deixar esta regra pronta para uso</label>
                             <div class="flex justify-end gap-2"><button id="upsell-rule-cancel" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Cancelar</button><button id="upsell-rule-save" type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Salvar regra</button></div>
                         </form>
                         <div id="upsell-rules-list" class="space-y-2" aria-live="polite"></div>
                     </section>
 
-                    <details class="border-t border-slate-200 pt-5"><summary class="cursor-pointer text-sm font-bold text-slate-800">Configuração atualmente usada pelo agente</summary>
+                    <details hidden class="border-t border-slate-200 pt-5"><summary class="cursor-pointer text-sm font-bold text-slate-800">Configuração anterior</summary>
                     <div class="pt-4 space-y-4"><p class="text-xs text-slate-500">Ela permanece em uso até a integração das novas regras com o agente.</p>
 
                     <!-- Mensagem de Alerta se não houver categorias válidas -->
@@ -462,7 +461,7 @@
 
     <script src="../assets/cadastro-ui.js?v=20261009-2"></script>
 <script src="pizzas-produtos.js?v=20261009-2"></script>
-<script src="sugestoes-regras.js?v=20261009-3"></script>
+<script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -748,7 +747,6 @@
         // ==========================================
         async function carregarTaxasEntrega() {
             const tbody = document.getElementById('lista-entregas');
-            let respostaRecebida = false;
             tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
             try {
                 const res = await fetch(`${urlConfigGet}?account_id=${globalAccountId}`);
@@ -759,7 +757,6 @@
                 let data;
                 try { data = JSON.parse(respostaTexto); }
                 catch { throw new Error(`empresa-config respondeu HTTP ${res.status} com JSON inválido`); }
-                respostaRecebida = true;
                 if (Array.isArray(data)) data = data[0];
 
                 configEmpresaCache = data || {};
@@ -778,10 +775,7 @@
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar taxas.</td></tr>`;
                 console.error('Falha ao carregar a configuração da empresa:', error);
-                const detalhe = String(error?.message || 'Falha desconhecida').slice(0, 180);
-                window.SugestoesRegras?.reportLoadError(respostaRecebida
-                    ? `A resposta de empresa-config chegou, mas não foi processada: ${detalhe}`
-                    : `A consulta a empresa-config falhou: ${detalhe}`);
+                window.SugestoesRegras?.reportLoadError('Não foi possível carregar as sugestões. Atualize a página e tente novamente.');
             }
         }
 
@@ -1038,7 +1032,7 @@
                 CadastroUI.restore(view);
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
-                window.SugestoesRegras.reportLoadError('Não foi possível carregar produtos-dados. Confira a execução do webhook e tente atualizar a página.');
+                window.SugestoesRegras.reportLoadError('Não foi possível carregar as categorias. Atualize a página e tente novamente.');
             }
         }
 

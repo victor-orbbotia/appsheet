@@ -4,9 +4,21 @@ window.CadastroUI = (() => {
  function notify(message, error=false) {
   if(window.parent!==window){window.parent.postMessage({type:'cadastro-aviso',message,error},location.origin==='null'?'*':location.origin);return;}
   let box=document.getElementById('cadastro-toast');
-  if(!box){box=document.createElement('div');box.id='cadastro-toast';box.setAttribute('role','status');box.setAttribute('aria-live','polite');document.body.append(box);}
-  box.style.cssText='position:fixed;bottom:20px;right:20px;max-width:min(420px,90vw);padding:14px 18px;border-radius:12px;z-index:10000;box-shadow:0 4px 22px #0002;font:14px system-ui;background:'+(error?'#fff1f2;color:#9f1239':'#ecfdf5;color:#065f46');
-  box.textContent=message;box.hidden=false;clearTimeout(timer);if(!error)timer=setTimeout(()=>box.hidden=true,4500);
+  if(!box){
+   const style=document.createElement('style');
+   style.textContent='#cadastro-toast{position:fixed;z-index:10000;top:max(16px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(520px,calc(100vw - 28px));display:flex;align-items:flex-start;gap:14px;padding:17px 18px;border:2px solid;border-radius:16px;box-shadow:0 16px 48px #0f172a55;font:15px/1.45 system-ui,sans-serif}#cadastro-toast[hidden]{display:none}#cadastro-toast[data-error="false"]{background:#e8fff2;border-color:#22a466;color:#075b39}#cadastro-toast[data-error="true"]{background:#fff0ed;border-color:#dc5947;color:#8f2419}#cadastro-toast .toast-icon{display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:50%;background:currentColor;font-size:22px;font-weight:800}#cadastro-toast .toast-icon span{color:#fff}#cadastro-toast .toast-copy{flex:1;min-width:0}#cadastro-toast strong{display:block;font-size:16px;line-height:1.2;margin-bottom:4px}#cadastro-toast .toast-close{flex:none;min-width:32px;min-height:32px;padding:0;border:0;border-radius:8px;background:transparent;color:inherit;font-size:22px;cursor:pointer}#cadastro-toast .toast-close:focus-visible{outline:3px solid currentColor;outline-offset:2px}';
+   document.head.append(style);
+   box=document.createElement('div');box.id='cadastro-toast';
+   const icon=document.createElement('span');icon.className='toast-icon';icon.setAttribute('aria-hidden','true');icon.append(document.createElement('span'));
+   const copy=document.createElement('div');copy.className='toast-copy';copy.append(document.createElement('strong'),document.createElement('span'));
+   const close=document.createElement('button');close.type='button';close.className='toast-close';close.setAttribute('aria-label','Fechar aviso');close.textContent='×';close.onclick=()=>{box.hidden=true;clearTimeout(timer);};
+   box.append(icon,copy,close);document.body.append(box);
+  }
+  const failed=Boolean(error);box.dataset.error=String(failed);box.setAttribute('role',failed?'alert':'status');box.setAttribute('aria-live',failed?'assertive':'polite');
+  box.querySelector('.toast-icon span').textContent=failed?'!':'✓';
+  box.querySelector('strong').textContent=failed?'Atenção':'Concluído';
+  box.querySelector('.toast-copy span').textContent=String(message);
+  box.hidden=false;clearTimeout(timer);timer=setTimeout(()=>box.hidden=true,failed?10000:6500);
  }
  function capture(root=document) {
   const nodes=[...root.querySelectorAll('details')],focus=document.activeElement;

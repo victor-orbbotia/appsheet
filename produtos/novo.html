@@ -462,7 +462,7 @@
 
     <script src="../assets/cadastro-ui.js?v=20261009-2"></script>
 <script src="pizzas-produtos.js?v=20261009-2"></script>
-<script src="sugestoes-regras.js?v=20261009-2"></script>
+<script src="sugestoes-regras.js?v=20261009-3"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -748,12 +748,14 @@
         // ==========================================
         async function carregarTaxasEntrega() {
             const tbody = document.getElementById('lista-entregas');
+            let respostaRecebida = false;
             tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
             try {
                 const res = await fetch(`${urlConfigGet}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error("Erro");
                 
                 let data = await res.json();
+                respostaRecebida = true;
                 if (Array.isArray(data)) data = data[0];
 
                 configEmpresaCache = data || {};
@@ -771,7 +773,10 @@
 
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar taxas.</td></tr>`;
-                window.SugestoesRegras.reportLoadError('Não foi possível carregar empresa-config. Confira a execução do webhook e tente atualizar a página.');
+                console.error('Falha ao carregar a configuração da empresa:', error);
+                window.SugestoesRegras?.reportLoadError(respostaRecebida
+                    ? 'A resposta de empresa-config chegou, mas a página não conseguiu processá-la. Confira o console do navegador.'
+                    : 'Não foi possível carregar empresa-config. Confira a execução do webhook e tente atualizar a página.');
             }
         }
 

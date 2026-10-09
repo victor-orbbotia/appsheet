@@ -8,6 +8,9 @@ window.SugestoesRegras = (() => {
   let rules = [];
   let categories = [];
   let ready = false;
+  let configLoaded = false;
+  let catalogLoaded = false;
+  let loadError = '';
   let busy = false;
   let editingId = null;
 
@@ -16,6 +19,7 @@ window.SugestoesRegras = (() => {
   }
 
   function updateCatalog(products = []) {
+    catalogLoaded = true;
     const byId = new Map();
     for (const raw of products) {
       const product = raw?.json || raw;
@@ -24,12 +28,13 @@ window.SugestoesRegras = (() => {
       if (id && product.categoria) byId.set(id, { id, name: String(product.categoria) });
     }
     categories = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    $('upsell-rule-new').disabled = !ready || !categories.length || busy;
+    $('upsell-rule-new').disabled = busy;
     if (!$('upsell-rule-form').classList.contains('hidden')) fillSelects();
     render();
   }
 
   function loadConfig(config, currentAccountId) {
+    configLoaded = true;
     const nextAccountId = String(currentAccountId || '');
     const preserveForm = nextAccountId === accountId && !$('upsell-rule-form').classList.contains('hidden');
     accountId = nextAccountId;
@@ -40,7 +45,7 @@ window.SugestoesRegras = (() => {
       editingId = null;
       $('upsell-rule-form').classList.add('hidden');
     }
-    $('upsell-rule-new').disabled = !ready || !categories.length;
+    $('upsell-rule-new').disabled = busy;
     render();
   }
 
@@ -61,7 +66,11 @@ window.SugestoesRegras = (() => {
   }
 
   function showForm(rule = null) {
-    if (!ready || busy) return;
+    if (busy) return;
+    if (loadError) return CadastroUI.notify(loadError, true);
+    if (!configLoaded || !catalogLoaded) return CadastroUI.notify('Aguarde o carregamento das configurações e do catálogo.', true);
+    if (!ready) return CadastroUI.notify('O retorno de empresa-config não trouxe upsell_regras e upsell_regras_versao. Confira o workflow GET publicado.', true);
+    if (!categories.length) return CadastroUI.notify('O catálogo não trouxe categorias com ID em produtos ativos. Confira o retorno de produtos-dados.', true);
     editingId = rule?.id || null;
     $('upsell-rule-form-title').textContent = rule ? 'Editar regra' : 'Nova regra';
     $('upsell-rule-name').value = rule?.nome || '';
@@ -90,17 +99,31 @@ window.SugestoesRegras = (() => {
   function render() {
     const list = $('upsell-rules-list');
     list.replaceChildren();
+    if (loadError) {
+      const message = document.createElement('p');
+      message.className = 'rounded-lg bg-white p-3 text-sm text-rose-700';
+      message.textContent = loadError;
+      list.append(message);
+      return;
+    }
+    if (!configLoaded || !catalogLoaded) {
+      const message = document.createElement('p');
+      message.className = 'rounded-lg bg-white p-3 text-sm text-slate-600';
+      message.textContent = 'Carregando configurações e categorias do catálogo…';
+      list.append(message);
+      return;
+    }
     if (!ready) {
       const message = document.createElement('p');
       message.className = 'rounded-lg bg-white p-3 text-sm text-amber-900';
-      message.textContent = 'Para cadastrar estas regras, publique primeiro a atualização do banco e do workflow empresa-config.';
+      message.textContent = 'O retorno de empresa-config não trouxe upsell_regras e upsell_regras_versao. Confira o workflow GET publicado.';
       list.append(message);
       return;
     }
     if (!categories.length) {
       const message = document.createElement('p');
       message.className = 'rounded-lg bg-white p-3 text-sm text-slate-600';
-      message.textContent = 'Cadastre produtos ativos em categorias identificadas pelo sistema para criar regras.';
+      message.textContent = 'O catálogo não trouxe categorias com ID em produtos ativos. Confira o retorno de produtos-dados.';
       list.append(message);
     }
     if (!rules.length) {
@@ -156,7 +179,7 @@ window.SugestoesRegras = (() => {
     } finally {
       busy = false;
       $('upsell-rule-save').disabled = false;
-      $('upsell-rule-new').disabled = !categories.length;
+      $('upsell-rule-new').disabled = false;
       render();
     }
   }
@@ -193,5 +216,5 @@ window.SugestoesRegras = (() => {
   $('upsell-rule-new').addEventListener('click', () => showForm());
   $('upsell-rule-cancel').addEventListener('click', closeForm);
   $('upsell-rule-form').addEventListener('submit', saveForm);
-  return { updateCatalog, loadConfig };
+  return { updateCatalog, loadConfig, reportLoadError(message) { loadError = message; render(); } };
 })();

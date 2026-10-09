@@ -2,7 +2,8 @@
 window.CadastroUI = (() => {
  let timer;
  function notify(message, error=false) {
-  if(window.parent!==window){window.parent.postMessage({type:'cadastro-aviso',message,error},location.origin==='null'?'*':location.origin);return;}
+  const embeddedCadastro=window.parent!==window&&['pc-addons-frame','pc-rules-frame'].includes(window.frameElement?.id);
+  if(embeddedCadastro){window.parent.postMessage({type:'cadastro-aviso',message,error},location.origin==='null'?'*':location.origin);return;}
   let box=document.getElementById('cadastro-toast');
   if(!box){
    const style=document.createElement('style');

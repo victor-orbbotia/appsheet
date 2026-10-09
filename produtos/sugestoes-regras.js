@@ -1,7 +1,8 @@
 'use strict';
-// Cadastro das regras futuras. A escolha e a comunicação pelo agente permanecem na lógica antiga.
+// Cadastro das regras de sugestões. A integração com o atendimento virá depois.
 window.SugestoesRegras = (() => {
   const endpoint = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
+  const readEndpoint = 'https://n8n.orbbotia.com/webhook/empresa-config';
   const $ = id => document.getElementById(id);
   let accountId = '';
   let version = 0;
@@ -72,8 +73,8 @@ window.SugestoesRegras = (() => {
     if (busy) return;
     if (loadError) return CadastroUI.notify(loadError, true);
     if (!configLoaded || !catalogLoaded) return CadastroUI.notify('Aguarde o carregamento das configurações e do catálogo.', true);
-    if (!ready) return CadastroUI.notify('O retorno de empresa-config não trouxe regras ou versão válidas. Confira o workflow GET publicado.', true);
-    if (!categories.length) return CadastroUI.notify('O catálogo não trouxe categorias com ID em produtos ativos. Confira o retorno de produtos-dados.', true);
+    if (!ready) return CadastroUI.notify('Não foi possível carregar as sugestões. Atualize a página e tente novamente.', true);
+    if (!categories.length) return CadastroUI.notify('Cadastre produtos disponíveis em categorias antes de criar uma sugestão.', true);
     editingId = rule?.id || null;
     $('upsell-rule-form-title').textContent = rule ? 'Editar regra' : 'Nova regra';
     $('upsell-rule-name').value = rule?.nome || '';
@@ -119,20 +120,20 @@ window.SugestoesRegras = (() => {
     if (!ready) {
       const message = document.createElement('p');
       message.className = 'rounded-lg bg-white p-3 text-sm text-amber-900';
-      message.textContent = 'O retorno de empresa-config não trouxe regras ou versão válidas. Confira o workflow GET publicado.';
+      message.textContent = 'Não foi possível carregar as sugestões. Atualize a página e tente novamente.';
       list.append(message);
       return;
     }
     if (!categories.length) {
       const message = document.createElement('p');
       message.className = 'rounded-lg bg-white p-3 text-sm text-slate-600';
-      message.textContent = 'O catálogo não trouxe categorias com ID em produtos ativos. Confira o retorno de produtos-dados.';
+      message.textContent = 'Cadastre produtos disponíveis em categorias antes de criar uma sugestão.';
       list.append(message);
     }
     if (!rules.length) {
       const message = document.createElement('p');
       message.className = 'rounded-lg bg-white p-3 text-sm text-slate-600';
-      message.textContent = 'Nenhuma regra preparada. As sugestões atuais do agente continuam como estão.';
+      message.textContent = 'Nenhuma regra cadastrada.';
       list.append(message);
     }
     rules.forEach((rule, index) => {
@@ -168,16 +169,32 @@ window.SugestoesRegras = (() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: accountId, upsell_regras: candidate, upsell_regras_versao: version })
       });
-      const result = await response.json().catch(() => null);
-      if (!response.ok || result?.success !== true || !Number.isInteger(Number(result.versao)) || Number(result.versao) !== version + 1) {
-        throw new Error(result?.mensagem || 'O servidor não confirmou as regras. Confira se a atualização do workflow foi publicada.');
+      const raw = await response.json().catch(() => null);
+      const result = (Array.isArray(raw) ? raw[0] : raw)?.resultado || (Array.isArray(raw) ? raw[0] : raw);
+      if (result?.success === false || !response.ok) throw new Error(result?.mensagem || 'Não foi possível salvar a regra. Tente novamente.');
+      let savedVersion = Number(result?.versao);
+      if (result?.success !== true || !Number.isSafeInteger(savedVersion) || savedVersion !== version + 1) {
+        const check = await fetch(`${readEndpoint}?account_id=${encodeURIComponent(accountId)}`);
+        if (!check.ok) throw new Error('Não foi possível confirmar o salvamento. Atualize a página para conferir.');
+        const read = await check.json().catch(() => null);
+        const current = Array.isArray(read) ? read[0] : read;
+        const persisted = current?.upsell_regras;
+        savedVersion = Number(current?.upsell_regras_versao);
+        const matches = Array.isArray(persisted) && persisted.length === candidate.length && persisted.every((rule, index) => {
+          const expected = candidate[index];
+          return rule.id === expected.id && rule.nome === expected.nome && rule.gatilho_categoria_id === expected.gatilho_categoria_id &&
+            rule.ativo === expected.ativo && JSON.stringify(rule.ofertas_categoria_ids) === JSON.stringify(expected.ofertas_categoria_ids);
+        });
+        if (!matches || !Number.isSafeInteger(savedVersion) || savedVersion <= version) {
+          throw new Error('Não foi possível confirmar o salvamento. Atualize a página para conferir.');
+        }
       }
       rules = structuredClone(candidate);
-      version = Number(result.versao);
+      version = savedVersion;
       CadastroUI.notify(successMessage);
       return true;
     } catch (error) {
-      CadastroUI.notify(error.message || 'Não foi possível salvar as regras.', true);
+      CadastroUI.notify(error.message || 'Não foi possível salvar a regra. Tente novamente.', true);
       return false;
     } finally {
       busy = false;
@@ -211,7 +228,7 @@ window.SugestoesRegras = (() => {
   }
 
   async function remove(index) {
-    if (!confirm('Excluir esta regra preparada? As sugestões atuais do agente não serão alteradas.')) return;
+    if (!confirm('Excluir esta regra de sugestão?')) return;
     const candidate = rules.filter((_, itemIndex) => itemIndex !== index);
     if (await persist(candidate, 'Regra excluída.')) closeForm();
   }

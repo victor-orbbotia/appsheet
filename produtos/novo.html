@@ -752,7 +752,7 @@
             tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
             try {
                 const res = await fetch(`${urlConfigGet}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro");
+                if (!res.ok) throw new Error(`empresa-config respondeu HTTP ${res.status}`);
                 
                 let data = await res.json();
                 respostaRecebida = true;
@@ -774,9 +774,10 @@
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar taxas.</td></tr>`;
                 console.error('Falha ao carregar a configuração da empresa:', error);
+                const detalhe = String(error?.message || 'Falha desconhecida').slice(0, 180);
                 window.SugestoesRegras?.reportLoadError(respostaRecebida
-                    ? 'A resposta de empresa-config chegou, mas a página não conseguiu processá-la. Confira o console do navegador.'
-                    : 'Não foi possível carregar empresa-config. Confira a execução do webhook e tente atualizar a página.');
+                    ? `A resposta de empresa-config chegou, mas não foi processada: ${detalhe}`
+                    : `A consulta a empresa-config falhou: ${detalhe}`);
             }
         }
 

@@ -351,12 +351,41 @@
                         💡 Regra de Negócio do Agente de Vendas
                     </div>
                     <p><strong>Gatilhos:</strong> Quando o cliente seleciona itens das categorias de pratos/comidas e solicita o fechamento do pedido.</p>
-                    <p><strong>Prioridade inicial:</strong> O robô checa se o cliente já pediu algo da primeira categoria de oferta. Se não tiver pedido, sugere uma opção ativa dessa categoria.</p>
-                    <p><strong>Próxima prioridade:</strong> Se o cliente já tiver itens dessa categoria no carrinho, o robô considera a próxima categoria configurada.</p>
-                    <p class="text-slate-500 italic pt-1">⚠️ <strong>Importante:</strong> A sugestão é feita apenas <u>uma única vez</u> por atendimento para evitar insistências desagradáveis.</p>
+                    <p><strong>Configuração atual:</strong> As categorias complementares elegíveis são apresentadas juntas, em uma pergunta breve. Categorias já presentes no carrinho ou sem produtos disponíveis são ignoradas.</p>
+                    <p><strong>Novas regras:</strong> A ordem das regras preparadas definirá qual vence quando o pedido tiver mais de uma categoria gatilho. Elas ainda não são usadas pelo agente.</p>
+                    <p class="text-slate-500 italic pt-1">⚠️ <strong>Importante:</strong> A sugestão ocorre no máximo <u>uma vez por pedido</u> para evitar insistência.</p>
                 </div>
 
                 <div class="p-5 md:p-6 space-y-6">
+
+                    <section id="upsell-rules" class="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 md:p-5 space-y-4" aria-label="Regras de sugestões por pedido">
+                        <div class="flex items-start justify-between gap-3 flex-wrap">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">Regras por tipo de pedido</h3>
+                                <p class="text-sm text-slate-600 mt-1">Defina o que sugerir quando o pedido tiver uma categoria específica. Se duas regras combinarem, vence a primeira da lista com sugestões disponíveis.</p>
+                            </div>
+                            <button id="upsell-rule-new" type="button" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">+ Nova regra</button>
+                        </div>
+                        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Estas regras ficam salvas para a próxima etapa. O agente ainda usa a configuração atual abaixo; esta página não muda as ofertas enviadas ao cliente.</p>
+                        <form id="upsell-rule-form" class="hidden rounded-xl border border-slate-200 bg-white p-4 space-y-4" novalidate>
+                            <h4 id="upsell-rule-form-title" class="font-bold text-slate-800">Nova regra</h4>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <label class="text-sm font-semibold text-slate-700">Nome da regra<input id="upsell-rule-name" class="input-field mt-1" maxlength="80" placeholder="Ex.: Pedido com pizza" required></label>
+                                <label class="text-sm font-semibold text-slate-700">Quando o pedido tiver<select id="upsell-rule-trigger" class="input-field mt-1" required></select></label>
+                            </div>
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <label class="text-sm font-semibold text-slate-700">1ª categoria a sugerir<select id="upsell-rule-offer-1" class="input-field mt-1" required></select></label>
+                                <label class="text-sm font-semibold text-slate-700">2ª categoria (opcional)<select id="upsell-rule-offer-2" class="input-field mt-1"></select></label>
+                                <label class="text-sm font-semibold text-slate-700">3ª categoria (opcional)<select id="upsell-rule-offer-3" class="input-field mt-1"></select></label>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input id="upsell-rule-active" type="checkbox" checked>Regra disponível para a próxima etapa</label>
+                            <div class="flex justify-end gap-2"><button id="upsell-rule-cancel" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Cancelar</button><button id="upsell-rule-save" type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Salvar regra</button></div>
+                        </form>
+                        <div id="upsell-rules-list" class="space-y-2" aria-live="polite"></div>
+                    </section>
+
+                    <details class="border-t border-slate-200 pt-5"><summary class="cursor-pointer text-sm font-bold text-slate-800">Configuração atualmente usada pelo agente</summary>
+                    <div class="pt-4 space-y-4"><p class="text-xs text-slate-500">Ela permanece em uso até a integração das novas regras com o agente.</p>
 
                     <!-- Mensagem de Alerta se não houver categorias válidas -->
                     <div id="alerta-sem-categorias" class="hidden p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
@@ -387,31 +416,31 @@
                         </div>
 
                         <div class="md:col-span-3 border-t border-slate-100 pt-3">
-                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Prioridades de Oferta</h3>
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Categorias da oferta atual</h3>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-indigo-700 uppercase tracking-wide mb-1">
-                                🥤 1ª Prioridade de Oferta
+                                🥤 1ª categoria
                             </label>
                             <select id="upsell_prioridade_1" class="input-field bg-indigo-50/30 border-indigo-200"></select>
-                            <p class="text-[10px] text-slate-400 mt-1">Primeira opção oferecida caso não esteja no carrinho.</p>
+                            <p class="text-[10px] text-slate-400 mt-1">A ordem orienta a apresentação; as elegíveis são oferecidas juntas.</p>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1">
-                                🍰 2ª Prioridade de Oferta
+                                🍰 2ª categoria
                             </label>
                             <select id="upsell_prioridade_2" class="input-field bg-emerald-50/30 border-emerald-200"></select>
-                            <p class="text-[10px] text-slate-400 mt-1">Oferecida caso o cliente já tenha pedido a 1ª opção.</p>
+                            <p class="text-[10px] text-slate-400 mt-1">Ignorada se já estiver no carrinho ou sem produto disponível.</p>
                         </div>
 
                         <div>
                             <label class="block text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-1">
-                                🍟 3ª Prioridade (Opcional)
+                                🍟 3ª categoria (opcional)
                             </label>
                             <select id="upsell_prioridade_3" class="input-field bg-amber-50/30 border-amber-200"></select>
-                            <p class="text-[10px] text-slate-400 mt-1">Oferecida caso o cliente já tenha a 1ª e a 2ª opção.</p>
+                            <p class="text-[10px] text-slate-400 mt-1">Também integra a mesma pergunta, quando elegível.</p>
                         </div>
 
                     </div>
@@ -422,6 +451,8 @@
                         </button>
                     </div>
 
+                    </div></details>
+
                 </div>
             </div>
 
@@ -431,6 +462,7 @@
 
     <script src="../assets/cadastro-ui.js?v=20261009-2"></script>
 <script src="pizzas-produtos.js?v=20261009-2"></script>
+<script src="sugestoes-regras.js?v=20261009-1"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -725,6 +757,7 @@
                 if (Array.isArray(data)) data = data[0];
 
                 configEmpresaCache = data || {};
+                window.SugestoesRegras.loadConfig(configEmpresaCache, globalAccountId);
 
                 listaTaxas = data.taxas_entrega || [];
                 if (typeof listaTaxas === 'string') {
@@ -984,6 +1017,7 @@
                 if (!res.ok) throw new Error("Erro");
                 const dados = await res.json();
                 listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
+                window.SugestoesRegras.updateCatalog(listaAtual);
                 
                 window.pizzasCadastro.renderList(listaAtual.map(x=>x.json||x).filter(p=>window.pizzasCadastro.isPizza(p)&&!p.deletado));
                 atualizarDatalistCategorias();

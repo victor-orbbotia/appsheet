@@ -106,8 +106,8 @@
 <iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe><iframe id="pc-rules-frame" title="Regras completas das personalizações" style="width:100%;height:1800px;border:0" loading="lazy" hidden></iframe></section>
 <nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-common-tab="list" aria-selected="false">Lista de itens</button></nav>
 <section id="pc-editor" class="pizza-ui" hidden>
-<div class="pc-card"><div class="pc-row section-heading"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" class="help-control" aria-expanded="false" aria-controls="pc-help">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
-<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e regra de preço da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> mantenha juntos os sabores que podem combinar entre si.</li><li><strong>Sabores e preços:</strong> informe o preço da pizza inteira para cada tamanho.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se precisar, limite a oferta a determinados agrupamentos.</li><li><strong>Lista de itens:</strong> confira pizzas cadastradas, disponibilidade e estoque.</li></ol><p>Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
+<div class="pc-card"><div class="pc-row section-heading"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" class="help-control" aria-haspopup="dialog">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
+<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e forma de precificação da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> reúna os sabores que podem ser combinados entre si. Exemplo: sabores premium podem formar uma pizza meio a meio apenas com outros sabores do agrupamento Premium.</li><li><strong>Sabores e preços:</strong> defina sabores e informe valores para cada opção de tamanho.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se desejar, limite a oferta a determinados agrupamentos. Exemplo: uma borda especial disponível apenas para pizzas premium.</li><li><strong>Lista de itens:</strong> confira pizzas cadastradas, disponibilidade e estoque.</li></ol><p>Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
 <p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" hidden></div></div>
 <fieldset id="pc-content" disabled>
@@ -134,7 +134,7 @@
                         </button>
                         <h1 id="titulo-form" class="text-lg font-bold text-slate-800">Adicionar Novo Produto</h1>
                     </div>
-                    <button type="button" onclick="toggleAjudaProduto()" id="common-help-toggle" class="help-control" aria-expanded="false" aria-controls="common-help">ℹ️ Como funciona?</button>
+                    <button type="button" onclick="toggleAjudaProduto()" id="common-help-toggle" class="help-control" aria-haspopup="dialog">ℹ️ Como funciona?</button>
                     </div>
 
                     <div class="flex gap-2 flex-wrap justify-end">
@@ -168,7 +168,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Categoria <span class="text-rose-500">*</span></label>
+                            <label for="categoria" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Categoria <span class="text-rose-500">*</span> <span class="normal-case font-normal text-slate-500">Para adicionar uma nova categoria, basta digitar o nome no campo abaixo.</span></label>
                             <input list="lista-categorias" id="categoria" required class="input-field bg-amber-50/50 border-amber-200 focus:border-amber-400" placeholder="Ex: Prato Executivo, Bebidas...">
                             <datalist id="lista-categorias"></datalist>
                         </div>
@@ -247,7 +247,7 @@
             
             <div data-delivery-panel="new" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/80">
-                    <div class="section-heading"><h2 class="text-md font-bold text-slate-800">Nova Taxa de Entrega</h2><button type="button" class="help-control" onclick="toggleAjudaEntrega()" id="delivery-help-toggle" aria-expanded="false" aria-controls="delivery-help">ℹ️ Como funciona?</button></div>
+                    <div class="section-heading"><h2 class="text-md font-bold text-slate-800">Nova Taxa de Entrega</h2><button type="button" class="help-control" onclick="toggleAjudaEntrega()" id="delivery-help-toggle" aria-haspopup="dialog">ℹ️ Como funciona?</button></div>
                     <p class="text-xs text-slate-500 mt-1">Defina os valores de entrega por bairro ou região.</p>
                 </div>
                 <div id="delivery-help" class="hidden p-4 text-xs text-slate-600 bg-slate-50 border-b border-slate-200">Cadastre um valor por bairro em “Adicionar taxa”. Confira os registros em “Regiões cadastradas”. Use “Outros locais” quando o bairro do cliente não estiver na lista; o valor será mostrado como estimativa.</div>
@@ -337,7 +337,7 @@
                     <div>
                         <div class="flex items-center gap-2">
                             <h2 class="text-md font-bold text-slate-800">🤖 Sugestões Automáticas</h2>
-                            <button type="button" onclick="toggleInstrucoesUpsell()" class="help-control">
+                            <button type="button" onclick="toggleInstrucoesUpsell()" class="help-control" aria-haspopup="dialog">
                                 ℹ️ Como funciona?
                             </button>
                         </div>
@@ -558,15 +558,11 @@
         }
 
         function toggleAjudaProduto() {
-            const help = document.getElementById('common-help');
-            help.hidden = !help.hidden;
-            document.getElementById('common-help-toggle').setAttribute('aria-expanded', String(!help.hidden));
+            CadastroUI.abrirAjuda('common-help','Produtos comuns',document.getElementById('common-help-toggle'));
         }
 
         function toggleAjudaEntrega() {
-            const help = document.getElementById('delivery-help');
-            help.classList.toggle('hidden');
-            document.getElementById('delivery-help-toggle').setAttribute('aria-expanded', String(!help.classList.contains('hidden')));
+            CadastroUI.abrirAjuda('delivery-help','Taxas de entrega',document.getElementById('delivery-help-toggle'));
         }
 
         // ==========================================
@@ -595,7 +591,7 @@
         }
 
         function toggleInstrucoesUpsell() {
-            document.getElementById('painel-instrucoes-upsell').classList.toggle('hidden');
+            CadastroUI.abrirAjuda('painel-instrucoes-upsell','Sugestões automáticas',document.activeElement);
         }
 
         // ==========================================

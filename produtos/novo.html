@@ -462,7 +462,7 @@
 
     <script src="../assets/cadastro-ui.js?v=20261009-2"></script>
 <script src="pizzas-produtos.js?v=20261009-2"></script>
-<script src="sugestoes-regras.js?v=20261009-1"></script>
+<script src="sugestoes-regras.js?v=20261009-2"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -771,6 +771,7 @@
 
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar taxas.</td></tr>`;
+                window.SugestoesRegras.reportLoadError('Não foi possível carregar empresa-config. Confira a execução do webhook e tente atualizar a página.');
             }
         }
 
@@ -1027,6 +1028,7 @@
                 CadastroUI.restore(view);
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
+                window.SugestoesRegras.reportLoadError('Não foi possível carregar produtos-dados. Confira a execução do webhook e tente atualizar a página.');
             }
         }
 

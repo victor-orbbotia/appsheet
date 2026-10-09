@@ -21,5 +21,26 @@ window.CadastroUI = (() => {
   const a=s.anchorId?document.getElementById(s.anchorId):find(s.anchor);
   scrollTo({left:s.x,top:a&&a.getBoundingClientRect().height?scrollY+a.getBoundingClientRect().top-s.top:s.y,behavior:'instant'});
  }
- return {notify,capture,restore};
+ function abrirAjuda(origem, titulo='Como funciona?', acionador=document.activeElement){
+  const fonte=typeof origem==='string'?document.getElementById(origem):origem;
+  if(!fonte)return;
+  let dialog=document.getElementById('cadastro-help-dialog');
+  if(!dialog){
+   const style=document.createElement('style');
+   style.textContent='.cadastro-help-dialog{position:fixed;inset:0;margin:auto;width:min(560px,calc(100vw - 32px));max-height:min(80dvh,680px);padding:0;border:1px solid #c7d2fe;border-radius:16px;background:#fff;color:#172033;box-shadow:0 20px 60px #0f172a55;overflow:hidden}.cadastro-help-dialog::backdrop{background:#0f172acc;backdrop-filter:blur(3px)}.cadastro-help-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid #e2e8f0}.cadastro-help-head h2{margin:0;font:700 20px/1.3 system-ui,sans-serif}.cadastro-help-close{min-width:40px;min-height:40px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#172033;font-size:22px;cursor:pointer}.cadastro-help-body{max-height:calc(min(80dvh,680px) - 78px);overflow:auto;padding:20px;font:14px/1.6 system-ui,sans-serif}.cadastro-help-body ol{padding-left:22px}.cadastro-help-body li{margin:8px 0}.cadastro-help-dialog button:focus-visible{outline:3px solid #818cf8;outline-offset:2px}';
+   document.head.append(style);
+   dialog=document.createElement('dialog');dialog.id='cadastro-help-dialog';dialog.className='cadastro-help-dialog';dialog.setAttribute('aria-labelledby','cadastro-help-title');
+   const head=document.createElement('div');head.className='cadastro-help-head';
+   const heading=document.createElement('h2');heading.id='cadastro-help-title';
+   const close=document.createElement('button');close.type='button';close.className='cadastro-help-close';close.setAttribute('aria-label','Fechar ajuda');close.textContent='×';close.onclick=()=>dialog.close();
+   head.append(heading,close);const body=document.createElement('div');body.className='cadastro-help-body';dialog.append(head,body);
+   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+   document.body.append(dialog);
+  }
+  dialog.querySelector('#cadastro-help-title').textContent=titulo;
+  dialog.querySelector('.cadastro-help-body').replaceChildren(...[...fonte.childNodes].map(node=>node.cloneNode(true)));
+  dialog.onclose=()=>acionador?.focus?.({preventScroll:true});
+  dialog.showModal();dialog.querySelector('.cadastro-help-close').focus();
+ }
+ return {notify,capture,restore,abrirAjuda};
 })();

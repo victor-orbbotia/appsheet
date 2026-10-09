@@ -215,7 +215,7 @@ window.pizzasCadastro = (() => {
    for(const kind of ['borda','adicional']){ $('pc-new-'+kind).onclick=()=>newOption(kind);$('pc-new-group-'+kind).onclick=()=>editorGroup(kind);}
    $('pc-show-inactive').onchange=()=>renderList();
    for(const b of document.querySelectorAll('[data-pc-section]'))b.onclick=()=>setSection(b.dataset.pcSection);
-   $('pc-help-toggle').onclick=()=>{const help=$('pc-help');help.hidden=!help.hidden;$('pc-help-toggle').setAttribute('aria-expanded',String(!help.hidden));};
+   $('pc-help-toggle').onclick=()=>CadastroUI.abrirAjuda('pc-help','Cadastro de pizzas',$('pc-help-toggle'));
    if(window.AdminSession?.enabled){$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-load').textContent='Carregar cadastro';AdminSession.ready.then(()=>{if(!data&&!busy)$('pc-load').click();}).catch(()=>{});}
    choose(new URLSearchParams(location.search).get('tipo')==='pizza'?'pizza':'common');
  }

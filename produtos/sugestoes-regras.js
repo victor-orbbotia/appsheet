@@ -38,8 +38,11 @@ window.SugestoesRegras = (() => {
     const nextAccountId = String(currentAccountId || '');
     const preserveForm = nextAccountId === accountId && !$('upsell-rule-form').classList.contains('hidden');
     accountId = nextAccountId;
-    ready = Array.isArray(config?.upsell_regras) && Number.isInteger(Number(config?.upsell_regras_versao));
-    rules = ready ? structuredClone(config.upsell_regras) : [];
+    const hasRules = config && Object.hasOwn(config, 'upsell_regras');
+    const hasVersion = config && Object.hasOwn(config, 'upsell_regras_versao');
+    const savedRules = config?.upsell_regras == null ? [] : config.upsell_regras;
+    ready = hasRules && hasVersion && Array.isArray(savedRules) && Number.isSafeInteger(Number(config.upsell_regras_versao));
+    rules = ready ? structuredClone(savedRules) : [];
     version = ready ? Number(config.upsell_regras_versao) : 0;
     if (!preserveForm) {
       editingId = null;
@@ -69,7 +72,7 @@ window.SugestoesRegras = (() => {
     if (busy) return;
     if (loadError) return CadastroUI.notify(loadError, true);
     if (!configLoaded || !catalogLoaded) return CadastroUI.notify('Aguarde o carregamento das configurações e do catálogo.', true);
-    if (!ready) return CadastroUI.notify('O retorno de empresa-config não trouxe upsell_regras e upsell_regras_versao. Confira o workflow GET publicado.', true);
+    if (!ready) return CadastroUI.notify('O retorno de empresa-config não trouxe regras ou versão válidas. Confira o workflow GET publicado.', true);
     if (!categories.length) return CadastroUI.notify('O catálogo não trouxe categorias com ID em produtos ativos. Confira o retorno de produtos-dados.', true);
     editingId = rule?.id || null;
     $('upsell-rule-form-title').textContent = rule ? 'Editar regra' : 'Nova regra';
@@ -116,7 +119,7 @@ window.SugestoesRegras = (() => {
     if (!ready) {
       const message = document.createElement('p');
       message.className = 'rounded-lg bg-white p-3 text-sm text-amber-900';
-      message.textContent = 'O retorno de empresa-config não trouxe upsell_regras e upsell_regras_versao. Confira o workflow GET publicado.';
+      message.textContent = 'O retorno de empresa-config não trouxe regras ou versão válidas. Confira o workflow GET publicado.';
       list.append(message);
       return;
     }

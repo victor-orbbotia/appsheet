@@ -754,7 +754,11 @@
                 const res = await fetch(`${urlConfigGet}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error(`empresa-config respondeu HTTP ${res.status}`);
                 
-                let data = await res.json();
+                const respostaTexto = await res.text();
+                if (!respostaTexto.trim()) throw new Error(`empresa-config respondeu HTTP ${res.status} sem conteúdo`);
+                let data;
+                try { data = JSON.parse(respostaTexto); }
+                catch { throw new Error(`empresa-config respondeu HTTP ${res.status} com JSON inválido`); }
                 respostaRecebida = true;
                 if (Array.isArray(data)) data = data[0];
 

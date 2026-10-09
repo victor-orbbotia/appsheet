@@ -439,6 +439,13 @@
         // ROTAS EMPRESA CONFIG
         const urlConfigGet = 'https://n8n.orbbotia.com/webhook/empresa-config';
         const urlConfigPost = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
+        async function confirmarConfigSalva(response) {
+            const body = await response.json().catch(() => null);
+            if (!body || !response.ok || body.success === false || [body.status, body.resultado?.status].some(status => ['erro', 'error', 'pendencia'].includes(status))) {
+                throw new Error(body?.mensagem || body?.resultado?.mensagem || body?.message || 'O servidor não confirmou a alteração.');
+            }
+            return body;
+        }
 
         let globalAccountId = null;
         let handshakeInterval;
@@ -668,7 +675,7 @@
             const p3 = document.getElementById('upsell_prioridade_3').value;
 
             if (upsellAtivo && gatilhosSelecionados.length === 0) {
-                return CadastroUI.notify("Selecione pelo menos uma categoria gatilho para ativar o recurso!");
+                return CadastroUI.notify("Selecione pelo menos uma categoria gatilho para ativar o recurso!", true);
             }
 
             btn.innerText = "⏳ Salvando...";
@@ -689,20 +696,15 @@
                     })
                 });
 
-                const jsonRes = await response.json().catch(() => ({}));
-
-                if (response.ok || jsonRes.success) {
+                await confirmarConfigSalva(response);
                     configEmpresaCache.upsell_ativo = upsellAtivo;
                     configEmpresaCache.upsell_gatilhos = gatilhosSelecionados.join(', ');
                     configEmpresaCache.upsell_prioridade_1 = p1;
                     configEmpresaCache.upsell_prioridade_2 = p2;
                     configEmpresaCache.upsell_prioridade_3 = p3;
                     CadastroUI.notify("Configurações de sugestões salvas com sucesso!");
-                } else {
-                    throw new Error();
-                }
             } catch (error) {
-                CadastroUI.notify("Erro ao salvar configurações no servidor.");
+                CadastroUI.notify("Erro ao salvar configurações no servidor.", true);
             } finally {
                 btn.innerText = "💾 Salvar Configurações";
                 btn.disabled = false;
@@ -803,7 +805,7 @@
             const input = document.getElementById('entrega_outros_valor');
             const btn = document.getElementById('btnSalvarOutros');
             const valor = Number(input.value);
-            if (!Number.isFinite(valor) || valor < 0) return CadastroUI.notify('Informe um valor válido para a taxa estimada de Outros.');
+            if (!Number.isFinite(valor) || valor < 0) return CadastroUI.notify('Informe um valor válido para a taxa estimada de Outros.', true);
 
             btn.innerText = '⏳ Salvando...';
             btn.disabled = true;
@@ -817,12 +819,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ account_id: globalAccountId.toString(), taxas_entrega: novaLista })
                 });
-                if (!response.ok) throw new Error();
+                await confirmarConfigSalva(response);
                 listaTaxas = novaLista;
                 sincronizarTaxaOutrosUI();
                 renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa estimada de Outros salva.');
             } catch (error) {
-                CadastroUI.notify('Erro ao salvar a taxa estimada de Outros.');
+                CadastroUI.notify('Erro ao salvar a taxa estimada de Outros.', true);
             } finally {
                 btn.innerText = 'Salvar Outros';
                 btn.disabled = false;
@@ -839,12 +842,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ account_id: globalAccountId.toString(), taxas_entrega: novaLista })
                 });
-                if (!response.ok) throw new Error();
+                await confirmarConfigSalva(response);
                 listaTaxas = novaLista;
                 sincronizarTaxaOutrosUI();
                 renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa de Outros removida.');
             } catch (error) {
-                CadastroUI.notify('Erro ao remover a taxa de Outros.');
+                CadastroUI.notify('Erro ao remover a taxa de Outros.', true);
             }
         }
 
@@ -856,10 +860,10 @@
             const bairro = inputBairro.value.trim();
             const valor = parseFloat(inputValor.value);
 
-            if (!bairro) return CadastroUI.notify("Digite o nome do bairro ou região!");
-            if (normalizarTaxaTexto(bairro) === TAXA_OUTROS_KEY) return CadastroUI.notify('Use o campo separado “Taxa para Outros Locais”.');
-            if (listaTaxas.some(t => normalizarTaxaTexto(t?.bairro) === normalizarTaxaTexto(bairro))) return CadastroUI.notify('Este bairro/região já está cadastrado.');
-            if (isNaN(valor) || valor < 0) return CadastroUI.notify("Digite um valor válido para a entrega!");
+            if (!bairro) return CadastroUI.notify("Digite o nome do bairro ou região!", true);
+            if (normalizarTaxaTexto(bairro) === TAXA_OUTROS_KEY) return CadastroUI.notify('Use o campo separado “Taxa para Outros Locais”.', true);
+            if (listaTaxas.some(t => normalizarTaxaTexto(t?.bairro) === normalizarTaxaTexto(bairro))) return CadastroUI.notify('Este bairro/região já está cadastrado.', true);
+            if (isNaN(valor) || valor < 0) return CadastroUI.notify("Digite um valor válido para a entrega!", true);
 
             btn.innerText = "⏳ Salvando...";
             btn.disabled = true;
@@ -876,15 +880,16 @@
                     })
                 });
 
-                if (!response.ok) throw new Error();
+                await confirmarConfigSalva(response);
                 
                 listaTaxas = novaLista;
                 inputBairro.value = '';
                 inputValor.value = '';
                 renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa de entrega salva.');
 
             } catch (error) {
-                CadastroUI.notify("Erro ao salvar taxa no servidor.");
+                CadastroUI.notify("Erro ao salvar taxa no servidor.", true);
             } finally {
                 btn.innerText = "+ Adicionar Taxa";
                 btn.disabled = false;
@@ -907,13 +912,14 @@
                     })
                 });
 
-                if (!response.ok) throw new Error();
+                await confirmarConfigSalva(response);
                 
                 listaTaxas = novaLista;
                 renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa de entrega removida.');
 
             } catch (error) {
-                CadastroUI.notify("Erro ao remover taxa no servidor.");
+                CadastroUI.notify("Erro ao remover taxa no servidor.", true);
             }
         }
 
@@ -1120,7 +1126,7 @@
                 metadata: updated
             }) });
             const result = await response.json();
-            if (!response.ok || ['erro','error','pendencia'].includes(result.status || result.resultado?.status)) throw Error(result.mensagem || 'Não foi possível alterar o estoque.');
+            if (!response.ok || [result.status, result.resultado?.status].some(status => ['erro','error','pendencia'].includes(status))) throw Error(result.mensagem || result.resultado?.mensagem || 'Não foi possível alterar o estoque.');
             await carregarLista();
             CadastroUI.notify('Estoque atualizado.');
             } catch (error) { control.value = previous; CadastroUI.notify(error.message, true); }
@@ -1201,14 +1207,14 @@
             try {
                 const response=await fetch(urlAcao,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
                 const result=await response.json();
-                if(!response.ok||['erro','error','pendencia'].includes(result.status))throw Error(result.mensagem||'Não foi possível salvar.');
+                if(!response.ok||[result.status,result.resultado?.status].some(status=>['erro','error','pendencia'].includes(status)))throw Error(result.mensagem||result.resultado?.mensagem||'Não foi possível salvar.');
                 await carregarLista();
                 if(payload.action==='criar') {
                     const created=result.id||result.resultado?.id;
                     if(created)document.getElementById('produto_id').value=created;
                     else {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
                 }
-                if(payload.action==='excluir') {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                if(payload.action==='deletar') {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
                 commonDirty = false;
                 CadastroUI.notify(txtSucesso||'Alteração salva.');
             } catch(e){CadastroUI.notify(e.message,true);}
@@ -1219,7 +1225,7 @@
             const id = document.getElementById('produto_id').value;
             if (!id) return;
             if (confirm("Deseja apagar este produto do cardápio?")) {
-                enviarAcao({ action: 'deletar', account_id: globalAccountId.toString(), id: id }, document.getElementById('btnExcluir'), '🗑️');
+                enviarAcao({ action: 'deletar', account_id: globalAccountId.toString(), id: id }, document.getElementById('btnExcluir'), 'Produto excluído.');
             }
         }
 
@@ -1230,7 +1236,7 @@
             const categoria = document.getElementById('categoria').value.trim();
             const tipo = document.getElementById('tipo_venda').value;
 
-            if (!nome || !categoria) return CadastroUI.notify("Nome e Categoria são obrigatórios!");
+            if (!nome || !categoria) return CadastroUI.notify("Nome e Categoria são obrigatórios!", true);
 
             let precoBase = 0.00;
             let metadata = {};
@@ -1269,14 +1275,14 @@
                         });
                     }
                 }
-                if (arrayVariacoes.length === 0) return CadastroUI.notify("Adicione pelo menos uma opção de variação de preço!");
+                if (arrayVariacoes.length === 0) return CadastroUI.notify("Adicione pelo menos uma opção de variação de preço!", true);
                 
                 metadata.tipo = 'com_variacoes';
                 metadata.variacoes = arrayVariacoes;
                 metadata.tamanhos = arrayVariacoes;
             }
 
-            if (categoria.trim().toLowerCase() === 'pizzas') { CadastroUI.notify('Use o card Pizza para cadastrar sabores e tamanhos na categoria padrão Pizzas.'); return; }
+            if (categoria.trim().toLowerCase() === 'pizzas') { CadastroUI.notify('Use o card Pizza para cadastrar sabores e tamanhos na categoria padrão Pizzas.', true); return; }
             enviarAcao({
                 action: id ? 'editar' : 'criar',
                 id: id,
@@ -1287,7 +1293,7 @@
                 preco_base: precoBase,
                 ativo: document.getElementById('ativo_produto').checked,
                 metadata: metadata
-            }, document.getElementById('btnSalvar'), '✓ Salvo');
+            }, document.getElementById('btnSalvar'), id ? 'Produto atualizado.' : 'Produto cadastrado.');
         }
         if (globalAccountId) iniciarApp();
     </script>

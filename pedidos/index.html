@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
+<script src="../assets/contexto-conta.js"></script><script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedidos — Monitor de Pagamento</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -250,7 +252,7 @@
                 tab: 1
             },
             comprovante_enviado: {
-                label: 'Aguardando Comprovante',
+                label: 'Aguardando conferência',
                 anterior: 'aguardando_pix',
                 btnAnteriorLabel: '← Reenviar PIX',
                 btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600',
@@ -321,6 +323,8 @@
         }
 
         window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
             if (eventData.event === 'appContext' && eventData.data) {
@@ -332,13 +336,12 @@
         });
 
         handshakeInterval = setInterval(() => {
-            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            if (!globalAccountId) ContextoConta.solicitar();
         }, 500);
 
-        setTimeout(() => {
-            if (!globalAccountId) globalAccountId = '3';
-            iniciarApp();
-        }, 1500);
+
+
+        if(globalAccountId){clearInterval(handshakeInterval);iniciarApp();}
 
         function iniciarApp() {
             document.getElementById('alerta-chatwoot').classList.add('hidden');

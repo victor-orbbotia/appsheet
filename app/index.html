@@ -765,7 +765,7 @@
         : MODO_SOLICITADO;
       const ACESSO = params.get('acesso') || '';
       const TERMINAIS = ['cancelado','cancelado_cliente','cancelado_atendente','entregue','retirado','concluido','finalizado','resolvido'];
-      const EDITAVEIS = ['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','comprovante_enviado','retirada_balcao'];
+      const EDITAVEIS = ['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','retirada_balcao'];
       const IS_DEMO = !ACCOUNT_ID || params.get("demo") === "1";
       const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -2076,7 +2076,7 @@
               if (changeInput) changeInput.checked = true;
             }
             $("#input-troco").value = stored.amount;
-            if (!['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','comprovante_enviado','retirada_balcao'].includes(p.status)) {
+            if (!EDITAVEIS.includes(p.status)) {
               $("#btn-submit").disabled = true;
               $("#btn-submit").textContent = 'Alterações com a equipe pelo WhatsApp';
             }

@@ -6,7 +6,7 @@ window.AdminSession = (() => {
  const loginUrl=new URL('acesso.html',root),loginPage=location.pathname===loginUrl.pathname;
  const routes=new Set(['admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot']);
  const originalFetch=window.fetch.bind(window);
- let client=null,session=null,redirecting=false;
+ let client=null,session=null,redirecting=false,navigation=null;
  const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
  function goLogin(){if(redirecting)return;redirecting=true;loginUrl.searchParams.set('retorno',location.pathname+location.search);location.replace(loginUrl.href);}
  function safeReturn(value){try{const u=new URL(value||'index.html',root);if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname)return u.href;}catch{}return new URL('index.html',root).href;}
@@ -21,6 +21,10 @@ window.AdminSession = (() => {
   if(!empresaResponse.ok)throw Error('conta_nao_confirmada');
   const raw=await empresaResponse.json();const empresa=Array.isArray(raw)?raw[0]:raw;
   if(!empresa||String(empresa.account_id)!==account)throw Error('conta_inexistente');
+  let modulos=empresa.modulos;
+  if(typeof modulos==='string'){try{modulos=JSON.parse(modulos);}catch{modulos={};}}
+  // Projeção exclusiva de navegação: nunca expor a configuração completa/credenciais.
+  navigation=Object.freeze({accountId:account,segmento:String(empresa.segmento||''),modulos:Object.freeze(Object.fromEntries(['pedidos','produtos','conhecimento','profissionais','configuracoes'].map(key=>[key,modulos?.[key]===true])))});
  }
 
  if(enabled&&!loginPage){const style=document.createElement('style');style.textContent='html.admin-pending body{visibility:hidden}';document.head.append(style);document.documentElement.classList.add('admin-pending');}
@@ -54,5 +58,5 @@ window.AdminSession = (() => {
   if(response.status===403){await domReady;const bar=banner('Você não tem acesso a esta operação neste estabelecimento. Confira a conta e sua permissão.');const b=document.createElement('button');b.textContent='Trocar usuário';b.onclick=async()=>{await client.auth.signOut({scope:'local'});goLogin();};bar.append(b);}
   return response;
  };
- return {enabled,ready,safeReturn,get client(){return client;}};
+ return {enabled,ready,safeReturn,get client(){return client;},get navigation(){return navigation;}};
 })();

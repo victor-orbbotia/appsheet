@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+<script src="../assets/contexto-conta.js?v=20261013-global1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261013-global2"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Menu Studio Pro — Gerador de Cardápio</title>
 
@@ -44,13 +47,15 @@
         #preview-canvas {
             width: 794px;
             margin: 0 auto;
-            background-color: transparent; 
+            background-color: transparent;
         }
 
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-global2">
+<script src="../assets/admin-ui.js?v=20261013-global2" defer></script>
 </head>
 
 <body class="flex flex-col md:flex-row h-screen text-slate-800 relative">
@@ -170,7 +175,7 @@
                     <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wide flex items-center gap-1.5">
                         <i class="fa-solid fa-eye text-indigo-600"></i> Exibição no PDF (Estoque)
                     </h2>
-                    
+
                     <div class="grid grid-cols-2 gap-2 text-[11px]">
                         <div class="bg-white p-2 rounded-lg border border-indigo-100">
                             <label class="block font-bold text-amber-800 mb-1">⚠️ Em Falta</label>
@@ -292,7 +297,7 @@
         const urlSalvarCardapio = 'https://n8n.orbbotia.com/webhook/cardapio-salvar';
         const urlObterCardapio = 'https://n8n.orbbotia.com/webhook/cardapio-obter';
 
-        let globalAccountId = '3';
+        let globalAccountId = null;
         let handshakeInterval;
         let isMobilePreviewOpen = false;
         let updateTimeout;
@@ -302,14 +307,14 @@
             restaurantDescription: "", logoUrl: null, carrosChefe: [], data: [],
             colorPrimary: "#111827", colorSecondary: "#4f46e5", colorBg: "#FFFFFF", colorText: "#333333",
             fontTitle: "'Playfair Display', serif", fontBody: "'Lato', sans-serif",
-            exibirEmFalta: 'ocultar', 
-            exibirEsgotado: 'mostrar'  
+            exibirEmFalta: 'ocultar',
+            exibirEsgotado: 'mostrar'
         };
 
         let stateHistory = [];
         let redoStack = [];
-        const MAX_HISTORY = 20; 
-        let changesCount = 0;  
+        const MAX_HISTORY = 20;
+        let changesCount = 0;
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
@@ -319,7 +324,7 @@
         function saveStateToHistory() {
             stateHistory.push(JSON.stringify(appState));
             if (stateHistory.length > MAX_HISTORY) stateHistory.shift();
-            redoStack = []; 
+            redoStack = [];
             changesCount++;
             updateHistoryUI();
         }
@@ -373,12 +378,12 @@
             [1, 2, 3].forEach(i => {
                 const btn = document.getElementById(`btn-layout-${i}`);
                 if(!btn) return;
-                if(i === appState.layout) { 
-                    btn.className = "w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between transition-all"; 
-                    btn.querySelector('span').className = "text-xs font-bold text-indigo-900"; 
-                } else { 
-                    btn.className = "w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500"; 
-                    btn.querySelector('span').className = "text-xs font-medium"; 
+                if(i === appState.layout) {
+                    btn.className = "w-full text-left p-2.5 rounded-lg border-2 border-indigo-600 bg-indigo-50/50 flex items-center justify-between transition-all";
+                    btn.querySelector('span').className = "text-xs font-bold text-indigo-900";
+                } else {
+                    btn.className = "w-full text-left p-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 flex items-center justify-between transition-all text-slate-500";
+                    btn.querySelector('span').className = "text-xs font-medium";
                 }
             });
 
@@ -448,19 +453,19 @@
         ${rootStyles}
         *, *::before, *::after { box-sizing: border-box; }
         body { background-color: var(--color-bg); padding: 0; margin: 0; font-family: var(--font-body); color: var(--color-text); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        
+
         /* Regra Exata para PDF */
         @page { size: A4 portrait; margin: 0; }
-        
-        .pdf-page { 
+
+        .pdf-page {
             width: 794px;
             height: 1123px;
             padding: 15mm;
             margin: 0 !important;
             position: relative;
-            background-color: var(--color-bg); 
+            background-color: var(--color-bg);
             page-break-after: always;
-            box-shadow: none !important; 
+            box-shadow: none !important;
             overflow: hidden;
             box-sizing: border-box;
         }
@@ -483,8 +488,8 @@
                 const response = await fetch(urlSalvarCardapio, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        account_id: globalAccountId, 
+                    body: JSON.stringify({
+                        account_id: globalAccountId,
                         config_state: appState,
                         html_renderizado: fullHtml
                     })
@@ -508,7 +513,7 @@
                 const config = await response.json();
 
                 if (config && Object.keys(config).length > 0) {
-                    saveStateToHistory(); 
+                    saveStateToHistory();
                     appState = { ...appState, ...config };
                     applyStateToUI(); renderPreview(); salvarConfigNoCache();
                     alert("🔄 Versão restaurada do servidor com sucesso!");
@@ -523,6 +528,8 @@
         }
 
         window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
             if (eventData.event === 'appContext' && eventData.data) {
@@ -532,21 +539,21 @@
             }
         });
 
-        handshakeInterval = setInterval(() => { 
-            if (globalAccountId === '3') {
-                window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) {
+                ContextoConta.solicitar();
                 if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'chatwoot-dashboard-app:fetch-info' }));
             } else {
                 clearInterval(handshakeInterval);
             }
         }, 500);
 
-        setTimeout(() => { 
-            if (globalAccountId === '3') { 
-                clearInterval(handshakeInterval);
-                iniciarPagina(); 
-            } 
-        }, 1200);
+
+
+        if (urlParams.get('account_id')) {
+            clearInterval(handshakeInterval);
+            iniciarPagina();
+        }
 
         function iniciarPagina() {
             document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
@@ -589,24 +596,24 @@
 
                         let meta = p.metadata;
                         if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
-                        
+
                         let tamanhosArray = null;
                         let precoFinal = parseFloat(p.preco_base) || 0;
 
                         const listaOpcoes = meta?.variacoes || meta?.tamanhos;
                         if (Array.isArray(listaOpcoes) && listaOpcoes.length > 0) {
                             tamanhosArray = listaOpcoes;
-                            precoFinal = parseFloat(listaOpcoes[0].preco) || 0; 
+                            precoFinal = parseFloat(listaOpcoes[0].preco) || 0;
                         }
 
                         const statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
 
                         agrupado[cat].push({
-                            id: p.id || Math.random().toString(), 
+                            id: p.id || Math.random().toString(),
                             nome: p.nome || 'Sem Nome',
-                            desc: p.descricao || '', 
-                            preco: precoFinal, 
-                            variacoes: tamanhosArray, 
+                            desc: p.descricao || '',
+                            preco: precoFinal,
+                            variacoes: tamanhosArray,
                             statusEstoque: statusEstoque,
                             visivel: true
                         });
@@ -676,7 +683,7 @@
             if (!wrapper || !zoomContainer || !canvasElement) return;
 
             wrapper.style.transform = `scale(${appState.zoom})`;
-            const canvasUnscaledWidth = 794; 
+            const canvasUnscaledWidth = 794;
             const canvasUnscaledHeight = canvasElement.scrollHeight > 1123 ? canvasElement.scrollHeight : 1123;
 
             zoomContainer.style.width = `${canvasUnscaledWidth * appState.zoom}px`;
@@ -724,7 +731,7 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                saveStateToHistory(); 
+                saveStateToHistory();
                 const imgData = e.target.result;
                 appState.logoUrl = imgData;
                 document.getElementById('logo-preview-img').src = imgData;
@@ -781,14 +788,14 @@
             appState.carrosChefe.forEach((item) => {
                 const div = document.createElement('div');
                 div.className = "bg-white/5 border border-white/10 rounded-lg p-2.5 flex gap-2.5 relative group";
-                
-                const imgMarkup = item.imgBase64 
+
+                const imgMarkup = item.imgBase64
                     ? `<div class="relative w-full h-full group/img">
                         <img src="${item.imgBase64}" class="w-full h-full object-cover" alt="${item.nome}">
                         <button type="button" onclick="event.stopPropagation(); removeDestaqueImg('${item.id}')" title="Remover Foto" class="absolute top-0.5 right-0.5 bg-rose-600/90 hover:bg-rose-700 text-white w-4 h-4 rounded flex items-center justify-center text-[8px] transition-opacity opacity-0 group-hover/img:opacity-100 z-10">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
-                       </div>` 
+                       </div>`
                     : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs"><i class="fa-solid fa-camera"></i></div>`;
 
                 div.innerHTML = `
@@ -827,7 +834,7 @@
         function updateDestaque(id, field, value) {
             const index = appState.carrosChefe.findIndex(c => c.id === id);
             if (index > -1) {
-                saveStateToHistory(); 
+                saveStateToHistory();
                 if (field === 'preco') value = parseFloat(value) || 0;
                 appState.carrosChefe[index][field] = value;
                 renderPreview(); salvarConfigNoCache();
@@ -876,7 +883,7 @@
         }
 
         function updateTheme() {
-            saveStateToHistory(); 
+            saveStateToHistory();
             appState.colorPrimary = document.getElementById('color-primary').value;
             appState.colorSecondary = document.getElementById('color-secondary').value;
             appState.colorBg = document.getElementById('color-bg').value;
@@ -923,7 +930,7 @@
 
         function buildElementsArray() {
             const elements = [];
-            
+
             // --- HEADER ---
             let headerHtml = `<div style="width: 100%; text-align: center; margin-bottom: 2rem; display: inline-block;">`;
             if (appState.logoUrl) headerHtml += `<img src="${appState.logoUrl}" style="max-height: 5rem; margin: 0 auto 1rem auto; object-fit: contain; display: block;" alt="Logo">`;
@@ -947,7 +954,7 @@
             // --- CATEGORIAS ---
             const filteredData = appState.data.map(cat => ({
                 categoria: cat.categoria,
-                itens: cat.itens 
+                itens: cat.itens
             })).filter(cat => cat.itens.length > 0);
 
             filteredData.forEach(cat => {
@@ -1033,7 +1040,7 @@
             content.className = 'page-content';
             content.style.width = '100%';
             content.style.position = 'relative';
-            
+
             page.appendChild(content);
             return page;
         }
@@ -1056,7 +1063,7 @@
             let currentPage = createEmptyPage();
             tempWrapper.appendChild(currentPage);
 
-            const MAX_CONTENT_HEIGHT = 980; 
+            const MAX_CONTENT_HEIGHT = 980;
 
             elementsHtml.forEach(htmlString => {
                 const div = document.createElement('div');
@@ -1072,27 +1079,27 @@
                     if (pageContent.children.length > 1) {
                         // Array de nós que precisam ser movidos para a nova página
                         let nodesToMove = [node];
-                        
+
                         // Verifica se o nó atual NÃO é uma categoria, mas o nó anterior ERA uma categoria.
                         // Se sim, temos que mover o título da categoria junto com este primeiro item!
                         const isCategory = node.hasAttribute('data-category-title');
                         const previousNode = node.previousSibling;
-                        
+
                         if (!isCategory && previousNode && previousNode.hasAttribute('data-category-title')) {
                             nodesToMove.unshift(previousNode); // Adiciona o título no início da fila de mudança
                         }
 
                         // Remove os nós da página atual que "estouraram" ou ficaram órfãos
                         nodesToMove.forEach(n => pageContent.removeChild(n));
-                        
+
                         // Salva a página atual
                         pages.push(currentPage);
-                        
+
                         // Cria uma nova página
                         currentPage = createEmptyPage();
-                        tempWrapper.innerHTML = ''; 
+                        tempWrapper.innerHTML = '';
                         tempWrapper.appendChild(currentPage);
-                        
+
                         // Adiciona os nós removidos na nova página
                         const newPageContent = currentPage.querySelector('.page-content');
                         nodesToMove.forEach(n => newPageContent.appendChild(n));
@@ -1117,7 +1124,7 @@
                 footer.style.paddingTop = '4mm';
                 footer.style.opacity = '0.8';
                 footer.innerText = `Página ${index + 1} de ${pages.length} — ${appState.restaurantName}`;
-                
+
                 pageObj.appendChild(footer);
                 canvas.appendChild(pageObj);
             });
@@ -1141,7 +1148,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        account_id: parseInt(globalAccountId, 10) || 3,
+                        account_id: globalAccountId,
                         restaurant_name: appState.restaurantName,
                         html_content: fullHtml
                     })

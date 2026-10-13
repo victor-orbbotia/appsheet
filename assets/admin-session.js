@@ -12,34 +12,40 @@ window.AdminSession = (() => {
  function safeReturn(value){try{const u=new URL(value||'index.html',root);if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname)return u.href;}catch{}return new URL('index.html',root).href;}
  function banner(message){let bar=document.getElementById('admin-session-bar');if(!bar){bar=document.createElement('aside');bar.id='admin-session-bar';bar.setAttribute('aria-label','Sua sessão');bar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:#eef2ff;color:#312e81;font:14px system-ui;border-radius:12px;margin:8px;';document.body.prepend(bar);}bar.replaceChildren();const text=document.createElement('span');text.textContent=message;bar.append(text);return bar;}
  function showSession(){const account=new URLSearchParams(location.search).get('account_id');const bar=banner(`${session.user.email||'Sessão ativa'}${account?' · Estabelecimento '+account:''}`);const button=document.createElement('button');button.type='button';button.textContent='Sair';button.style.cssText='min-height:44px;padding:8px 16px;margin-left:auto;border:1px solid #c7d2fe;border-radius:8px;background:white;color:#312e81;cursor:pointer';button.onclick=async()=>{button.disabled=true;await client.auth.signOut({scope:'local'});goLogin();};bar.append(button);}
- async function chooseAccount(){
+ async function validarConta(account){
   const response=await originalFetch(config.apiOrigin+'/webhook/admin-contas',{headers:{Authorization:'Bearer '+session.access_token},redirect:'error'});
-  if(!response.ok)throw Error('Não foi possível consultar seus estabelecimentos. Tente novamente.');
-  const data=await response.json();if(!Array.isArray(data.contas)||!data.contas.length)throw Error('Sua conta ainda não tem um estabelecimento autorizado. Peça ao responsável para liberar seu acesso.');
-  const navigate=a=>{const url=new URL(location.href);url.searchParams.set('account_id',a.account_id);location.replace(url.href);};
-  if(data.contas.length===1){navigate(data.contas[0]);return new Promise(()=>{});}
-  await domReady;const main=document.createElement('main');main.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const title=document.createElement('h1');title.textContent='Escolha o estabelecimento';main.append(title);
-  for(const a of data.contas){const b=document.createElement('button');b.type='button';b.textContent=a.nome;b.style.cssText='display:block;width:100%;min-height:48px;padding:16px;margin:12px 0;border:1px solid #c7d2fe;border-radius:12px;background:white;color:#312e81;cursor:pointer';b.onclick=()=>navigate(a);main.append(b);}
-  document.body.replaceChildren(main);showSession();document.documentElement.classList.remove('admin-pending');return new Promise(()=>{});
+  if(!response.ok)throw Error('conta_nao_confirmada');
+  const data=await response.json();
+  if(!Array.isArray(data.contas)||!data.contas.some(a=>String(a.account_id)===account))throw Error('conta_nao_autorizada');
+  const empresaResponse=await originalFetch(config.apiOrigin+'/webhook/empresa-config?account_id='+encodeURIComponent(account),{headers:{Authorization:'Bearer '+session.access_token},redirect:'error'});
+  if(!empresaResponse.ok)throw Error('conta_nao_confirmada');
+  const raw=await empresaResponse.json();const empresa=Array.isArray(raw)?raw[0]:raw;
+  if(!empresa||String(empresa.account_id)!==account)throw Error('conta_inexistente');
  }
+
  if(enabled&&!loginPage){const style=document.createElement('style');style.textContent='html.admin-pending body{visibility:hidden}';document.head.append(style);document.documentElement.classList.add('admin-pending');}
  const ready=(async()=>{
-  if(!enabled)return null;
+  const account=loginPage?null:await window.ContextoConta.pronta;
+  if(!enabled){if(!loginPage)throw Error('conta_nao_confirmada');return null;}
   if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(config.supabaseUrl||'')||!config.publishableKey||config.publishableKey.startsWith('sb_secret_'))throw Error('Acesso administrativo ainda não configurado. Solicite a configuração à equipe responsável.');
   // Reject legacy service_role JWTs accidentally pasted as the public key.
   try{if(JSON.parse(atob(config.publishableKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).role==='service_role')throw Error('chave_privada');}catch(e){if(e.message==='chave_privada')throw Error('Use somente a chave pública do projeto para configurar o acesso.');}
   client=window.supabase.createClient(config.supabaseUrl,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
   const result=await client.auth.getSession();if(result.error)throw result.error;session=result.data.session;
   client.auth.onAuthStateChange((event,next)=>{session=next;if(event==='SIGNED_OUT'&&!loginPage)goLogin();});
-  if(!loginPage){if(!session){goLogin();throw Error('Entre para continuar.');}if(!new URLSearchParams(location.search).get('account_id'))await chooseAccount();await domReady;showSession();document.documentElement.classList.remove('admin-pending');}
+  if(!loginPage){if(!session){goLogin();throw Error('Entre para continuar.');}await validarConta(account);await domReady;showSession();document.documentElement.classList.remove('admin-pending');window.ContextoConta.aprovar(account);window.dispatchEvent(new Event('admin-pronto'));}
   return client;
  })();
- ready.catch(async error=>{await domReady;document.documentElement.classList.remove('admin-pending');if(loginPage)return;const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Acesso administrativo';const p=document.createElement('p');p.textContent=error.message;box.append(h,p);document.body.replaceChildren(box);});
+ ready.catch(async error=>{await domReady;if(loginPage)return;if(error.message.startsWith('conta_')){window.ContextoConta.bloquear();return;}document.documentElement.classList.remove('admin-pending');const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Acesso administrativo';const p=document.createElement('p');p.textContent=error.message;box.append(h,p);document.body.replaceChildren(box);});
  window.fetch=async(input,init)=>{
   const url=new URL(input instanceof Request?input.url:String(input),location.href);
-  const administrative=url.origin===config.apiOrigin&&/^\/webhook(?:-test)?\//.test(url.pathname)&&routes.has(url.pathname.split('/').pop());
-  if(!enabled||!administrative)return originalFetch(input,init);
+  const administrative=/^\/webhook(?:-test)?\//.test(url.pathname)&&routes.has(url.pathname.split('/').pop());
+  if(!administrative)return originalFetch(input,init);
+  if(url.origin!==config.apiOrigin)throw Error('destino_administrativo_invalido');
   await ready;
+  const identidade=window.ContextoConta.conta;
+  const requestAccount=url.searchParams.get('account_id')||(()=>{try{return JSON.parse(init?.body||'{}').account_id;}catch{return null;}})();
+  if(requestAccount!=null&&String(requestAccount)!==identidade)throw Error('conta_divergente');
   const result=await client.auth.getSession();const current=result.data.session;
   if(result.error||!current){goLogin();throw Error('Sua sessão terminou. Entre novamente.');}
   const request=new Request(input,init),headers=new Headers(request.headers);

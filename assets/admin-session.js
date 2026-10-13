@@ -40,7 +40,7 @@ window.AdminSession = (() => {
   if(!loginPage){if(!session){goLogin();throw Error('Entre para continuar.');}await validarConta(account);await domReady;showSession();document.documentElement.classList.remove('admin-pending');window.ContextoConta.aprovar(account);window.dispatchEvent(new Event('admin-pronto'));}
   return client;
  })();
- ready.catch(async error=>{await domReady;if(loginPage)return;if(error.message.startsWith('conta_')){window.ContextoConta.bloquear();return;}document.documentElement.classList.remove('admin-pending');const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Acesso administrativo';const p=document.createElement('p');p.textContent=error.message;box.append(h,p);document.body.replaceChildren(box);});
+ ready.catch(async error=>{await domReady;if(loginPage)return;window.ContextoConta.bloquear();if(error.message.startsWith('conta_'))return;document.documentElement.classList.remove('admin-pending');const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Acesso administrativo';const p=document.createElement('p');p.textContent=error.message;box.append(h,p);document.body.replaceChildren(box);});
  window.fetch=async(input,init)=>{
   const url=new URL(input instanceof Request?input.url:String(input),location.href);
   const administrative=/^\/webhook(?:-test)?\//.test(url.pathname)&&routes.has(url.pathname.split('/').pop());

@@ -100,3 +100,25 @@ html.orbbotia-admin :is(.pizza-ui,.pc-choice-copy,.text-indigo-900):not(.pdf-pag
  html.orbbotia-admin h1:not(.pdf-page *) { font-size:22px!important; }
 }
 @media(max-width:360px) { html.orbbotia-admin #admin-session-bar>span { max-width:80px; } }
+
+/* Melhoria progressiva: navegação nativa e autorização continuam independentes. */
+@view-transition { navigation:auto; }
+html.orbbotia-admin #admin-shell { view-transition-name:admin-header; }
+html.orbbotia-admin::view-transition-group(root),
+html.orbbotia-admin::view-transition-group(admin-header) { animation-duration:160ms; animation-timing-function:ease-out; }
+html.orbbotia-admin::view-transition-old(root),
+html.orbbotia-admin::view-transition-new(root) { animation-duration:160ms; }
+html.orbbotia-admin.admin-view-ready body>:not(#admin-shell,script,style) { animation:admin-content-enter 160ms ease-out; }
+@keyframes admin-content-enter { from { opacity:.75; } to { opacity:1; } }
+/* Fora do body oculto: mostra apenas uma mensagem neutra, nunca dados da sessão. */
+html.orbbotia-admin.conta-pendente.admin-preparando::before { content:'Carregando página…'; position:fixed; top:26px; left:50%; transform:translateX(-50%); z-index:90; color:var(--admin-muted); font:13px/1.5 system-ui,sans-serif; }
+html.orbbotia-admin:is(.admin-preparando,.admin-navegando)::after { content:''; position:fixed; top:0; left:0; width:100%; height:3px; z-index:100; background:linear-gradient(90deg,transparent 0%,var(--admin-accent) 45%,transparent 90%); background-size:50% 100%; background-repeat:no-repeat; animation:admin-loading 1.2s ease-in-out infinite; pointer-events:none; }
+@keyframes admin-loading { from { background-position:-100% 0; } to { background-position:200% 0; } }
+html.orbbotia-admin.admin-view-ready #area-loading:not(.hidden) { flex:none; min-height:40px; padding:10px 14px; border:1px solid var(--admin-line); border-radius:9px; background:var(--admin-panel); color:var(--admin-muted); font-size:13px; }
+@media(prefers-reduced-motion:reduce) {
+ @view-transition { navigation:none; }
+ html.orbbotia-admin::view-transition-group(*),html.orbbotia-admin::view-transition-old(*),html.orbbotia-admin::view-transition-new(*) { animation:none!important; }
+ html.orbbotia-admin.admin-view-ready body>:not(#admin-shell,script,style),html.orbbotia-admin:is(.admin-preparando,.admin-navegando)::after { animation:none!important; }
+ html.orbbotia-admin:is(.admin-preparando,.admin-navegando)::after { background:var(--admin-accent); opacity:.65; }
+}
+@media print { html.orbbotia-admin::before,html.orbbotia-admin::after { display:none!important; } }

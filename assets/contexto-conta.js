@@ -10,12 +10,12 @@ window.ContextoConta = (() => {
   if(!loginPage){
     document.documentElement.classList.add('conta-pendente');
     const style=document.createElement('style');
-    style.textContent='html.conta-pendente body{visibility:hidden!important}';
+    style.textContent='html.orbbotia-admin{background:#172536;color-scheme:dark}html.conta-pendente body{visibility:hidden!important}';
     document.head.append(style);
   }
   document.documentElement.classList.add('orbbotia-admin');
   if(loginPage)document.documentElement.classList.add('orbbotia-login');
-  function definir(account){if(!valido(account))return false;conta=String(account);resolver(conta);return true;}
+  function definir(account){if(!valido(account))return false;conta=String(account);if(!loginPage)document.documentElement.classList.add('admin-preparando');resolver(conta);return true;}
   function mensagemDoPainel(event){
     if(window.parent===window||event.source!==window.parent||!origens.has(event.origin))return null;
     let value;try{value=typeof event.data==='string'?JSON.parse(event.data):event.data;}catch{return null;}
@@ -25,12 +25,15 @@ window.ContextoConta = (() => {
     return {account:String(account),segmento:value.data?.segmento};
   }
   function solicitar(){if(window.parent===window)return;for(const origin of origens)window.parent.postMessage('chatwoot-dashboard-app:fetch-info',origin);}
-  function bloquear(){if(!loginPage)document.documentElement.classList.add('conta-pendente');}
-  function aprovar(account){if(String(account)!==conta||!valido(account))throw Error('conta_divergente');document.documentElement.classList.remove('conta-pendente');}
+  function bloquear(){document.documentElement.classList.remove('admin-preparando');if(!loginPage)document.documentElement.classList.add('conta-pendente');}
+  function aprovar(account){if(String(account)!==conta||!valido(account))throw Error('conta_divergente');document.documentElement.classList.remove('admin-preparando');document.documentElement.classList.remove('conta-pendente');}
   function navegar(account,segmento){if(!valido(account)){bloquear();return;}bloquear();const url=new URL(location.href);url.searchParams.set('account_id',String(account));if(segmento)url.searchParams.set('segmento',segmento);location.replace(url.href);}
   if(loginPage)resolver(null);
   else if(params.has('account_id')){if(params.getAll('account_id').length!==1||!definir(params.get('account_id')))rejeitar(Error('conta_invalida'));}
   else if(window.parent===window)rejeitar(Error('conta_obrigatoria'));
   else{window.addEventListener('message',event=>{const contexto=mensagemDoPainel(event);if(contexto)definir(contexto.account);});solicitar();}
+  // pageswap só ocorre quando a navegação segue: não interfere em beforeunload/edições.
+  window.addEventListener('pageswap',()=>{if(!loginPage&&!params.has('embedded'))document.documentElement.classList.add('admin-navegando');});
+  window.addEventListener('pageshow',()=>document.documentElement.classList.remove('admin-navegando'));
   return {valido,pronta,mensagemDoPainel,solicitar,navegar,bloquear,aprovar,get conta(){return conta;}};
 })();

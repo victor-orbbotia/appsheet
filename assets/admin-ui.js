@@ -76,6 +76,7 @@ window.AdminUI = (() => {
     shell.append(inner);
     document.body.prepend(shell);
     document.body.classList.add('admin-shell-active');
+    document.documentElement.classList.add('admin-view-ready');
     const content = document.querySelector('#area-modulos, #app-container, main');
     const width = content && getComputedStyle(content).maxWidth;
     if (width && /^\d+(\.\d+)?px$/.test(width)) shell.style.setProperty('--admin-shell-max', width);

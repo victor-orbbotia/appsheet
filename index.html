@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-<script src="assets/contexto-conta.js"></script><script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script><script src="assets/admin-session.js"></script>
+<script src="assets/contexto-conta.js?v=20261013-global1"></script>
+<script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script><script src="assets/admin-session.js?v=20261013-global1"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orbbotia Workspace</title>
@@ -37,6 +38,8 @@
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
+<link rel="stylesheet" href="assets/admin-ui.css?v=20261013-global1">
+<script src="assets/admin-ui.js?v=20261013-global1" defer></script>
 </head>
 
 <body class="flex flex-col h-screen p-4 md:p-8">
@@ -170,20 +173,15 @@
                 aplicarModulos(config);
 
             } catch (error) {
-                const configFake = {
-                    nome_empresa: "Empresa Padrão",
-                    segmento: segmentoAtual,
-                    modulos: {
-                        profissionais: false, produtos: true,
-                        conhecimento: true, pedidos: true, configuracoes: true
-                    }
-                };
-                aplicarModulos(configFake);
+                document.getElementById('main-header').classList.add('hidden');
+                document.getElementById('area-modulos').classList.add('hidden');
+                document.getElementById('area-loading').classList.add('hidden');
             }
         }
 
         // 3. Aplica os módulos na tela
         function aplicarModulos(config) {
+            if (!config || String(config.account_id) !== String(globalAccountId)) return;
             // Exibe o Nome da Empresa no cabeçalho
             document.getElementById('nome-empresa').innerText = config.nome_empresa || `Empresa (ID: ${globalAccountId})`;
             document.getElementById('seletor-segmento').value = segmentoAtual;

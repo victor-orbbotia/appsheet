@@ -7,36 +7,26 @@
 <script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script><script src="assets/admin-session.js?v=20261013-global2"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orbbotia Workspace</title>
+    <title>Início · Proposta em avaliação · Orbbotia</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            background-color: #f1f5f9;
-            font-family: system-ui, sans-serif;
-        }
-
-        .card-modulo {
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-            min-height: 156px;
-        }
-        .card-modulo.hidden { display: none; }
-        .card-modulo-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: #eef2ff; font-size: 27px; line-height: 1; }
-        .card-modulo-copy { min-width: 0; }
-
-        .card-modulo:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
+        .home-preview { display: grid; gap: 20px; padding-bottom: 32px; }
+        .home-intro { padding: 24px; border: 1px solid var(--admin-line); border-radius: 16px; background: var(--admin-panel); }
+        .home-label { display: inline-flex; padding: 5px 10px; border: 1px solid #b69a5c; border-radius: 999px; background: var(--admin-warn-bg); color: var(--admin-warn); font-size: 12px; font-weight: 650; }
+        .home-intro h2 { margin: 16px 0 10px; }
+        .home-intro p { max-width: 760px; margin: 0; }
+        .home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .home-placeholder { padding: 24px; border: 1px dashed var(--admin-line); border-radius: 16px; background: var(--admin-panel); }
+        .home-placeholder h3 { margin: 12px 0 8px; }
+        .home-placeholder p { margin: 0; }
+        .home-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--admin-raised); color: var(--admin-accent); font-size: 21px; }
+        .home-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+        .home-examples span { padding: 6px 9px; border: 1px solid var(--admin-line); border-radius: 7px; color: var(--admin-muted); font-size: 12px; }
+        .home-note { font-size: 13px; margin: 0; }
+        #perfil-negocio[hidden], .home-preview[hidden], .home-preview.hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 640px) { .home-grid { grid-template-columns: 1fr; } .home-intro, .home-placeholder { padding: 20px; } }
     </style>
 <link rel="stylesheet" href="assets/admin-ui.css?v=20261013-global2">
 <script src="assets/admin-ui.js?v=20261013-global2" defer></script>
@@ -61,8 +51,8 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-            <!-- SELETOR DE SEGMENTO DA CONTA -->
+        <div id="perfil-negocio" hidden class="flex items-center gap-3">
+            <!-- Perfil preservado; controle oculto enquanto a página inicial é avaliada. -->
             <div class="flex flex-col items-end">
                 <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil do Negócio</label>
                 <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer">
@@ -83,40 +73,40 @@
         <p class="text-sm font-semibold text-slate-500 tracking-wide uppercase">Carregando Workspace...</p>
     </div>
 
-    <!-- GRADE DE MÓDULOS -->
-    <main id="area-modulos"
-        class="max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden fade-in">
-
-        <!-- MÓDULO 2: PROFISSIONAIS -->
-        <a href="profissionais/novo.html" id="mod-profissionais"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-emerald-300">
-            <span class="card-modulo-icon" aria-hidden="true">🩺</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Equipe / Profissionais</h2><p class="text-sm text-slate-500 leading-relaxed">Cadastre médicos, cabeleireiros ou especialistas e controle quem está ativo.</p></span>
-        </a>
-
-        <!-- MÓDULO 3: PRODUTOS / CARDÁPIO -->
-        <a href="produtos/novo.html" id="mod-produtos"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-amber-300">
-            <span class="card-modulo-icon" aria-hidden="true">🍔</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Catálogo</h2><p class="text-sm text-slate-500 leading-relaxed">Organize produtos, pizzas, adicionais, entregas e sugestões.</p></span>
-        </a>
-
-        <!-- MÓDULO 4: BASE DE CONHECIMENTO -->
-        <a href="conhecimento/novo.html" id="mod-conhecimento"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300">
-            <span class="card-modulo-icon" aria-hidden="true">🧠</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Base de Conhecimento</h2><p class="text-sm text-slate-500 leading-relaxed">Treine a IA com as regras, FAQ e informações gerais do seu negócio.</p></span>
-        </a>
-
-        <!-- MÓDULO 5: PEDIDOS / DELIVERY -->
-        <a href="pedidos/index.html" id="mod-pedidos"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300">
-            <span class="card-modulo-icon" aria-hidden="true">📦</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Pedidos</h2><p class="text-sm text-slate-500 leading-relaxed">Acompanhe os pedidos e gerencie a validação de comprovantes PIX em tempo real.</p></span>
-        </a>
-
-        <!-- MÓDULO 6: CONFIGURAÇÕES DA EMPRESA -->
-        <a href="configuracoes/index.html" id="mod-configuracoes"
-            class="card-modulo hidden bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:border-slate-400">
-            <span class="card-modulo-icon" aria-hidden="true">⚙️</span><span class="card-modulo-copy"><h2 class="text-lg font-bold text-slate-800 mb-1">Configurações</h2><p class="text-sm text-slate-500 leading-relaxed">Gerencie o comportamento global da IA e o status da integração.</p></span>
-        </a>
-
+    <!-- Prévia visual: nenhuma opção abaixo executa ações ou representa dados reais. -->
+    <main id="area-modulos" class="home-preview max-w-5xl mx-auto w-full hidden fade-in" aria-labelledby="home-preview-title">
+        <section class="home-intro">
+            <span class="home-label">Simulação · decisão pendente</span>
+            <h2 id="home-preview-title">Um possível novo início</h2>
+            <p>Esta página é apenas uma proposta para visualizarmos as possibilidades. O conteúdo ainda será decidido: não há dados reais nem opções de edição nesta prévia.</p>
+        </section>
+        <div class="home-grid">
+            <section class="home-placeholder">
+                <span class="home-icon" aria-hidden="true">▥</span>
+                <h3>Aqui pode ficar o dashboard</h3>
+                <p>Um resumo dos principais indicadores do estabelecimento. Vamos decidir quais informações realmente ajudam no dia a dia.</p>
+                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Indicadores a definir</span><span>Resumo da operação</span></div>
+            </section>
+            <section class="home-placeholder">
+                <span class="home-icon" aria-hidden="true">◉</span>
+                <h3>Aqui podem aparecer avisos</h3>
+                <p>Informações que precisam de atenção, como pendências ou itens indisponíveis, de acordo com os módulos utilizados.</p>
+                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Pendências</span><span>Lembretes importantes</span></div>
+            </section>
+            <section class="home-placeholder">
+                <span class="home-icon" aria-hidden="true">↗</span>
+                <h3>Aqui podem ficar atalhos úteis</h3>
+                <p>Acesso às tarefas mais frequentes. Podemos avaliar se isso acrescenta algo ao menu rápido que já está no topo.</p>
+                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Tarefas frequentes</span><span>Favoritos a avaliar</span></div>
+            </section>
+            <section class="home-placeholder">
+                <span class="home-icon" aria-hidden="true">◷</span>
+                <h3>Aqui podem aparecer atividades recentes</h3>
+                <p>Um resumo do que mudou no sistema, se essa informação for útil para acompanhar a rotina da equipe.</p>
+                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Atualizações recentes</span><span>Conteúdo a definir</span></div>
+            </section>
+        </div>
+        <p class="home-note">Nada aqui está definido ou habilitado. Para usar as páginas atuais, navegue pelo menu rápido no topo.</p>
     </main>
 
     <script>
@@ -170,7 +160,7 @@
                 if (typeof config.modulos === 'string') config.modulos = JSON.parse(config.modulos);
                 if (config.segmento) segmentoAtual = config.segmento;
 
-                aplicarModulos(config);
+                aplicarVisaoInicial(config);
 
             } catch (error) {
                 document.getElementById('main-header').classList.add('hidden');
@@ -179,36 +169,15 @@
             }
         }
 
-        // 3. Aplica os módulos na tela
-        function aplicarModulos(config) {
+        // A prévia é somente leitura; a navegação real está no cabeçalho compartilhado.
+        function aplicarVisaoInicial(config) {
             if (!config || String(config.account_id) !== String(globalAccountId)) return;
-            // Exibe o Nome da Empresa no cabeçalho
             document.getElementById('nome-empresa').innerText = config.nome_empresa || `Empresa (ID: ${globalAccountId})`;
             document.getElementById('seletor-segmento').value = segmentoAtual;
-
-            const params = `account_id=${globalAccountId}&segmento=${segmentoAtual}`;
-            document.getElementById('mod-profissionais').href = `profissionais/novo.html?${params}`;
-            document.getElementById('mod-produtos').href = `produtos/novo.html?${params}`;
-            document.getElementById('mod-conhecimento').href = `conhecimento/novo.html?${params}`;
-            document.getElementById('mod-pedidos').href = `pedidos/index.html?${params}`;
-            document.getElementById('mod-configuracoes').href = `configuracoes/index.html?${params}`;
-
-            const cards = document.querySelectorAll('.card-modulo');
-            cards.forEach(c => c.classList.add('hidden'));
-
-            if (config.modulos) {
-                if (config.modulos.profissionais) document.getElementById('mod-profissionais').classList.remove('hidden');
-                if (config.modulos.produtos) document.getElementById('mod-produtos').classList.remove('hidden');
-                if (config.modulos.conhecimento) document.getElementById('mod-conhecimento').classList.remove('hidden');
-                if (config.modulos.pedidos) document.getElementById('mod-pedidos').classList.remove('hidden');
-                if (config.modulos.configuracoes !== false) document.getElementById('mod-configuracoes').classList.remove('hidden');
-            }
-
             document.getElementById('area-loading').classList.add('hidden');
             document.getElementById('main-header').classList.remove('hidden');
             document.getElementById('area-modulos').classList.remove('hidden');
         }
-
         // 4. Alterar Segmento
         async function alterarSegmentoEmpresa(novoSegmento) {
             document.getElementById('area-modulos').classList.add('hidden');

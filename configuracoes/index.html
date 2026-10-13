@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+<script src="../assets/contexto-conta.js?v=20261013-global1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261013-global1"></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurações do Sistema</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,6 +15,8 @@
             font-family: system-ui, sans-serif;
         }
     </style>
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-global1">
+<script src="../assets/admin-ui.js?v=20261013-global1" defer></script>
 </head>
 
 <body class="p-4 md:p-6 space-y-6">
@@ -72,6 +77,8 @@
         if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
         window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
 
@@ -83,18 +90,21 @@
         });
 
         handshakeInterval = setInterval(() => {
-            if (!globalAccountId) window.parent.postMessage('chatwoot-dashboard-app:fetch-info', '*');
+            if (!globalAccountId) ContextoConta.solicitar();
         }, 500);
 
-        setTimeout(() => {
-            if (!globalAccountId) { globalAccountId = '3'; iniciarApp(); }
-        }, 1500);
+
+
+        if (globalAccountId) {
+            clearInterval(handshakeInterval);
+            iniciarApp();
+        }
 
         function iniciarApp() {
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
-            
+
             carregarConfiguracoes();
         }
 
@@ -102,7 +112,7 @@
             try {
                 const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
                 if (!res.ok) throw new Error("Erro ao carregar dados do banco");
-                
+
                 let data = await res.json();
                 if (Array.isArray(data)) data = data[0];
 

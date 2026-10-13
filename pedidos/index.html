@@ -1,239 +1,19 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8">
-<script src="../assets/contexto-conta.js"></script><script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js"></script>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedidos — Monitor de Pagamento</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #f1f5f9; font-family: system-ui, sans-serif; }
-        .kanban-col { min-width: 280px; max-width: 320px; flex-shrink: 0; }
-        .card-pedido { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-        .card-pedido:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08); }
-        #toast { transition: opacity 0.3s ease, transform 0.3s ease; }
-        #toast.hidden { opacity: 0; transform: translateY(8px); pointer-events: none; }
-        ::-webkit-scrollbar { height: 6px; }
-        ::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
-    </style>
-</head>
-
-<body class="p-4 md:p-5 min-h-screen flex flex-col gap-4">
-
-    <!-- Alerta Chatwoot -->
-    <div id="alerta-chatwoot" class="bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm">
-        ⏳ Conectando ao painel Chatwoot...
-    </div>
-
-    <!-- Toast de Notificação -->
-    <div id="toast" class="hidden fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white"></div>
-
-    <!-- App Principal -->
-    <div id="app-container" class="hidden flex flex-col flex-1 gap-4">
-
-        <!-- Cabeçalho Principal -->
-        <div class="flex items-center justify-between gap-3 flex-wrap bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
-            <div class="flex items-center gap-3">
-                <a id="link-voltar" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Menu Principal
-                </a>
-                <span class="text-slate-300">|</span>
-                <div>
-                    <h1 class="text-base font-bold text-slate-800">📦 Gestão de Pedidos</h1>
-                    <p id="badge-segmento" class="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">Segmento: Carregando...</p>
-                </div>
-            </div>
-
-            <!-- Filtros, Busca e Ações -->
-            <div class="flex flex-wrap items-center gap-2">
-                <!-- Campo de Pesquisa Geral -->
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </div>
-                    <input type="text" id="searchInput" onkeyup="renderizarKanban()" placeholder="Buscar nome, telefone, conversa..." class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:border-indigo-500 w-52 transition-all focus:w-64">
-                </div>
-
-                <span class="text-slate-200">|</span>
-
-                <input type="date" id="filtroData" onchange="carregarPedidos()" class="text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
-                <button onclick="setHoje()" class="text-[11px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1.5 rounded-lg transition-colors">Hoje</button>
-                <button id="btnAtualizar" onclick="carregarPedidos()" class="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 px-3 py-1.5 rounded-lg transition-colors shadow-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Atualizar
-                </button>
-            </div>
-        </div>
-
-        <!-- 3 ABAS DE NAVEGAÇÃO -->
-        <div class="border-b border-slate-200">
-            <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Tabs">
-                <button onclick="setTab(1)" id="btn-tab-1" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600 transition-colors">
-                    🚀 Ações Principais
-                </button>
-                <button onclick="setTab(2)" id="btn-tab-2" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors">
-                    ⏳ Em Aberto & PIX
-                </button>
-                <button onclick="setTab(3)" id="btn-tab-3" class="whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors">
-                    📂 Aprovados & Cancelados
-                </button>
-            </nav>
-        </div>
-
-        <!-- Loading -->
-        <div id="area-loading" class="flex flex-col items-center justify-center py-20 gap-3">
-            <svg class="animate-spin h-7 w-7 text-indigo-500" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="text-sm text-slate-400 font-medium">Carregando pedidos...</p>
-        </div>
-
-        <!-- Quadro Kanban de Colunas -->
-        <div id="kanban-board" class="hidden flex gap-4 overflow-x-auto pb-2 flex-1">
-
-            <!-- ====== COLUNAS DA ABA 1 (AÇÕES PRINCIPAIS) ====== -->
-            <div class="kanban-col flex flex-col gap-3" id="kanban-col-pagamento_na_entrega">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">💵 Pagamento na Entrega</h2>
-                    </div>
-                    <span id="count-pagamento_na_entrega" class="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200">0</span>
-                </div>
-                <div id="col-pagamento_na_entrega" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <div class="kanban-col flex flex-col gap-3" id="kanban-col-comprovante_enviado">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🔍 Validar Comprovante</h2>
-                    </div>
-                    <span id="count-comprovante_enviado" class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200">0</span>
-                </div>
-                <div id="col-comprovante_enviado" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <div class="kanban-col flex flex-col gap-3" id="kanban-col-retirada_balcao">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛍️ Retirada no Balcão</h2>
-                    </div>
-                    <span id="count-retirada_balcao" class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-200">0</span>
-                </div>
-                <div id="col-retirada_balcao" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <!-- ====== COLUNAS DA ABA 2 (EM ABERTO E AGUARDANDO PIX) ====== -->
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-em_aberto">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🛒 Em Aberto</h2>
-                    </div>
-                    <span id="count-em_aberto" class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">0</span>
-                </div>
-                <div id="col-em_aberto" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-aguardando_pix">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">🕐 Aguardando PIX</h2>
-                    </div>
-                    <span id="count-aguardando_pix" class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">0</span>
-                </div>
-                <div id="col-aguardando_pix" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <!-- ====== COLUNAS DA ABA 3 (APROVADOS E CANCELADOS) ====== -->
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pedido_aprovado">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">✅ Pedido Aprovado</h2>
-                    </div>
-                    <span id="count-pedido_aprovado" class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">0</span>
-                </div>
-                <div id="col-pedido_aprovado" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pronto_para_entrega"><div class="flex items-center justify-between"><h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">Pronto para Entrega</h2><span id="count-pronto_para_entrega" class="text-xs font-bold">0</span></div><div id="col-pronto_para_entrega" class="flex flex-col gap-3 min-h-[120px]"></div></div>
-
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-pronto_para_retirada"><div class="flex items-center justify-between"><h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">Pronto para Retirada</h2><span id="count-pronto_para_retirada" class="text-xs font-bold">0</span></div><div id="col-pronto_para_retirada" class="flex flex-col gap-3 min-h-[120px]"></div></div>
-
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-saiu_para_entrega"><div class="flex items-center justify-between"><h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">Saiu para Entrega</h2><span id="count-saiu_para_entrega" class="text-xs font-bold">0</span></div><div id="col-saiu_para_entrega" class="flex flex-col gap-3 min-h-[120px]"></div></div>
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-cancelado_cliente">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-400 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado pelo Cliente</h2>
-                    </div>
-                    <span id="count-cancelado_cliente" class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
-                </div>
-                <div id="col-cancelado_cliente" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-            <div class="kanban-col flex flex-col gap-3 hidden" id="kanban-col-cancelado_atendente">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-600 shadow-sm"></span>
-                        <h2 class="text-xs font-bold text-slate-600 uppercase tracking-wide">❌ Cancelado pelo Atendente</h2>
-                    </div>
-                    <span id="count-cancelado_atendente" class="bg-rose-100 text-rose-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-rose-200">0</span>
-                </div>
-                <div id="col-cancelado_atendente" class="flex flex-col gap-3 min-h-[120px]"></div>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        const urlDados = 'https://n8n.orbbotia.com/webhook/pedidos-dados';
-        const urlAcao = 'https://n8n.orbbotia.com/webhook/pedidos-acao';
-
-        let globalAccountId = null;
-        let segmentoAtual = 'restaurante';
-        let handshakeInterval;
-        let listaPedidos = [];
-        let currentTab = 1;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
-        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
-
-        document.getElementById('filtroData').value = new Date().toISOString().split('T')[0];
-
-        function setHoje() {
-            document.getElementById('filtroData').value = new Date().toISOString().split('T')[0];
-            carregarPedidos();
-        }
-
-        function setTab(tab) {
-            currentTab = tab;
-            [1, 2, 3].forEach(t => {
-                const btn = document.getElementById(`btn-tab-${t}`);
-                if (t === tab) {
-                    btn.className = "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-indigo-600 text-indigo-600 transition-colors";
-                } else {
-                    btn.className = "whitespace-nowrap border-b-2 py-2 px-1 text-sm font-bold border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors";
-                }
-            });
-            renderizarKanban();
-        }
-
-        const STATUS_CONFIG = {
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fila de pedidos</title><script src="../assets/contexto-conta.js"></script><script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js"></script><link rel="stylesheet" href="fila.css"></head>
+<body><main class="shell"><div id="alerta-chatwoot" class="connection">Conectando ao estabelecimento…</div><div id="app-container" class="hidden"><a id="link-voltar" href="../index.html" class="small">← Menu principal</a>
+<header class="topbar"><div><div class="eyebrow">Operação · <span id="badge-segmento">Pedidos</span></div><h1>Fila de pedidos</h1><p class="subtext">Veja o que precisa de atenção e acompanhe cada pedido.</p></div><div class="actions"><button id="btnAtualizar" class="btn" onclick="carregarPedidos()" title="Atualizar pedidos" aria-label="Atualizar pedidos"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M18 17A7 7 0 0 1 6 18l-2-3"/></svg><span class="refresh-label">Atualizar</span></button></div></header>
+<section class="workspace" aria-label="Gestão de pedidos"><div class="workspace-head"><div class="tabs" role="tablist" aria-label="Recorte da fila"><button class="tab" id="tab-ativos" role="tab" aria-selected="true" onclick="setRecorte('ativos')">Ativos <span id="count-ativos" class="count">0</span></button><button class="tab" id="tab-atencao" role="tab" aria-selected="false" onclick="setRecorte('atencao')">Atenção <span id="count-atencao" class="count">0</span></button><button class="tab" id="tab-historico" role="tab" aria-selected="false" onclick="setRecorte('historico')">Histórico <span id="count-historico" class="count">0</span></button></div><div class="view-switch" role="group" aria-label="Densidade da fila"><button id="visao-principal" aria-pressed="true" onclick="setVisao('principal')">Visão principal</button><button id="visao-detalhada" aria-pressed="false" onclick="setVisao('detalhada')">Visão detalhada</button></div></div>
+<div class="toolbar"><label class="search">Buscar pedido<input id="searchInput" type="search" placeholder="Cliente, telefone, pedido ou conversa" oninput="renderizarKanban()"></label><label>Etapa<select id="filtroEtapa" onchange="renderizarKanban()"><option value="">Todas as etapas</option value="em_aberto">Em montagem</option><option value="aguardando_pix">Aguardando Pix</option><option value="comprovante_enviado">Conferir comprovante</option><option value="pagamento_na_entrega">Aprovação · entrega</option><option value="retirada_balcao">Aprovação · retirada</option><option value="pedido_aprovado">Aprovado</option><option value="em_preparo">Em preparo</option><option value="pronto_para_entrega">Pronto para entrega</option><option value="pronto_para_retirada">Pronto para retirada</option><option value="saiu_para_entrega">Saiu para entrega</option><option value="entregue">Entregue</option><option value="retirado">Retirado</option><option value="cancelado_cliente">Cancelado pelo cliente</option><option value="cancelado_atendente">Cancelado pelo atendente</option></select></label><label>Modalidade<select id="filtroModalidade" onchange="renderizarKanban()"><option value="">Todas</option><option value="entrega">Entrega</option><option value="retirada">Retirada</option><option value="conferir">A conferir</option></select></label><label>Pagamento<select id="filtroPagamento" onchange="renderizarKanban()"><option value="">Todas as situações</option><option value="conferencia">Em conferência</option><option value="pendente">A receber</option><option value="conferir">Recebimento a conferir</option></select></label><div id="periodoHistorico" class="period hidden"><label>Data de criação<input type="date" id="filtroData" onchange="carregarPedidos()"></label><button class="btn" onclick="setHoje()">Hoje</button></div></div>
+<div class="list-caption"><span id="resultadoBusca" aria-live="polite">Carregando pedidos…</span><span id="escopoFila">Ativos incluem dias anteriores · mais antigos primeiro</span></div><div id="area-loading" class="loading" role="status">Consultando pedidos…</div><div id="kanban-board" class="orders" aria-label="Pedidos da fila"></div></section>
+<div class="list-caption footer-note"><span id="ultimaAtualizacao">Atualize para conferir o andamento mais recente.</span></div><p class="small footer-note">O tempo exibido conta desde a criação do pedido. Confira o recebimento do pagamento na conta; aprovação ou entrega não confirma quitação.</p></div></main>
+<dialog id="detalhes" class="panel" aria-labelledby="tituloDetalhes"><header class="panel-head"><div><div id="numeroDetalhes" class="eyebrow">Pedido</div><h2 id="tituloDetalhes">Detalhes do pedido</h2><p class="small">Informações e ações deste pedido</p></div><button class="btn quiet" onclick="fecharDetalhes()" aria-label="Fechar detalhes">✕</button></header><div class="panel-body" id="conteudoDetalhes"></div></dialog><div id="toast" class="toast hidden" role="status" aria-live="polite"></div><script src="fila.js"></script><script>
+const urlDados = 'https://n8n.orbbotia.com/webhook/pedidos-dados';
+const urlAcao = 'https://n8n.orbbotia.com/webhook/pedidos-acao';
+let globalAccountId=null,segmentoAtual='restaurante',handshakeInterval,listaPedidos=[];
+const urlParams=new URLSearchParams(window.location.search);
+if(urlParams.get('account_id'))globalAccountId=urlParams.get('account_id');
+if(urlParams.get('segmento'))segmentoAtual=urlParams.get('segmento');
+document.getElementById('filtroData').value=new Date().toLocaleDateString('en-CA');
+const STATUS_CONFIG = {
             entregue: {label:'Entregue',podeCancel:false,tab:3},
             retirado: {label:'Retirado',podeCancel:false,tab:3},
             concluido: {label:'Concluído',podeCancel:false,tab:3},
@@ -304,171 +84,8 @@
             }
         };
 
-        const COLUNAS_TODAS = Object.keys(STATUS_CONFIG);
 
-        function normalizarStatus(statusOriginal, formaPagamento) {
-            let status = (statusOriginal || 'em_aberto').toLowerCase().trim();
-            const formaPgto = (formaPagamento || '').toLowerCase();
-
-            if (status === 'confirmado') return 'pedido_aprovado';
-            if (status === 'pagamento_entrega') return 'pagamento_na_entrega';
-            if (status === 'cancelado') return 'cancelado_atendente';
-            if (status === 'aberto' || status === 'carrinho') return 'em_aberto';
-            if (status === 'aguardando_pix' && (formaPgto.includes('cartao') || formaPgto.includes('dinheiro') || formaPgto.includes('cartão'))) {
-                return 'pagamento_na_entrega';
-            }
-            if (status === 'balcao' || status === 'retirada') return 'retirada_balcao';
-
-            return STATUS_CONFIG[status] ? status : 'em_aberto';
-        }
-
-        window.addEventListener('message', function (event) {
-            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
-            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
-            let eventData = {};
-            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
-            if (eventData.event === 'appContext' && eventData.data) {
-                clearInterval(handshakeInterval);
-                const payload = eventData.data;
-                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
-                iniciarApp();
-            }
-        });
-
-        handshakeInterval = setInterval(() => {
-            if (!globalAccountId) ContextoConta.solicitar();
-        }, 500);
-
-
-
-        if(globalAccountId){clearInterval(handshakeInterval);iniciarApp();}
-
-        function iniciarApp() {
-            document.getElementById('alerta-chatwoot').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
-            document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
-            carregarPedidos();
-        }
-
-        const CHATWOOT_BASE_URL = 'https://chat.orbbotia.com';
-
-        function abrirChat(conversaId) {
-            if (!conversaId || conversaId === '?' || conversaId === 'null' || conversaId === 'undefined') {
-                mostrarToast('Pedido sem ID de conversa vinculado', 'error');
-                return;
-            }
-            const accountId = globalAccountId || '3';
-            const pathRelativo = `/app/accounts/${accountId}/conversations/${conversaId}`;
-            const urlAbsoluta = `${CHATWOOT_BASE_URL}${pathRelativo}`;
-
-            try { window.parent.postMessage({ event: 'appContext', data: { url: pathRelativo } }, '*'); } catch (e) {}
-
-            const isMobileApp = !!window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot');
-            if (isMobileApp) {
-                const iframeMobile = document.createElement('iframe');
-                iframeMobile.style.display = 'none';
-                iframeMobile.src = `chatwootapp://${pathRelativo}`;
-                document.body.appendChild(iframeMobile);
-                setTimeout(() => iframeMobile.remove(), 1000);
-            } else {
-                setTimeout(() => {
-                    try {
-                        if (window.top && window.top !== window) window.top.location.href = urlAbsoluta;
-                        else window.location.href = urlAbsoluta;
-                    } catch (err) { window.open(urlAbsoluta, '_blank'); }
-                }, 100);
-            }
-        }
-
-        async function carregarPedidos() {
-            document.getElementById('area-loading').classList.remove('hidden');
-            document.getElementById('kanban-board').classList.add('hidden');
-
-            const dataSelecionada = document.getElementById('filtroData').value;
-            const accountIdFinal = globalAccountId || '3';
-
-            try {
-                const endpoint = `${urlDados}?account_id=${accountIdFinal}&segmento=${segmentoAtual}&data_filtro=${dataSelecionada}`;
-                const res = await fetch(endpoint);
-                if (!res.ok) throw new Error('Erro ao buscar pedidos');
-
-                const dados = await res.json();
-                listaPedidos = Array.isArray(dados) ? dados : (dados.data || []);
-                renderizarKanban();
-            } catch (error) {
-                document.getElementById('area-loading').innerHTML = `
-                    <div class="text-center space-y-2">
-                        <p class="text-sm text-rose-500 font-medium">⚠️ Não foi possível carregar os pedidos.</p>
-                        <button onclick="carregarPedidos()" class="text-xs text-indigo-600 underline">Tentar novamente</button>
-                    </div>
-                `;
-            }
-        }
-
-        function renderizarKanban() {
-            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
-
-            COLUNAS_TODAS.forEach(s => {
-                const elCol = document.getElementById(`col-${s}`);
-                const elKanbanCol = document.getElementById(`kanban-col-${s}`);
-
-                if (elCol) elCol.innerHTML = '';
-                if (document.getElementById(`count-${s}`)) document.getElementById(`count-${s}`).textContent = '0';
-
-                if (elKanbanCol) {
-                    elKanbanCol.classList.toggle('hidden', STATUS_CONFIG[s].tab !== currentTab);
-                }
-            });
-
-            const pedidosAtivos = listaPedidos.filter(item => {
-                const p = item.json ? item.json : item;
-                if (!p || !p.id || p.deletado === true) return false;
-
-                if (searchQuery) {
-                    const idMatch = String(p.id || '').toLowerCase().includes(searchQuery);
-                    const chatMatch = String(p.conversa_id || '').toLowerCase().includes(searchQuery);
-                    const nomeMatch = String(p.cliente_nome || '').toLowerCase().includes(searchQuery);
-                    const telMatch = String(p.cliente_telefone || '').toLowerCase().includes(searchQuery);
-
-                    if (!idMatch && !chatMatch && !nomeMatch && !telMatch) return false;
-                }
-
-                return true;
-            });
-
-            const contagens = Object.fromEntries(COLUNAS_TODAS.map(s => [s, 0]));
-
-            pedidosAtivos.forEach(pedidoRaw => {
-                const p = pedidoRaw.json ? pedidoRaw.json : pedidoRaw;
-                const statusFinal = normalizarStatus(p.status, p.forma_pagamento);
-
-                const coluna = document.getElementById(`col-${statusFinal}`);
-                if (!coluna) return;
-
-                contagens[statusFinal] = (contagens[statusFinal] || 0) + 1;
-                coluna.appendChild(criarCard(p, statusFinal));
-            });
-
-            Object.entries(contagens).forEach(([status, total]) => {
-                if(document.getElementById(`count-${status}`)) document.getElementById(`count-${status}`).textContent = total;
-            });
-
-            COLUNAS_TODAS.forEach(status => {
-                if (contagens[status] === 0 && document.getElementById(`col-${status}`)) {
-                    document.getElementById(`col-${status}`).innerHTML = `
-                        <div class="flex items-center justify-center p-4 border border-dashed border-slate-200 bg-slate-50/50 rounded-xl text-slate-400 text-xs font-medium">
-                            Nenhum pedido nesta coluna
-                        </div>
-                    `;
-                }
-            });
-
-            document.getElementById('area-loading').classList.add('hidden');
-            document.getElementById('kanban-board').classList.remove('hidden');
-        }
-
-        function proximaEtapaAprovado(p, status) {
+function proximaEtapaAprovado(p, status) {
             if (status !== 'pedido_aprovado') return null;
             const forma = String(p.forma_pagamento || '').toLowerCase();
             const endereco = String(p.endereco_entrega || '').trim().toLowerCase();
@@ -477,104 +94,8 @@
             return null; // Dados legados ambíguos exigem conferir a modalidade.
         }
 
-        function criarCard(p, statusCalculado) {
-            const config = { ...(STATUS_CONFIG[statusCalculado] || {}) };
-            const proximaEtapa = proximaEtapaAprovado(p, statusCalculado);
-            if (proximaEtapa) Object.assign(config, { proximo: proximaEtapa, btnProximoLabel: proximaEtapa === "pronto_para_retirada" ? "Marcar pronto para retirada 🛍️" : "Marcar pronto para entrega 📦", btnProximoCor: "bg-indigo-600 hover:bg-indigo-700" });
-            const valor = parseFloat(p.valor_total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            const dataStr = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
 
-            // LÓGICA DA FORMA DE PAGAMENTO: Só renderiza o badge se houver uma forma de pagamento definida!
-            const formaPgtoBruta = (p.forma_pagamento || '').trim();
-            const formaPgto = formaPgtoBruta.toUpperCase();
-
-            let badgePgtoHtml = '';
-            let textColorClass = 'text-slate-700';
-
-            if (formaPgtoBruta) {
-                let badgePgtoClass = 'bg-slate-100 text-slate-700 border-slate-200';
-
-                if (formaPgto.includes('PIX')) {
-                    badgePgtoClass = 'bg-teal-50 text-teal-700 border-teal-200';
-                    textColorClass = 'text-teal-700';
-                } else if (formaPgto.includes('DINHEIRO')) {
-                    badgePgtoClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                    textColorClass = 'text-emerald-700';
-                } else if (formaPgto.includes('CARTAO') || formaPgto.includes('CARTÃO')) {
-                    badgePgtoClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
-                    textColorClass = 'text-indigo-700';
-                } else if (formaPgto.includes('RETIRADA')) {
-                    badgePgtoClass = 'bg-orange-50 text-orange-700 border-orange-200';
-                    textColorClass = 'text-orange-700';
-                }
-
-                badgePgtoHtml = `<span class="text-[9px] font-bold border px-2 py-0.5 rounded-md uppercase tracking-wider ${badgePgtoClass}">💳 ${formaPgto}</span>`;
-            }
-
-            const escaparHtml = valor => String(valor ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-            const resumoItem = item => {
-                const quantidade = Math.max(1, Number(item.quantidade) || 1);
-                const nomes = item.tipo === 'meia_pizza'
-                    ? (item.meia_pizza?.partes || item.partes || []).map(parte => `${parte.fracao?.numerador || parte.percentual || ''}${parte.fracao ? `/${parte.fracao.denominador}` : '%'} ${parte.nome} ${parte.variacao || ''}`.trim()).join(' + ')
-                    : (item.modificadores || []).map(mod => `${mod.quantidade || 1}× ${mod.nome}`).join(' · ');
-                const label = `${quantidade}× ${item.nome || 'Item'}${item.variacao ? ` — ${item.variacao}` : ''}${nomes ? ` · ${nomes}` : ''}`;
-                return `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">${escaparHtml(label)}</span>`;
-            };
-            let itensHtml = '';
-            if (Array.isArray(p.itens) && p.itens.length > 0) {
-                itensHtml = `<div class="flex flex-wrap gap-1">
-                    ${p.itens.map(resumoItem).join('')}
-                </div>`;
-            }
-
-            let botoesHtml = '';
-            if (config.anterior) {
-                botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.anterior}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnAnteriorCor} transition-colors disabled:opacity-50">${config.btnAnteriorLabel}</button>`;
-            }
-            if (config.proximo) {
-                botoesHtml += `<button onclick="moverStatus('${p.id}', '${config.proximo}', this)" class="w-full text-[10px] font-semibold text-white px-2.5 py-1.5 rounded-md ${config.btnProximoCor} transition-colors disabled:opacity-50">${config.btnProximoLabel}</button>`;
-            }
-
-            if (config.podeCancel) {
-                botoesHtml += `
-                <div class="w-full flex gap-1.5 mt-1">
-                    <button onclick="cancelarPedido('${p.id}', 'cancelado_cliente', this)" class="flex-1 text-[9px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-1.5 py-1.5 rounded transition-colors disabled:opacity-50">✕ Cancelar Cliente</button>
-                    <button onclick="cancelarPedido('${p.id}', 'cancelado_atendente', this)" class="flex-1 text-[9px] font-semibold text-rose-600 border border-rose-200 bg-white hover:bg-rose-50 px-1.5 py-1.5 rounded transition-colors disabled:opacity-50">✕ Cancelar Atendente</button>
-                </div>`;
-            }
-
-            const card = document.createElement('div');
-            card.id = `card-${p.id}`;
-            card.className = 'card-pedido bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm space-y-2.5';
-
-            card.innerHTML = `
-                <div class="flex items-start justify-between gap-2">
-                    <div>
-                        <p class="text-sm font-bold text-slate-800 leading-snug">${p.cliente_nome || 'Cliente'}</p>
-                        <span class="text-[10px] text-slate-500 font-mono">${p.cliente_telefone || ''}</span>
-                    </div>
-                    <button onclick="abrirChat('${p.conversa_id}')" title="Ir para o Chat" class="flex items-center gap-1 text-xs font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 px-2 py-1 rounded-lg transition-colors shrink-0">
-                        💬 #${p.conversa_id || '?'}
-                    </button>
-                </div>
-
-                <div class="flex items-center gap-1.5">
-                    ${badgePgtoHtml}
-                    <span class="text-[11px] font-extrabold ${textColorClass}">${valor}</span>
-                </div>
-
-                ${p.editado ? '<p class="text-xs font-bold text-amber-700">✏️ Pedido editado — confira os itens</p>' : ''}
-                ${itensHtml}
-                ${p.endereco_entrega ? `<p class="text-[10px] text-slate-500 flex items-start gap-1"><span>📍</span><span>${p.endereco_entrega}</span></p>` : ''}
-                ${p.observacoes ? `<p class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">⚠️ ${p.observacoes}</p>` : ''}
-                ${botoesHtml ? `<div class="flex flex-col gap-1.5 pt-1 border-t border-slate-100">${botoesHtml}</div>` : ''}
-                ${dataStr ? `<p class="text-[9px] text-slate-300 text-right mt-1">${dataStr}</p>` : ''}
-            `;
-
-            return card;
-        }
-
-        async function moverStatus(id, novoStatus, btn) {
+async function moverStatus(id, novoStatus, btn) {
             const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
@@ -647,14 +168,133 @@
             }
         }
 
-        function mostrarToast(msg, tipo) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.className = `fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl shadow-xl text-sm font-semibold text-white transition-all ${tipo === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2500);
-        }
-    </script>
-</body>
 
-</html>
+let recorteAtual='ativos',visaoAtual='principal',pedidoSelecionado=null,toastTimer;
+const esc=FilaPedidos.escapar;
+const dinheiro=v=>v!==null&&v!==undefined&&v!==''&&Number.isFinite(Number(v))?Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Valor a conferir';
+function dataPedido(v){const d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString('pt-BR'):'Criação não informada';}
+function filtrosFila(){return {recorte:recorteAtual,busca:document.getElementById('searchInput').value,etapa:document.getElementById('filtroEtapa').value,modalidade:document.getElementById('filtroModalidade').value,pagamento:document.getElementById('filtroPagamento').value};}
+function setRecorte(valor){recorteAtual=valor;for(const r of ['ativos','atencao','historico'])document.getElementById('tab-'+r).setAttribute('aria-selected',String(r===valor));document.getElementById('periodoHistorico').classList.toggle('hidden',valor!=='historico');renderizarKanban();}
+function setVisao(valor){visaoAtual=valor;for(const v of ['principal','detalhada'])document.getElementById('visao-'+v).setAttribute('aria-pressed',String(v===valor));renderizarKanban();}
+function setHoje(){document.getElementById('filtroData').value=new Date().toLocaleDateString('en-CA');carregarPedidos();}
+function limparFiltros(){for(const id of ['searchInput','filtroEtapa','filtroModalidade','filtroPagamento'])document.getElementById(id).value='';renderizarKanban();}
+function configuracaoAcao(m){
+ if(!m.conhecido||m.terminal)return {};
+ const config={...(STATUS_CONFIG[m.status]||{})},proximo=proximaEtapaAprovado(m.p,m.status);
+ if(proximo)Object.assign(config,{proximo,btnProximoLabel:proximo==='pronto_para_retirada'?'Marcar pronto para retirada':'Marcar pronto para entrega'});
+ return config;
+}
+function botaoAcao(m,dentro=false){const c=configuracaoAcao(m);
+ if(m.status==='comprovante_enviado'&&!dentro)return `<button class="btn primary" data-acao="detalhes" data-id="${esc(m.p.id)}" data-secao="pagamento">Conferir pagamento</button>`;
+ return c.proximo?`<button class="btn primary" data-acao="status" data-id="${esc(m.p.id)}" data-status="${esc(c.proximo)}">${esc(c.btnProximoLabel)}</button>`:'';
+}
+function renderizarKanban(){
+ const filtros=filtrosFila();const modelos=FilaPedidos.filtrar(listaPedidos,filtros);
+ for(const r of ['ativos','atencao','historico'])document.getElementById('count-'+r).textContent=FilaPedidos.filtrar(listaPedidos,{...filtros,recorte:r}).length;
+ document.getElementById('resultadoBusca').textContent=modelos.length+' pedido'+(modelos.length===1?'':'s')+' '+(recorteAtual==='historico'?'no dia consultado':'na fila');
+ document.getElementById('escopoFila').textContent=recorteAtual==='historico'?'Histórico por data de criação':'Ativos incluem dias anteriores · mais antigos primeiro';
+ document.getElementById('kanban-board').innerHTML=modelos.length?modelos.map(m=>{
+  const p=m.p;const alerta=m.alertas.length?`<div class="alert">${m.alertas.map(esc).join('<br>')}</div>`:'';
+  const preview=visaoAtual==='detalhada'?`<div class="detail-preview"><div><div class="eyebrow">Itens</div><ul>${FilaPedidos.itens(p).map(i=>`<li><strong>${esc(i.titulo)}</strong>${i.linhas.length?'<br>'+i.linhas.map(esc).join(' · '):''}</li>`).join('')||'<li>Itens não informados</li>'}</ul></div><div><div class="eyebrow">Destino e contato</div><p class="small">${esc(p.endereco_entrega||'Destino a conferir')}<br>${esc(p.cliente_telefone||'Telefone não informado')}</p></div></div>`:'';
+  return `<article class="order${m.atencao?' attention':''}${pedidoSelecionado===p.id?' selected':''}" aria-label="Pedido ${esc(String(p.id).slice(0,8))}"><div><div class="order-id">PEDIDO #${esc(String(p.id).slice(0,8))}</div><div class="customer">${esc(p.cliente_nome||'Cliente')}</div><div class="small">${esc(m.modalidadeTexto)} · ${esc(FilaPedidos.idade(p))}</div>${alerta}</div><div><span class="status${m.atencao?' warn':m.terminal?' good':''}">${esc(m.etapa)}</span><p class="small">${esc(dataPedido(p.created_at))}</p></div><div><div class="money">${esc(dinheiro(p.valor_total))}</div><div class="payment${m.pagamento!=='conferir'?' warn':''}">${esc(m.pagamentoTexto)}</div></div><div class="row-actions">${botaoAcao(m)}<button class="btn" data-acao="detalhes" data-id="${esc(p.id)}">Detalhes</button></div>${preview}</article>`;
+ }).join(''):`<div class="empty"><strong>Nenhum pedido neste recorte</strong>Confira os filtros${recorteAtual==='historico'?' ou escolha outra data':''}.<br><button class="btn quiet" onclick="limparFiltros()">Limpar filtros</button></div>`;
+ if(pedidoSelecionado&&document.getElementById('detalhes').open)atualizarDetalhes();
+}
+async function carregarPedidos(){
+ const aviso=document.getElementById('area-loading'),botao=document.getElementById('btnAtualizar');aviso.classList.remove('hidden');aviso.textContent='Atualizando pedidos…';botao.disabled=true;
+ try{
+  if(!globalAccountId)throw Error('Selecione um estabelecimento para consultar os pedidos.');
+  const endpoint=`${urlDados}?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(segmentoAtual)}&data_filtro=${encodeURIComponent(document.getElementById('filtroData').value)}`;
+  const res=await fetch(endpoint);if(!res.ok)throw Error('Não foi possível consultar os pedidos. Tente atualizar novamente.');
+  const dados=await res.json();const lista=Array.isArray(dados)?dados:dados.data;if(!Array.isArray(lista))throw Error('Não foi possível ler os pedidos. Atualize novamente.');
+  listaPedidos=lista;renderizarKanban();document.getElementById('ultimaAtualizacao').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});aviso.classList.add('hidden');
+ }catch(error){aviso.textContent=error.message;mostrarToast(error.message,'error');}finally{botao.disabled=false;}
+}
+function abrirDetalhes(id,secao){
+ pedidoSelecionado=id;atualizarDetalhes();const dialog=document.getElementById('detalhes');if(!dialog.open)dialog.showModal();
+ if(secao){const alvo=document.getElementById('secao-'+secao);if(alvo){alvo.open=true;alvo.scrollIntoView({block:'nearest'});}}
+ renderizarKanban();
+}
+function fecharDetalhes(){document.getElementById('detalhes').close();pedidoSelecionado=null;renderizarKanban();}
+function atualizarDetalhes(){
+ const p=listaPedidos.map(x=>x.json||x).find(x=>x.id===pedidoSelecionado),box=document.getElementById('conteudoDetalhes');if(!p){box.innerHTML='<p class="small">Este pedido não está na consulta atual. Atualize ou confira a conversa.</p>';return;}
+ const m=FilaPedidos.projetar(p),c=configuracaoAcao(m),scroll=document.getElementById('detalhes').scrollTop;
+ const estadoSeccoes=[...box.querySelectorAll('details')].map(el=>[el.id,el.open]);
+ document.getElementById('tituloDetalhes').textContent=p.cliente_nome||'Cliente';document.getElementById('numeroDetalhes').textContent='PEDIDO #'+String(p.id).slice(0,8);
+ const chat=`<button class="btn" data-acao="chat" data-id="${esc(p.id)}">Abrir conversa</button>`;
+ box.innerHTML=`<span class="status${m.atencao?' warn':''}">${esc(m.etapa)}</span><dl><dt>Cliente</dt><dd>${esc(p.cliente_nome||'Não informado')}</dd><dt>Contato</dt><dd>${esc(p.cliente_telefone||'Não informado')}</dd><dt>Criado em</dt><dd>${esc(dataPedido(p.created_at))}</dd></dl>${m.alertas.map(a=>'<div class="alert">'+esc(a)+'</div>').join('')}
+ <details id="secao-itens" open><summary>Itens, bordas e adicionais</summary><div class="section-body">${FilaPedidos.itens(p).map(i=>`<div class="item"><strong>${esc(i.titulo)}</strong>${i.linhas.length?'<ul>'+i.linhas.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':''}</div>`).join('')||'Itens não informados.'}<div class="total"><span>Total do pedido</span><span>${esc(dinheiro(p.valor_total))}</span></div></div></details>
+ <details id="secao-pagamento"><summary>Pagamento e comprovante</summary><div class="section-body"><strong>${esc(m.pagamentoTexto)}</strong><p class="small">A forma de pagamento selecionada não comprova recebimento.${m.status==='comprovante_enviado'?' O arquivo foi recebido e precisa de conferência da equipe. Confira o comprovante na conversa e o crédito na conta antes de aprovar.':''}</p>${chat}${m.status==='comprovante_enviado'?botaoAcao(m,true):''}</div></details>
+ <details id="secao-destino"><summary>${esc(m.modalidadeTexto)}</summary><div class="section-body">${esc(p.endereco_entrega||'Destino não informado. Confira com o cliente pela conversa.')}</div></details>
+ <details id="secao-acoes"><summary>Outras ações</summary><div class="section-body">${chat}${m.status!=='comprovante_enviado'?botaoAcao(m,true):''}${c.anterior?`<button class="btn" data-acao="status" data-id="${esc(p.id)}" data-status="${esc(c.anterior)}">${esc(c.btnAnteriorLabel)}</button>`:''}${c.podeCancel?`<p class="small">Cancelar altera o estado do pedido e aciona as notificações existentes. A confirmação será solicitada.</p><button class="btn danger" data-acao="cancelar" data-id="${esc(p.id)}" data-status="cancelado_cliente">Cancelamento solicitado pelo cliente</button><button class="btn danger" data-acao="cancelar" data-id="${esc(p.id)}" data-status="cancelado_atendente">Cancelar pelo atendimento</button>`:''}</div></details>
+ <p class="small">Para mensagens e comprovantes, consulte a conversa. Este painel não recebe o histórico completo de alterações.</p>`;
+ for(const [id,open]of estadoSeccoes){const el=document.getElementById(id);if(el)el.open=open;}
+ document.getElementById('detalhes').scrollTop=scroll;
+}
+window.addEventListener('click',event=>{const btn=event.target.closest?.('[data-acao]');if(!btn||btn.disabled)return;const id=btn.dataset.id,p=listaPedidos.map(x=>x.json||x).find(x=>x.id===id);if(!p)return;
+ if(btn.dataset.acao==='detalhes')abrirDetalhes(id,btn.dataset.secao);else if(btn.dataset.acao==='chat')abrirChat(p.conversa_id);else if(btn.dataset.acao==='status')moverStatus(id,btn.dataset.status,btn);else if(btn.dataset.acao==='cancelar')cancelarPedido(id,btn.dataset.status,btn);
+});
+document.getElementById('detalhes').addEventListener('cancel',()=>{pedidoSelecionado=null;renderizarKanban();});
+function mostrarToast(msg,tipo){const toast=document.getElementById('toast');clearTimeout(toastTimer);toast.textContent=msg;toast.className='toast '+(tipo==='success'?'success':'error');toastTimer=setTimeout(()=>toast.classList.add('hidden'),4500);}
+
+window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                const payload = eventData.data;
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
+                iniciarApp();
+            }
+        });
+
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) ContextoConta.solicitar();
+        }, 500);
+
+
+
+        if(globalAccountId){clearInterval(handshakeInterval);iniciarApp();}
+
+        function iniciarApp() {
+            document.getElementById('alerta-chatwoot').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
+            document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
+            carregarPedidos();
+        }
+
+        const CHATWOOT_BASE_URL = 'https://chat.orbbotia.com';
+
+        function abrirChat(conversaId) {
+            if (!conversaId || conversaId === '?' || conversaId === 'null' || conversaId === 'undefined') {
+                mostrarToast('Pedido sem ID de conversa vinculado', 'error');
+                return;
+            }
+            const accountId = globalAccountId || '3';
+            const pathRelativo = `/app/accounts/${accountId}/conversations/${conversaId}`;
+            const urlAbsoluta = `${CHATWOOT_BASE_URL}${pathRelativo}`;
+
+            try { window.parent.postMessage({ event: 'appContext', data: { url: pathRelativo } }, '*'); } catch (e) {}
+
+            const isMobileApp = !!window.ReactNativeWebView || navigator.userAgent.includes('Chatwoot');
+            if (isMobileApp) {
+                const iframeMobile = document.createElement('iframe');
+                iframeMobile.style.display = 'none';
+                iframeMobile.src = `chatwootapp://${pathRelativo}`;
+                document.body.appendChild(iframeMobile);
+                setTimeout(() => iframeMobile.remove(), 1000);
+            } else {
+                setTimeout(() => {
+                    try {
+                        if (window.top && window.top !== window) window.top.location.href = urlAbsoluta;
+                        else window.location.href = urlAbsoluta;
+                    } catch (err) { window.open(urlAbsoluta, '_blank'); }
+                }, 100);
+            }
+        }
+
+
+</script></body></html>

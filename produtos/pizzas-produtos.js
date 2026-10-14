@@ -99,14 +99,66 @@ window.pizzasCadastro = (() => {
    f.append(node('p','Sabores do mesmo agrupamento podem combinar entre si.'));
    appendAction(f,button('Salvar agrupamento',()=>{if(!name.value.trim())return notice('Informe o nome do agrupamento.',true);save('salvar_linha',{id:line.id,nome:name.value.trim(),ativo:true});},'primary'));
  }
+ function lineLinks(line){
+   const products=catalog().produtos.filter(p=>p.pizza_linha_id===line.id);
+   const ids=new Set((data.linha_grupos||[]).filter(x=>x.linha_id===line.id).map(x=>x.grupo_id));
+   return {products,groups:catalog().personalizacao_grupos.filter(g=>ids.has(g.id)),rules:(data.linha_tamanhos||[]).filter(x=>x.linha_id===line.id),combinations:(data.configuracoes||[]).filter(x=>x.linha_id===line.id)};
+ }
+ function reviewLine(line,remove=false){
+   if(!discard())return;editor=null;const f=formSlot('pc-line-form'),links=lineLinks(line),reviewedVersion=data.versao_catalogo,reviewedAccount=account,reviewedSegment=segment;
+   f.append(node('h3',(remove?'Excluir agrupamento: ':'Vínculos de ')+line.nome));
+   const live=links.products.filter(p=>!p.deletado),archived=links.products.filter(p=>p.deletado);
+   f.append(node('h4','Sabores · '+live.length));
+   if(!live.length)f.append(node('p','Nenhum sabor cadastrado neste agrupamento.'));
+   for(const p of live){const row=node('div',undefined,'pc-row');row.append(node('p',p.nome+(p.ativo?' · Disponível':' · Indisponível')),button('Editar sabor',()=>editorFlavor(p)));f.append(row);}
+   if(archived.length){const details=node('details');details.append(node('summary',archived.length+' sabor(es) já excluído(s)'));for(const p of archived)details.append(node('p',p.nome+' · Excluído'));f.append(details);}
+   f.append(node('h4','Bordas e adicionais · '+links.groups.length));
+   if(!links.groups.length)f.append(node('p','Nenhum conjunto associado.'));
+   for(const g of links.groups){const row=node('div',undefined,'pc-row');const options=catalog().personalizacao_opcoes.filter(o=>o.grupo_id===g.id);row.append(node('p',g.nome+(g.ativo?'':' · Indisponível')+' · '+(options.map(o=>o.nome+(o.ativo?'':' (indisponível)')).join(', ')||'Sem opções')));
+    const others=lines().filter(l=>l.id!==line.id&&(data.linha_grupos||[]).some(x=>x.linha_id===l.id&&x.grupo_id===g.id));
+    row.append(node('p',others.length?'Também associado a: '+others.map(l=>l.nome).join(', ')+'.':remove?'Depois da exclusão, ficará sem agrupamentos de pizza. Continuará cadastrado para ser associado novamente.':'Exclusivo deste agrupamento.'));
+    if(g.uso_pizza&&sectionAllowed(g.uso_pizza==='borda'?'borders':'extras'))row.append(button('Editar conjunto',()=>editorGroup(g.uso_pizza,g)));
+    else row.append(node('p','Revise este conjunto nas configurações avançadas do catálogo.'));
+    f.append(row);
+   }
+   const rules=node('details');rules.append(node('summary','Regras por tamanho · '+links.rules.length+' próprias · '+links.combinations.length+' configurações de combinação'));
+   for(const r of links.rules)rules.append(node('p',(sizes().find(t=>t.id===r.tamanho_id)?.nome||'Tamanho indisponível')+' · '+({maior:'Sabor mais caro',media:'Média dos sabores',proporcional:'Proporcional às partes'}[r.formula]||r.formula)));
+   for(const c of links.combinations)rules.append(node('p',c.tamanho+' · '+(c.venda_habilitada?'Combinação disponível':'Combinação indisponível')));f.append(rules);
+   if(!remove){if(!line.padrao)appendAction(f,button('Revisar exclusão',()=>reviewLine(line,true),'danger'));return;}
+   if(line.padrao){notice('O agrupamento padrão não pode ser excluído.',true);return;}
+   f.append(node('p','Serão removidos apenas este agrupamento, suas associações e suas regras/configurações de combinação. Bordas, adicionais, opções, preços e pedidos já registrados serão preservados.'));
+   if(archived.length)f.append(node('p','Os sabores já excluídos perderão a referência a este agrupamento e continuarão excluídos.'));
+   let target=null;
+   const impact=node('p');
+   if(live.length){
+    const destinations=lines().filter(l=>l.id!==line.id&&l.ativo);
+    if(!destinations.length){f.append(node('p','Crie ou ative outro agrupamento antes de transferir estes sabores.'));return;}
+    target=select(f,'Transferir todos os sabores para',[['','Escolha o agrupamento de destino'],...destinations.map(l=>[l.id,l.nome])],'');target.required=true;
+    f.append(node('p','Os sabores transferidos seguirão as regras do destino. Os conjuntos exclusivos da origem não serão levados junto. Sabores indisponíveis continuarão indisponíveis.'));
+    target.onchange=()=>{const destination=destinations.find(l=>l.id===target.value);if(!destination){impact.textContent='';return;}const groups=lineLinks(destination).groups;impact.textContent='Conjuntos associados a '+destination.nome+': '+(groups.map(g=>g.nome+(g.ativo?'':' (indisponível)')).join(', ')||'nenhum')+'. Exceções individuais e disponibilidade por tamanho continuam sendo consideradas.';};
+   }
+   f.append(impact);
+   const accepted=checkbox(f,live.length?'Conferi os vínculos e autorizo a transferência e a exclusão':'Conferi os vínculos e autorizo a exclusão',false);
+   appendAction(f,button('Desvincular e excluir agrupamento',()=>{
+    if(live.length&&!target?.value)return notice('Escolha para onde transferir os sabores.',true);
+    if(!accepted.checked)return notice('Confirme a revisão dos vínculos antes de excluir.',true);
+    if(data.versao_catalogo!==reviewedVersion||account!==reviewedAccount||segment!==reviewedSegment)return notice('O cadastro mudou. Reabra os vínculos e confira antes de excluir.',true);
+    if(dirty)return notice('Há alterações não salvas. Reabra a revisão antes de excluir.',true);
+    save('excluir_linha_revisada',{id:line.id,destino_id:target?.value||null,confirmar_exclusao:true});
+   },'danger'));
+   // As escolhas de revisão não são alterações do cadastro antes da confirmação.
+   f.oninput=e=>{if(e.target!==accepted)accepted.checked=false;};
+   // A confirmação é independente de mudanças no destino.
+   target?.addEventListener('change',()=>{accepted.checked=false;});
+ }
  function renderLines(){
    const mount=$('pc-line-list');mount.replaceChildren();
    if(!data.linhas){mount.append(node('p','A configuração de agrupamentos ainda não está disponível neste cadastro.'));$('pc-new-line').disabled=true;return;}
    $('pc-new-line').disabled=false;
    for(const line of lines()){
     const d=node('details');d.dataset.uiKey='linha-'+line.id;const count=flavors().filter(p=>p.pizza_linha_id===line.id).length;
-    d.append(node('summary',line.nome+' · '+count+' sabores'),button('Editar agrupamento',()=>editorLine(line)));
-    if(!line.padrao)d.append(button('Excluir agrupamento',()=>{if(confirm('Excluir o agrupamento '+line.nome+'? Somente agrupamentos sem vínculos podem ser excluídos.'))save('excluir_linha',{id:line.id});},'danger'));
+    d.append(node('summary',line.nome+' · '+count+' sabores'),button('Editar agrupamento',()=>editorLine(line)),button('Ver vínculos',()=>reviewLine(line)));
+    if(!line.padrao)d.append(button('Excluir agrupamento',()=>reviewLine(line,true),'danger'));
     for(const size of sizes()){
      const rule=(data.linha_tamanhos||[]).find(x=>x.linha_id===line.id&&x.tamanho_id===size.id),box=node('details');box.dataset.uiKey='regra-'+line.id+'-'+size.id;box.append(node('summary',size.nome+' · '+(rule?'Regra própria':'Regra do tamanho')));
      const formula=select(box,'Preço da combinação',[['maior','Sabor mais caro'],['media','Média dos sabores'],['proporcional','Proporcional às partes']],rule?.formula||size.formula);

@@ -5,7 +5,7 @@ window.AdminSession = (() => {
  const scriptUrl=new URL(document.currentScript.src),root=new URL('../',scriptUrl);
  const loginUrl=new URL('acesso.html',root),loginPage=location.pathname===loginUrl.pathname;
  const embeddedPage=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
- const routes=new Set(['admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot']);
+ const routes=new Set(['admin-onboarding','admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot']);
  const originalFetch=window.fetch.bind(window);
  let client=null,session=null,redirecting=false,navigation=null;
  const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();

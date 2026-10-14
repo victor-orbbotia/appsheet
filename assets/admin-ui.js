@@ -69,6 +69,7 @@ window.AdminUI = (() => {
     nav.id = 'admin-quick-nav';
     nav.setAttribute('aria-label', 'Navegação principal');
     nav.append(link('Início', 'index.html'));
+    if (new URLSearchParams(location.search).get('onboarding') === '1') nav.append(link('← Continuar configuração', 'onboarding.html'));
     for (const [key, label, path] of modules) {
       if (context.modulos[key]) nav.append(link(label, path));
     }

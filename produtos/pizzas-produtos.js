@@ -3,9 +3,18 @@
 window.pizzasCadastro = (() => {
  const endpoint='https://n8n.orbbotia.com/webhook/meia-pizza-admin';
  let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='sizes', pizzaSource=[], pizzaGroupFilter='Todas';
- let modelo=null,regras=null;
+ let modelo=null,regras=null,contextLoaded=false;
  const regra=kind=>regras?.[kind==='borda'?'bordas':'adicionais'];
- function permitido(type){if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}
+ function permitido(type){if(!contextLoaded)return type==='common';if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}
+ function applyCatalogContext(context){
+   contextLoaded=!!context;modelo=context?.modelo||null;regras=context?.regras||null;
+   const pizza=!!context&&permitido('pizza'),addons=!!context&&permitido('addons');
+   $('pc-type-pizza').hidden=!pizza;$('pc-type-addons').hidden=!addons;
+   $('pc-type-cards').hidden=!(pizza||addons);
+   $('pc-type-cards').style.setProperty('--pc-type-columns',pizza&&addons?'3':'2');
+   for(const tab of document.querySelectorAll('[data-pc-section]'))tab.hidden=!sectionAllowed(tab.dataset.pcSection);
+   choose(context&&permitido(currentType)?currentType:'common');
+ }
  const $=id=>document.getElementById(id);
  const node=(tag,text,cls)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;if(cls)x.className=cls;return x;};
  const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -281,7 +290,7 @@ window.pizzasCadastro = (() => {
    for(const b of document.querySelectorAll('[data-pc-section]'))b.onclick=()=>setSection(b.dataset.pcSection);
    $('pc-help-toggle').onclick=()=>CadastroUI.abrirAjuda('pc-help','Cadastro de pizzas',$('pc-help-toggle'));
    if(window.AdminSession?.enabled){$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-load').textContent='Carregar cadastro';AdminSession.ready.then(()=>{if(!data&&!busy)$('pc-load').click();}).catch(()=>{});}
-   if(window.CatalogoContexto)CatalogoContexto.ready.then(context=>{modelo=context.modelo;regras=context.regras;for(const tab of document.querySelectorAll('[data-pc-section]'))tab.hidden=!sectionAllowed(tab.dataset.pcSection);$('pc-type-pizza').hidden=!permitido('pizza');$('pc-type-addons').hidden=!permitido('addons');choose(permitido(currentType)?currentType:'common');}).catch(()=>{$('pc-type-pizza').hidden=true;$('pc-type-addons').hidden=true;});
+   if(window.CatalogoContexto)CatalogoContexto.ready.then(context=>{applyCatalogContext(context);if(new URLSearchParams(location.search).get('tipo')==='pizza'&&permitido('pizza'))choose('pizza');}).catch(()=>applyCatalogContext(null));
    choose(new URLSearchParams(location.search).get('tipo')==='pizza'?'pizza':'common');
  }
  window.addEventListener('message',async e=>{

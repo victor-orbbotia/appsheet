@@ -52,10 +52,10 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-<link rel="stylesheet" href="pizzas-produtos.css?v=20261013-lista2">
+<link rel="stylesheet" href="pizzas-produtos.css?v=20261014-modelo1">
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-contraste2">
 <script src="../assets/admin-ui.js?v=20261014-onboarding1" defer></script>
-<script src="../assets/catalogo-contexto.js?v=20261014-guiado2" defer></script>
+<script src="../assets/catalogo-contexto.js?v=20261014-modelo1"></script>
 </head>
 
 <body class="p-4 md:p-6 space-y-6">
@@ -99,14 +99,14 @@
         <div id="view-produtos" class="space-y-6 block">
 
 
-<section class="pizza-ui pc-type-cards" aria-label="Tipo de cadastro">
+<section id="pc-type-cards" class="pizza-ui pc-type-cards" aria-label="Tipo de cadastro" hidden>
 <button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span><span class="pc-choice-copy"><strong>Produto comum</strong><small>Nome, preço e variações.</small></span></button>
-<button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button>
-<button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span><span class="pc-choice-copy"><strong>Adicionais</strong><small>Opções, preços e disponibilidade.</small></span></button>
+<button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false" hidden><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button>
+<button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false" hidden><span class="pc-icon" aria-hidden="true">🧀</span><span class="pc-choice-copy"><strong>Adicionais</strong><small>Opções, preços e disponibilidade.</small></span></button>
 </section>
 <section id="pc-addons" hidden>
 <nav id="pc-addon-tabs" class="catalog-tabs" aria-label="Etapas dos adicionais"><button type="button" data-addon-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-addon-tab="list" aria-selected="false">Lista de itens</button><button type="button" data-addon-tab="where" aria-selected="false">Onde oferecer</button><button type="button" data-addon-tab="advanced" aria-selected="false">Configurações avançadas</button></nav>
-<p><a id="pc-regras-negocio" href="../onboarding.html?avancado=1">⚙ Configurações avançadas · conjuntos e recursos do catálogo</a></p>
+<p><a id="pc-regras-negocio" href="../onboarding.html?avancado=1">⚙ Configurações avançadas · conjuntos de regras do catálogo</a></p>
 <section class="pizza-ui pc-card" id="pc-advanced" hidden><h2>Configurações avançadas do catálogo</h2><p>Escolha a configuração que deseja revisar.</p><nav class="catalog-tabs" aria-label="Configurações avançadas dos adicionais"><button type="button" data-advanced-tab="prices" aria-selected="true">Preços por tamanho</button><button type="button" data-advanced-tab="rules" aria-selected="false">Regras completas</button></nav><div id="pc-advanced-rules" hidden><p>Edite exceções por produto, vínculos especiais e outras regras do catálogo abaixo.</p></div><section id="pc-category-section" hidden><div id="pc-categories"></div></section></section>
 <iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe><iframe id="pc-rules-frame" title="Regras completas das personalizações" style="width:100%;height:1800px;border:0" loading="lazy" hidden></iframe></section>
 <nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-common-tab="list" aria-selected="false">Lista de itens</button></nav>
@@ -466,7 +466,7 @@
     </div>
 
     <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
-<script src="pizzas-produtos.js?v=20261014-agrupamentos1"></script>
+<script src="pizzas-produtos.js?v=20261014-modelo1"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS

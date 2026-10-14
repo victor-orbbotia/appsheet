@@ -21,7 +21,7 @@
 .pizza-ui .pc-help{padding:14px;margin:10px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;color:#475569}
 .pizza-ui .pc-help ol{margin:0 0 8px;padding-left:20px}.pizza-ui .pc-help li{margin:5px 0}
 .pizza-ui.pc-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px}
-.pizza-ui .pc-type-cards,.pizza-ui.pc-type-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.pizza-ui .pc-type-cards,.pizza-ui.pc-type-cards{display:grid;grid-template-columns:repeat(var(--pc-type-columns,3),minmax(0,1fr));gap:12px;align-items:stretch}
 .pizza-ui .pc-choice{display:flex;align-items:center;gap:14px;min-width:0;min-height:108px;width:100%;font-family:inherit}
 .pizza-ui .pc-choice .pc-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;font-size:30px;line-height:1}
 .pizza-ui .pc-choice .pc-choice-copy{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left}

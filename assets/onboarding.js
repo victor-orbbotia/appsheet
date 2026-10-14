@@ -32,12 +32,12 @@
  }
  function renderAdvanced(){
   document.querySelector('.ob-shell > header h1').textContent='Regras do negócio';
-  document.querySelector('.ob-shell > header p').textContent='Ajuste os conjuntos e os recursos do catálogo a qualquer momento.';
+  document.querySelector('.ob-shell > header p').textContent='Ajuste os conjuntos e as regras do catálogo.';
   $('ob-status').textContent='';$('ob-steps').hidden=true;$('ob-complete').hidden=true;$('ob-form').hidden=!data.pode_editar;
   if(!data.pode_editar){$('ob-status').textContent='Somente o proprietário pode alterar estas regras.';return;}
   $('ob-form').dataset.dirty='false';$('ob-back').hidden=true;$('ob-pause').textContent='Voltar ao sistema';$('ob-save').textContent='Salvar conjunto de regras';
-  const panel=$('ob-content');panel.replaceChildren();panel.append(el('h2','Configurações avançadas do catálogo'),el('p','Reveja o conjunto escolhido no início, habilite recursos ou ajuste os padrões. Salvar prepara os novos cadastros. Os atuais só mudam com aplicação revisada abaixo.'));
-  readRules=CatalogoRegrasUI.render(panel,data.onboarding.modelo||'restaurante',data.onboarding.regras_catalogo,{avancado:true});renderApplication(panel);
+  const panel=$('ob-content');panel.replaceChildren();panel.append(el('h2','Configurações avançadas do catálogo'),el('p','Reveja o conjunto escolhido no início e ajuste os padrões. Salvar prepara os novos cadastros. Os atuais só mudam com aplicação revisada abaixo.'));
+  readRules=CatalogoRegrasUI.render(panel,data.onboarding.modelo||'restaurante',data.onboarding.regras_catalogo,{avancado:true,permitirRecursos:false});renderApplication(panel);
  }
  function renderApplication(panel){
   const box=el('section');box.className='ob-panel';box.append(el('h3','Aplicar regras aos cadastros existentes'),el('p','Confira quais conjuntos serão alterados. Preços, produtos e vínculos serão preservados. A aplicação pode mudar a oferta de combinações e personalizações nos canais. Os tamanhos de pizza seguirão a oferta de pizza combinada escolhida.'));panel.append(box);

@@ -30,7 +30,7 @@ window.CatalogoRegrasUI=(()=>{
    const choices=presets(modelo,r.recursos),preset=select(editor,'Começar com este conjunto',[['personalizado','Personalizado'],...choices.map(x=>[x.preset_id,x.nome])],choices.some(x=>x.preset_id===r.preset_id)?r.preset_id:'personalizado');
    const name=input(editor,'Nome do conjunto de regras',r.nome);name.required=true;name.maxLength=80;
    let resourcePizza,resourceExtras;
-   if(options.avancado){const resources=el('fieldset');resources.append(el('legend','Recursos disponíveis no catálogo'));editor.append(resources);resourcePizza=input(resources,'Usar o cadastro especializado de pizzas',cap.pizza,'checkbox');resourceExtras=input(resources,'Usar personalizações e adicionais',cap.personalizacao,'checkbox');resources.append(el('p','Estes recursos podem mudar independentemente do modelo inicial. Os dados existentes não são apagados.'));}
+   if(options.avancado&&options.permitirRecursos!==false){const resources=el('fieldset');resources.append(el('legend','Recursos disponíveis no catálogo'));editor.append(resources);resourcePizza=input(resources,'Usar o cadastro especializado de pizzas',cap.pizza,'checkbox');resourceExtras=input(resources,'Usar personalizações e adicionais',cap.personalizacao,'checkbox');resources.append(el('p','Estes recursos podem mudar independentemente do modelo inicial. Os dados existentes não são apagados.'));}
    const split=cap.pizza?input(editor,'Oferecer pizza combinada (meio a meio e demais divisões dos tamanhos)',r.pizza_combinada,'checkbox'):null;
    for(const key of cap.personalizacao?(cap.pizza?['bordas','adicionais']:['adicionais']):[]){
     const fieldset=el('fieldset');fieldset.append(el('legend',key==='bordas'?'Bordas':'Adicionais'));editor.append(fieldset);
@@ -46,7 +46,7 @@ window.CatalogoRegrasUI=(()=>{
    }
    readCurrent=()=>({...r,nome:name.value.trim(),preset_id:preset.value,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))});
    preset.onchange=()=>{const selected=choices.find(x=>x.preset_id===preset.value);if(selected)build({...selected,recursos_personalizados:r.recursos_personalizados});};
-   if(options.avancado){const resourcesChanged=()=>{const current=readCurrent();current.recursos={pizza:resourcePizza.checked,personalizacao:resourceExtras.checked};current.preset_id='personalizado';current.recursos_personalizados=true;build(current);};resourcePizza.onchange=resourcesChanged;resourceExtras.onchange=resourcesChanged;}
+   if(resourcePizza&&resourceExtras){const resourcesChanged=()=>{const current=readCurrent();current.recursos={pizza:resourcePizza.checked,personalizacao:resourceExtras.checked};current.preset_id='personalizado';current.recursos_personalizados=true;build(current);};resourcePizza.onchange=resourcesChanged;resourceExtras.onchange=resourcesChanged;}
   }
   build(stored);return()=>readCurrent();
  }

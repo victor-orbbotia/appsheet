@@ -125,7 +125,7 @@ function criarMotorPersonalizacoes(dados) {
           const overrides = linhas('variacao_personalizacao_precos', escopo).filter(v =>
             variacao && v.variacao_id === variacao.id && v.produto_id === produto.id && v.grupo_id === id && v.opcao_id === o.id);
           if (overrides.length > 1) falhar('configuracao_invalida');
-          return { id: o.id, nome: o.nome, permite_quantidade: o.permite_quantidade,
+          return { id: o.id, nome: o.nome, obrigatoria: o.obrigatoria === true, permite_quantidade: o.permite_quantidade,
             max_quantidade: o.max_quantidade, preco_centavos: centavos(overrides.length ? overrides[0].preco : o.preco_padrao) };
         });
       const capacidadeIndividual = opcoes.reduce((s, o) => seguro(s + o.max_quantidade), 0);
@@ -176,6 +176,12 @@ function criarMotorPersonalizacoes(dados) {
       const bordas=catalogo.grupos.filter(g=>g.uso_pizza==='borda').reduce((n,g)=>n+(contagem.get(g.id)||0),0);
       if(catalogo.max_bordas!==null&&bordas>catalogo.max_bordas)falhar('limite_bordas',{maximo:catalogo.max_bordas});
       for (const grupo of catalogo.grupos) {
+        for (const opcao of grupo.opcoes) {
+          if (opcao.obrigatoria && !modificadores.some(m => m.opcao_id === opcao.id)) {
+            falhar('opcao_obrigatoria', { grupo_id: grupo.id, opcao_id: opcao.id, nome: opcao.nome,
+              mensagem: `Falta escolher a opção obrigatória: ${opcao.nome}.` });
+          }
+        }
         const qtd = contagem.get(grupo.id) || 0;
         if (qtd < grupo.min_selecoes || qtd > grupo.max_selecoes) {
           falhar('limite_grupo', { grupo_id: grupo.id, min_selecoes: grupo.min_selecoes,
@@ -255,15 +261,16 @@ function cotarMeiaPizza(dados, escopo, entrada) {
     const baseExata = total;
     const globais = entrada.globais ?? [];
     if(!Array.isArray(globais) || partes.some(p=>p.modificadores!==undefined&&!Array.isArray(p.modificadores))) fail('modificadores_invalidos');
-    const registros = [], usados = new Set(), contagens = new Map();
+    const registros = [], usados = new Set(), contagens = new Map(), porOpcao = new Map();
     const gruposConfigurados = new Map(c.grupos.map(g=>[g.grupo_id,g]));
     for(const p of resolvidos) for(const g of p.grupos) {
-      if(g.min_selecoes>0&&!gruposConfigurados.has(g.id)) fail('grupo_obrigatorio_sem_regra',{grupo_id:g.id});
+      if((g.min_selecoes>0 || g.opcoes.some(o=>o.obrigatoria))&&!gruposConfigurados.has(g.id)) fail('grupo_obrigatorio_sem_regra',{grupo_id:g.id});
     }
     const adicionar = (m, indice) => {
       const regra = gruposConfigurados.get(m.grupo_id);
       const escopoEsperado = indice===null?'inteira':'parte';
-      if(!regra || regra.escopo!==escopoEsperado) fail('escopo_adicional_invalido');
+      if(!regra || (regra.escopo!==escopoEsperado && regra.escopo!=='ambos')) fail('escopo_adicional_invalido');
+      const cobranca = indice === null ? regra.cobranca : regra.escopo === 'ambos' ? regra.cobranca_parte : regra.cobranca;
       const key = `${indice ?? 'inteira'}/${m.grupo_id}/${m.opcao_id}`;
       if(usados.has(key)) fail('opcao_duplicada'); usados.add(key);
       if(!inteiro(m.quantidade,1,999)) fail('quantidade_adicional_invalida');
@@ -274,21 +281,28 @@ function cotarMeiaPizza(dados, escopo, entrada) {
         if(!o || m.quantidade>o.max_quantidade) fail('opcao_indisponivel_ou_limite',{grupo_id:m.grupo_id,produto_id:resolvidos[i].produto_id});
         const contador=`${i}/${grupo.id}`;
         contagens.set(contador,(contagens.get(contador)||0)+m.quantidade);
+        const chaveOpcao=`${i}/${grupo.id}/${o.id}`;
+        const acumulada=(porOpcao.get(chaveOpcao)||0)+m.quantidade;
+        if(acumulada>o.max_quantidade) fail('limite_opcao',{produto_id:resolvidos[i].produto_id,opcao_id:o.id});
+        porOpcao.set(chaveOpcao,acumulada);
         return o;
       });
       let custo;
-      if(indice===null) custo=calcular(opcoes.map(o=>o.preco_centavos),regra.cobranca);
-      else if(regra.cobranca==='integral') custo=BigInt(opcoes[0].preco_centavos)*unidade;
-      else if(regra.cobranca==='proporcional') custo=BigInt(opcoes[0].preco_centavos)*BigInt(pesos[indice])*(unidade/BigInt(denominador));
+      if(indice===null) custo=calcular(opcoes.map(o=>o.preco_centavos),cobranca);
+      else if(cobranca==='integral') custo=BigInt(opcoes[0].preco_centavos)*unidade;
+      else if(cobranca==='proporcional') custo=BigInt(opcoes[0].preco_centavos)*BigInt(pesos[indice])*(unidade/BigInt(denominador));
       else fail('cobranca_invalida');
       custo*=BigInt(m.quantidade); total+=custo;
       registros.push({grupo_id:m.grupo_id,opcao_id:m.opcao_id,nome:opcoes[0].nome,quantidade:m.quantidade,
-        escopo:escopoEsperado,produto_id:indice===null?null:resolvidos[indice].produto_id,cobranca:regra.cobranca,
+        escopo:escopoEsperado,produto_id:indice===null?null:resolvidos[indice].produto_id,cobranca,
         precos_origem:ordenar(indices.map((i,j)=>({produto_id:resolvidos[i].produto_id,preco_centavos:opcoes[j].preco_centavos}))),valor_exato:{numerador:custo.toString(),denominador:unidade.toString()}});
     };
     globais.forEach(m=>adicionar(m,null));
     partes.forEach((p,i)=>(p.modificadores||[]).forEach(m=>adicionar(m,i)));
     resolvidos.forEach((p,i)=>p.grupos.forEach(g=>{
+      for(const o of g.opcoes) if(o.obrigatoria && !(porOpcao.get(`${i}/${g.id}/${o.id}`)>0))
+        fail('opcao_obrigatoria',{produto_id:p.produto_id,grupo_id:g.id,opcao_id:o.id,nome:o.nome,
+          mensagem:`Falta escolher ${o.nome}, obrigatória para a parte de ${p.nome}.`});
       const q=contagens.get(`${i}/${g.id}`)||0;
       if(q<g.min_selecoes||q>g.max_selecoes) fail('limite_grupo',{produto_id:p.produto_id,grupo_id:g.id,minimo:g.min_selecoes,maximo:g.max_selecoes});
     }));

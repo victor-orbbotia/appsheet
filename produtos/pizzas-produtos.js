@@ -3,6 +3,9 @@
 window.pizzasCadastro = (() => {
  const endpoint='https://n8n.orbbotia.com/webhook/meia-pizza-admin';
  let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='sizes', pizzaSource=[], pizzaGroupFilter='Todas';
+ let modelo=null,regras=null;
+ const regra=kind=>regras?.[kind==='borda'?'bordas':'adicionais'];
+ function permitido(type){if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}
  const $=id=>document.getElementById(id);
  const node=(tag,text,cls)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;if(cls)x.className=cls;return x;};
  const money=n=>Number(n).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -15,7 +18,8 @@ window.pizzasCadastro = (() => {
  function field(parent,label,value='',type='text'){const l=node('label',label),i=node('input');i.type=type;i.value=value??'';if(type==='number'){i.min='0';i.step='0.01';}l.append(i);parent.append(l);return i;}
  function checkbox(parent,label,value=false){const l=node('label'),i=node('input');i.type='checkbox';i.checked=value;l.append(i,document.createTextNode(label));parent.append(l);return i;}
  function select(parent,label,choices,value){const l=node('label',label),s=node('select');for(const [v,t] of choices)s.add(new Option(t,v));if(value!==undefined)s.value=value;l.append(s);parent.append(l);return s;}
- function setSection(section){activeSection=section;for(const b of document.querySelectorAll('[data-pc-section]'))b.setAttribute('aria-selected',String(b.dataset.pcSection===section));for(const id of ['sizes','lines','flavors','borders','extras','items'])$('pc-'+id).hidden=id!==section;}
+ function sectionAllowed(section){return section==='borders'?regras?.bordas?.ativo!==false:section==='extras'?regras?.adicionais?.ativo!==false:true;}
+ function setSection(section){if(!sectionAllowed(section))section='sizes';activeSection=section;for(const b of document.querySelectorAll('[data-pc-section]'))b.setAttribute('aria-selected',String(b.dataset.pcSection===section));for(const id of ['sizes','lines','flavors','borders','extras','items'])$('pc-'+id).hidden=id!==section;}
  function formSlot(id){const section={ 'pc-size-form':'sizes','pc-line-form':'lines','pc-flavor-form':'flavors','pc-borda-form':'borders','pc-adicional-form':'extras'}[id];setSection(section);const x=$(id);x.replaceChildren();x.hidden=false;x.className='pc-edit';x.oninput=()=>{dirty=true;};if(!restoring)requestAnimationFrame(()=>{x.scrollIntoView({behavior:'smooth',block:'start'});x.classList.remove('pc-edit-focus');void x.offsetWidth;x.classList.add('pc-edit-focus');x.querySelector('input:not([type=hidden]),select')?.focus({preventScroll:true});});return x;}
  const catalog=()=>data?.catalogo;
  const flavors=()=>catalog()?.produtos.filter(p=>isPizza(p)&&!p.deletado)||[];
@@ -23,6 +27,7 @@ window.pizzasCadastro = (() => {
  const lines=()=>data?.linhas||[];
  const variations=p=>catalog()?.produto_variacoes.filter(v=>v.produto_id===p.id)||[];
  async function request(action,body={}){
+   if(window.CatalogoContexto)await CatalogoContexto.ready;
    const requestAccount=account, requestSegment=segment;
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-pizza-admin-key':key},body:JSON.stringify({account_id:requestAccount,segmento:requestSegment,acao:'cadastro_'+action,dados:body,versao_esperada:action==='consultar'?null:data.versao_catalogo}),signal:AbortSignal.timeout(25000)});
    let r;try{r=await response.json();}catch{throw Error('O servidor não retornou JSON. Confira a publicação do workflow de pizzas.');}
@@ -56,7 +61,7 @@ window.pizzasCadastro = (() => {
    const name=field(grid,'Nome do tamanho',t.nome||'');name.placeholder='Pequena, Média, Grande…';name.maxLength=60;
    const slices=field(grid,'Quantidade de fatias (opcional)',t.fatias||'','number');slices.step='1';slices.max='100';
    const diameter=field(grid,'Diâmetro em cm (opcional)',t.diametro||'','number');diameter.max='200';
-   const active=checkbox(f,'Disponível para venda',t.ativo!==false);active.closest('label').classList.add('pc-availability');const divide=checkbox(f,'Permitir combinar sabores neste tamanho',t.permite_dividir||false);
+   const active=checkbox(f,'Disponível para venda',t.ativo!==false);active.closest('label').classList.add('pc-availability');const divide=checkbox(f,'Permitir combinar sabores neste tamanho',t.id?t.permite_dividir:(regras?.pizza_combinada??false));
    f.append(node('p','O mesmo tamanho vale para inteira e dividida. Fatias não determinam a quantidade de sabores.'));
    const rules=node('div',undefined,'pc-grid');f.append(rules);
    const min=select(rules,'Mínimo ao combinar',[[2,'2 sabores'],[3,'3 sabores'],[4,'4 sabores']],t.minimo||2);
@@ -122,26 +127,29 @@ window.pizzasCadastro = (() => {
  function editorGroup(kind,g={}){
    if(!discard())return;dirty=false;const f=formSlot('pc-'+kind+'-form');f.append(node('h3',g.id?'Editar conjunto':'Novo conjunto de opções'));
    const name=field(f,kind==='borda'?'Nome do conjunto (ex.: Bordas recheadas)':'Nome do conjunto (ex.: Molhos)',g.nome||(kind==='borda'?'Borda':'Adicionais'));
-   const scope=select(f,'Aplicar em',[['inteira','Pizza inteira'],['parte','Cada sabor/parte']],g.escopo_pizza||'inteira');
+   const scope=select(f,'Aplicar em',[['inteira','Pizza inteira'],['parte','Cada sabor/parte'],['ambos','Inteira e por parte']],g.escopo_pizza||(regra(kind)?.por_parte?(regra(kind).inteira?'ambos':'parte'):'inteira'));
    const charge=select(f,'Como cobrar?',[],undefined);
-   function update(){charge.replaceChildren();(scope.value==='inteira'?[['maior','Maior preço entre os sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']]:[['integral','Valor integral por parte'],['proporcional','Proporcional à parte']]).forEach(([v,t])=>charge.add(new Option(t,v)));}scope.onchange=update;update();charge.value=g.cobranca_pizza||charge.value;
+   function update(){charge.replaceChildren();(scope.value!=='parte'?[['maior','Maior preço entre os sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']]:[['integral','Valor integral por parte'],['proporcional','Proporcional à parte']]).forEach(([v,t])=>charge.add(new Option(t,v)));}scope.onchange=update;update();charge.value=g.cobranca_pizza||(scope.value==='parte'?regra(kind)?.cobranca_parte:regra(kind)?.cobranca_inteira)||charge.value;
+   const partialCharge=select(f,'Cobrança quando escolhido por parte',[['integral','Valor integral por parte'],['proporcional','Proporcional à parte']],g.cobranca_parte||regra(kind)?.cobranca_parte||'integral');
+   partialCharge.closest('label').hidden=scope.value!=='ambos';scope.onchange=()=>{update();partialCharge.closest('label').hidden=scope.value!=='ambos';};
    f.append(node('p','Cada opção conserva seu próprio limite de quantidade. Neste cadastro não há mínimo ou máximo total de escolhas.'));
    if(g.id)f.append(node('p','Editar esta escolha também altera os produtos que já a utilizam. Confira suas associações antes de salvar.'));
    const scopeLines=node('fieldset');scopeLines.append(node('legend','Onde oferecer este conjunto?'));
    const lineChecks=lines().map(l=>({id:l.id,input:checkbox(scopeLines,l.nome,!g.id||(data.linha_grupos||[]).some(x=>x.grupo_id===g.id&&x.linha_id===l.id))}));
    scopeLines.append(node('p','Todos começam marcados em um conjunto novo. Se desmarcar todos, este conjunto não aparecerá em nenhum agrupamento.'));f.append(scopeLines);
-   appendAction(f,button('Salvar conjunto',()=>save('salvar_grupo',{id:g.id,linhas_ids:lineChecks.filter(x=>x.input.checked).map(x=>x.id),nome:name.value.trim(),min_selecoes:0,max_selecoes:2147483647,ativo:true,uso_pizza:kind,escopo_pizza:scope.value,cobranca_pizza:charge.value}),'primary'));
+   appendAction(f,button('Salvar conjunto',()=>save('salvar_grupo',{id:g.id,linhas_ids:lineChecks.filter(x=>x.input.checked).map(x=>x.id),nome:name.value.trim(),min_selecoes:0,max_selecoes:2147483647,ativo:true,uso_pizza:kind,escopo_pizza:scope.value,cobranca_pizza:charge.value,cobranca_parte:partialCharge.value}),'primary'));
  }
  function editorOption(kind,g,o={}){
    if(!discard())return;dirty=false;const f=formSlot('pc-'+kind+'-form');f.append(node('h3',(o.id?'Editar opção de ':'Nova opção de ')+g.nome));
    const name=field(f,'Nome',o.nome||''),price=field(f,'Acréscimo padrão (R$)',o.preco_padrao??0,'number');
    const limits=node('div',undefined,'option-limits');f.append(limits);
-   const repeat=kind==='borda'?null:checkbox(limits,'Permitir repetir esta opção',o.permite_quantidade||false),max=field(limits,kind==='borda'?'Máximo desta borda por pizza':'Quantidade máxima',kind==='borda'?Math.max(2,Number(o.max_quantidade)||2):o.max_quantidade||1,'number');max.step='1';max.min=kind==='borda'?'2':'1';
+   const repeat=kind==='borda'?null:checkbox(limits,'Permitir repetir esta opção',o.id?o.permite_quantidade:(regra(kind)?.max_por_opcao||1)>1),max=field(limits,kind==='borda'?'Máximo desta borda por pizza':'Quantidade máxima',o.max_quantidade||regra(kind)?.max_por_opcao||1,'number');max.step='1';max.min='1';
+   const required=checkbox(limits,'Esta opção é obrigatória',o.id?o.obrigatoria:regra(kind)?.obrigatoria_padrao||false);
    const active=checkbox(f,'Opção disponível',o.ativo!==false);active.closest('label').classList.add('pc-availability');f.append(node('p','Preço vazio usa o padrão; zero é gratuito.'));
    const grid=node('div',undefined,'pc-grid');f.append(grid);
    const exceptionChecks=[];
    const prices=sizes().map(t=>{const saved=data.precos_tamanhos.find(x=>x.tamanho_id===t.id&&x.opcao_id===o.id);const box=node('div');grid.append(box);const available=checkbox(box,'Disponível em '+t.nome,!(data.bloqueios_tamanhos||[]).some(x=>x.tamanho_id===t.id&&x.opcao_id===o.id));return {t,available,original:saved?.preco??'',input:field(box,'Acréscimo em '+t.nome,saved?.preco??'','number')};});
-   appendAction(f,button('Salvar opção',()=>{if(!name.value.trim())return notice('Informe o nome da opção.',true);if(kind==='borda'&&(!Number.isInteger(Number(max.value))||Number(max.value)<2))return notice('Informe quantas unidades desta borda podem ser escolhidas (mínimo 2).',true);save(g.id?'salvar_opcao':'salvar_opcao_guiada',{uso_pizza:kind,id:o.id,grupo_id:g.id,nome:name.value.trim(),preco_padrao:price.value,permite_quantidade:kind==='borda'?true:repeat.checked,max_quantidade:kind==='borda'?Number(max.value):repeat.checked?Number(max.value):1,ativo:active.checked,excecoes_sabores:exceptionChecks.filter(x=>x.check.checked!==x.original).map(x=>({produto_id:x.id,remover:x.check.checked})),disponibilidade_tamanhos:prices.map(x=>({tamanho_id:x.t.id,disponivel:x.available.checked})),precos_tamanhos:prices.filter(x=>(x.input.value===''?null:Number(x.input.value))!==(x.original===''?null:Number(x.original))).map(x=>({tamanho_id:x.t.id,preco:x.input.value}))});},'primary'));
+   appendAction(f,button('Salvar opção',()=>{if(!name.value.trim())return notice('Informe o nome da opção.',true);if(kind==='borda'&&(!Number.isInteger(Number(max.value))||Number(max.value)<1))return notice('Informe quantas unidades desta borda podem ser escolhidas (mínimo 1).',true);save(g.id?'salvar_opcao':'salvar_opcao_guiada',{uso_pizza:kind,id:o.id,grupo_id:g.id,nome:name.value.trim(),preco_padrao:price.value,permite_quantidade:kind==='borda'?true:repeat.checked,max_quantidade:kind==='borda'?Number(max.value):repeat.checked?Number(max.value):1,ativo:active.checked,obrigatoria:required.checked,excecoes_sabores:exceptionChecks.filter(x=>x.check.checked!==x.original).map(x=>({produto_id:x.id,remover:x.check.checked})),disponibilidade_tamanhos:prices.map(x=>({tamanho_id:x.t.id,disponivel:x.available.checked})),precos_tamanhos:prices.filter(x=>(x.input.value===''?null:Number(x.input.value))!==(x.original===''?null:Number(x.original))).map(x=>({tamanho_id:x.t.id,preco:x.input.value}))});},'primary'));
 
  }
  function renderGroups(kind){
@@ -194,6 +202,7 @@ window.pizzasCadastro = (() => {
    const categories=$('pc-categories');categories.replaceChildren();for(const c of catalog().categorias){const row=node('div',undefined,'pc-row');row.append(node('p',c.nome));if(c.tipo_padrao)row.append(node('span','Categoria padrão — protegida','pc-badge'));else row.append(button('Excluir categoria',()=>{if(confirm('Excluir a categoria '+c.nome+' se estiver vazia?'))save('excluir_categoria',{id:c.id});},'danger'));categories.append(row);}
  }
  function choose(type){
+   if(!permitido(type))type='common';
    if(!discard())return;if(currentType==='addons'&&addonDirty&&type!=='addons'){if(!confirm('Há alterações não salvas nos adicionais. Deseja descartá-las?'))return;$('pc-addons-frame').contentWindow.location.reload();addonDirty=false;}dirty=false;currentType=type;
    $('pc-editor').hidden=type!=='pizza';$('pc-common-tabs').hidden=type!=='common';
    if(type==='common')switchCommonTab(document.querySelector('[data-common-tab][aria-selected="true"]')?.dataset.commonTab||'new');
@@ -210,6 +219,7 @@ window.pizzasCadastro = (() => {
      $('pc-addons-frame').removeAttribute('src');$('pc-rules-frame').removeAttribute('src');addonDirty=false;dirty=false;editor=null;pendingProduct=null;
      for(const id of ['pc-size-form','pc-flavor-form','pc-borda-form','pc-adicional-form','pc-line-form']){$(id).replaceChildren();$(id).hidden=true;}data=null;key='';$('pc-key').value='';$('pc-load').hidden=false;if(!window.AdminSession?.enabled){$('pc-key').closest('label').hidden=false;$('pc-key-help').hidden=false;}$('pc-content').disabled=true;renderList([]);}
    account=String(a);segment=s;
+   if($('pc-regras-negocio'))$('pc-regras-negocio').href='../onboarding.html?avancado=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment);
    $('pc-type-addons').onclick=()=>choose('addons');$('pc-type-common').onclick=()=>choose('common');$('pc-type-pizza').onclick=()=>choose('pizza');
    $('pc-load').onclick=()=>{if(!discard())return;run(async()=>{key=$('pc-key').value.trim();if(!key&&!window.AdminSession?.enabled)throw Error('Informe a chave administrativa de pizzas.');data=await request('consultar');dirty=false;render();$('pc-load').hidden=true;$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-status').textContent='Cadastro carregado.';if(pendingProduct){const id=pendingProduct;pendingProduct=null;open(id);}});};
    $('pc-new-line').onclick=()=>editorLine();
@@ -219,6 +229,7 @@ window.pizzasCadastro = (() => {
    for(const b of document.querySelectorAll('[data-pc-section]'))b.onclick=()=>setSection(b.dataset.pcSection);
    $('pc-help-toggle').onclick=()=>CadastroUI.abrirAjuda('pc-help','Cadastro de pizzas',$('pc-help-toggle'));
    if(window.AdminSession?.enabled){$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-load').textContent='Carregar cadastro';AdminSession.ready.then(()=>{if(!data&&!busy)$('pc-load').click();}).catch(()=>{});}
+   if(window.CatalogoContexto)CatalogoContexto.ready.then(context=>{modelo=context.modelo;regras=context.regras;for(const tab of document.querySelectorAll('[data-pc-section]'))tab.hidden=!sectionAllowed(tab.dataset.pcSection);$('pc-type-pizza').hidden=!permitido('pizza');$('pc-type-addons').hidden=!permitido('addons');choose(permitido(currentType)?currentType:'common');}).catch(()=>{$('pc-type-pizza').hidden=true;$('pc-type-addons').hidden=true;});
    choose(new URLSearchParams(location.search).get('tipo')==='pizza'?'pizza':'common');
  }
  window.addEventListener('message',async e=>{

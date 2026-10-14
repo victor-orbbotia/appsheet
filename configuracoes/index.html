@@ -40,6 +40,7 @@
             <p class="text-sm text-slate-500">Gerencie a operação dos robôs de IA para a sua conta.</p>
         </div>
 
+        <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><h2 class="text-lg font-bold">Configurações avançadas do catálogo</h2><p>Reveja os conjuntos de regras e os recursos escolhidos na configuração inicial. Os cadastros existentes só mudam após sua revisão.</p><a id="link-regras-catalogo" href="../onboarding.html?avancado=1">Configurar regras do negócio</a></section>
         <!-- Card de Status do Agente -->
         <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <div class="flex items-center justify-between">
@@ -101,6 +102,7 @@
         }
 
         function iniciarApp() {
+            document.getElementById('link-regras-catalogo').href = '../onboarding.html?avancado=1&account_id=' + encodeURIComponent(globalAccountId);
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;

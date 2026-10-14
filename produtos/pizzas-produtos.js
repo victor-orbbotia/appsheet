@@ -11,6 +11,7 @@ window.pizzasCadastro = (() => {
  const errors={linha_com_sabores:'Este agrupamento ainda tem sabores vinculados. Mova os sabores antes de excluir.',linha_com_vinculos:'Este agrupamento ainda possui conjuntos exclusivos. Revise o alcance dos conjuntos antes de excluir.',linha_indisponivel:'Selecione um agrupamento disponível neste estabelecimento.',limite_bordas_incompativel:'O limite total de bordas é menor que as escolhas obrigatórias. Revise os limites dos conjuntos.',versao_catalogo_divergente:'O cadastro mudou em outra sessão. Recarregue e confira antes de salvar.',categoria_padrao_protegida:'Pizzas é uma categoria padrão. Seu nome e sua existência são protegidos.',categoria_com_vinculos:'Esta categoria ainda tem produtos ou configurações vinculadas. Remova ou transfira esses vínculos antes de excluir.',tamanho_com_sabores:'Este tamanho ainda está disponível em sabores. Edite os sabores e retire a disponibilidade antes de excluir.',tamanho_duplicado:'Já existe um tamanho com esse nome.',precos_obrigatorios:'Informe ao menos um tamanho disponível e seu preço.',vinculo_explicito_necessario:'Há uma variação antiga com esse nome. Confira os vínculos existentes antes de criar outra.',grupo_obrigatorio_impossivel:'A escolha obrigatória precisa de opções suficientes. Cadastre as opções com mínimo zero e depois ajuste a obrigatoriedade.',acesso_negado:'Confira o acesso administrativo deste estabelecimento.'};
  function notice(text,error=false){CadastroUI.notify(text,error);$('pc-status').textContent=text;}
  function button(text,fn,cls=''){const b=node('button',text,cls);b.type='button';b.onclick=fn;return b;}
+ function appendAction(form,action){const footer=node('div',undefined,'form-actions');footer.append(action);form.append(footer);}
  function field(parent,label,value='',type='text'){const l=node('label',label),i=node('input');i.type=type;i.value=value??'';if(type==='number'){i.min='0';i.step='0.01';}l.append(i);parent.append(l);return i;}
  function checkbox(parent,label,value=false){const l=node('label'),i=node('input');i.type='checkbox';i.checked=value;l.append(i,document.createTextNode(label));parent.append(l);return i;}
  function select(parent,label,choices,value){const l=node('label',label),s=node('select');for(const [v,t] of choices)s.add(new Option(t,v));if(value!==undefined)s.value=value;l.append(s);parent.append(l);return s;}
@@ -64,7 +65,7 @@ window.pizzasCadastro = (() => {
    const division=select(rules,'Como dividir?',[['iguais','Partes iguais'],['personalizada','Cliente escolhe proporções de 5% em 5%']],t.divisao||'iguais');
    const example=node('p');rules.append(example);function explain(){example.textContent=formula.value==='maior'?'Ex.: sabores de R$30 e R$50 → R$50.':formula.value==='media'?'Ex.: sabores de R$30 e R$50 → R$40.':'Ex.: 25% de R$30 + 75% de R$50 → R$45.';}formula.onchange=explain;explain();
    rules.hidden=!divide.checked;divide.onchange=()=>{rules.hidden=!divide.checked;};
-   f.append(button('Salvar tamanho',()=>{if(!name.value.trim())return notice('Informe o nome do tamanho.',true);if(Number(max.value)<Number(min.value))return notice('O máximo precisa ser igual ou maior que o mínimo.',true);save('salvar_tamanho',{id:t.id,max_bordas:null,nome:name.value.trim(),fatias:slices.value||null,diametro:diameter.value||null,ativo:active.checked,permite_dividir:divide.checked,minimo:Number(min.value),maximo:Number(max.value),formula:formula.value,divisao:division.value});},'primary'));
+   appendAction(f,button('Salvar tamanho',()=>{if(!name.value.trim())return notice('Informe o nome do tamanho.',true);if(Number(max.value)<Number(min.value))return notice('O máximo precisa ser igual ou maior que o mínimo.',true);save('salvar_tamanho',{id:t.id,max_bordas:null,nome:name.value.trim(),fatias:slices.value||null,diametro:diameter.value||null,ativo:active.checked,permite_dividir:divide.checked,minimo:Number(min.value),maximo:Number(max.value),formula:formula.value,divisao:division.value});},'primary'));
  }
  function editorFlavor(p={}){
    if(!discard())return;dirty=false;editor=()=>editorFlavor(p);const f=formSlot('pc-flavor-form');f.append(node('h3',p.id?'Editar sabor':'Novo sabor'));
@@ -80,7 +81,7 @@ window.pizzasCadastro = (() => {
    if(!allowed.length)f.append(node('p','Cadastre primeiro um tamanho na seção acima.'));
    const unmatched=variations(p).filter(v=>v.ativo&&!v.pizza_tamanho_id);
    if(unmatched.length)f.append(node('p','Variações antigas preservadas: '+unmatched.map(v=>v.nome).join(', ')+'. Confira o cadastro anterior ou a limpeza de testes antes de substituí-las.'));
-   f.append(button('Salvar sabor e preços',()=>{
+   appendAction(f,button('Salvar sabor e preços',()=>{
      if(!name.value.trim())return notice('Informe o nome do sabor.',true);
      if(!entries.some(e=>e.available.checked))return notice('Selecione ao menos um tamanho e informe o preço.',true);
      if(entries.some(e=>e.available.checked&&!/^\d+(\.\d{1,2})?$/.test(e.price.value)))return notice('Preencha o preço de cada tamanho disponível com até duas casas decimais.',true);
@@ -91,7 +92,7 @@ window.pizzasCadastro = (() => {
    if(!discard())return;editor=()=>editorLine(line);const f=formSlot('pc-line-form');
    f.append(node('h3',line.id?'Editar agrupamento':'Novo agrupamento'));const name=field(f,'Nome do agrupamento',line.nome||'');
    f.append(node('p','Sabores do mesmo agrupamento podem combinar entre si.'));
-   f.append(button('Salvar agrupamento',()=>{if(!name.value.trim())return notice('Informe o nome do agrupamento.',true);save('salvar_linha',{id:line.id,nome:name.value.trim(),ativo:true});},'primary'));
+   appendAction(f,button('Salvar agrupamento',()=>{if(!name.value.trim())return notice('Informe o nome do agrupamento.',true);save('salvar_linha',{id:line.id,nome:name.value.trim(),ativo:true});},'primary'));
  }
  function renderLines(){
    const mount=$('pc-line-list');mount.replaceChildren();
@@ -129,17 +130,18 @@ window.pizzasCadastro = (() => {
    const scopeLines=node('fieldset');scopeLines.append(node('legend','Onde oferecer este conjunto?'));
    const lineChecks=lines().map(l=>({id:l.id,input:checkbox(scopeLines,l.nome,!g.id||(data.linha_grupos||[]).some(x=>x.grupo_id===g.id&&x.linha_id===l.id))}));
    scopeLines.append(node('p','Todos começam marcados em um conjunto novo. Se desmarcar todos, este conjunto não aparecerá em nenhum agrupamento.'));f.append(scopeLines);
-   f.append(button('Salvar conjunto',()=>save('salvar_grupo',{id:g.id,linhas_ids:lineChecks.filter(x=>x.input.checked).map(x=>x.id),nome:name.value.trim(),min_selecoes:0,max_selecoes:2147483647,ativo:true,uso_pizza:kind,escopo_pizza:scope.value,cobranca_pizza:charge.value}),'primary'));
+   appendAction(f,button('Salvar conjunto',()=>save('salvar_grupo',{id:g.id,linhas_ids:lineChecks.filter(x=>x.input.checked).map(x=>x.id),nome:name.value.trim(),min_selecoes:0,max_selecoes:2147483647,ativo:true,uso_pizza:kind,escopo_pizza:scope.value,cobranca_pizza:charge.value}),'primary'));
  }
  function editorOption(kind,g,o={}){
    if(!discard())return;dirty=false;const f=formSlot('pc-'+kind+'-form');f.append(node('h3',(o.id?'Editar opção de ':'Nova opção de ')+g.nome));
    const name=field(f,'Nome',o.nome||''),price=field(f,'Acréscimo padrão (R$)',o.preco_padrao??0,'number');
-   const repeat=kind==='borda'?null:checkbox(f,'Permitir repetir esta opção',o.permite_quantidade||false),max=field(f,kind==='borda'?'Máximo desta borda por pizza':'Quantidade máxima',kind==='borda'?Math.max(2,Number(o.max_quantidade)||2):o.max_quantidade||1,'number');max.step='1';max.min=kind==='borda'?'2':'1';
+   const limits=node('div',undefined,'option-limits');f.append(limits);
+   const repeat=kind==='borda'?null:checkbox(limits,'Permitir repetir esta opção',o.permite_quantidade||false),max=field(limits,kind==='borda'?'Máximo desta borda por pizza':'Quantidade máxima',kind==='borda'?Math.max(2,Number(o.max_quantidade)||2):o.max_quantidade||1,'number');max.step='1';max.min=kind==='borda'?'2':'1';
    const active=checkbox(f,'Opção disponível',o.ativo!==false);active.closest('label').classList.add('pc-availability');f.append(node('p','Preço vazio usa o padrão; zero é gratuito.'));
    const grid=node('div',undefined,'pc-grid');f.append(grid);
    const exceptionChecks=[];
    const prices=sizes().map(t=>{const saved=data.precos_tamanhos.find(x=>x.tamanho_id===t.id&&x.opcao_id===o.id);const box=node('div');grid.append(box);const available=checkbox(box,'Disponível em '+t.nome,!(data.bloqueios_tamanhos||[]).some(x=>x.tamanho_id===t.id&&x.opcao_id===o.id));return {t,available,original:saved?.preco??'',input:field(box,'Acréscimo em '+t.nome,saved?.preco??'','number')};});
-   f.append(button('Salvar opção',()=>{if(!name.value.trim())return notice('Informe o nome da opção.',true);if(kind==='borda'&&(!Number.isInteger(Number(max.value))||Number(max.value)<2))return notice('Informe quantas unidades desta borda podem ser escolhidas (mínimo 2).',true);save(g.id?'salvar_opcao':'salvar_opcao_guiada',{uso_pizza:kind,id:o.id,grupo_id:g.id,nome:name.value.trim(),preco_padrao:price.value,permite_quantidade:kind==='borda'?true:repeat.checked,max_quantidade:kind==='borda'?Number(max.value):repeat.checked?Number(max.value):1,ativo:active.checked,excecoes_sabores:exceptionChecks.filter(x=>x.check.checked!==x.original).map(x=>({produto_id:x.id,remover:x.check.checked})),disponibilidade_tamanhos:prices.map(x=>({tamanho_id:x.t.id,disponivel:x.available.checked})),precos_tamanhos:prices.filter(x=>(x.input.value===''?null:Number(x.input.value))!==(x.original===''?null:Number(x.original))).map(x=>({tamanho_id:x.t.id,preco:x.input.value}))});},'primary'));
+   appendAction(f,button('Salvar opção',()=>{if(!name.value.trim())return notice('Informe o nome da opção.',true);if(kind==='borda'&&(!Number.isInteger(Number(max.value))||Number(max.value)<2))return notice('Informe quantas unidades desta borda podem ser escolhidas (mínimo 2).',true);save(g.id?'salvar_opcao':'salvar_opcao_guiada',{uso_pizza:kind,id:o.id,grupo_id:g.id,nome:name.value.trim(),preco_padrao:price.value,permite_quantidade:kind==='borda'?true:repeat.checked,max_quantidade:kind==='borda'?Number(max.value):repeat.checked?Number(max.value):1,ativo:active.checked,excecoes_sabores:exceptionChecks.filter(x=>x.check.checked!==x.original).map(x=>({produto_id:x.id,remover:x.check.checked})),disponibilidade_tamanhos:prices.map(x=>({tamanho_id:x.t.id,disponivel:x.available.checked})),precos_tamanhos:prices.filter(x=>(x.input.value===''?null:Number(x.input.value))!==(x.original===''?null:Number(x.original))).map(x=>({tamanho_id:x.t.id,preco:x.input.value}))});},'primary'));
 
  }
  function renderGroups(kind){
@@ -153,10 +155,10 @@ window.pizzasCadastro = (() => {
    }
  }
  const stockChoices=[['disponivel','Disponível'],['em_falta','Em falta'],['esgotado','Esgotado']];
- function stockControl(p){const s=node('select');s.setAttribute('aria-label','Estoque de '+p.nome);s.className='pc-stock';s.append(...stockChoices.map(([value,label])=>new Option(label,value)));s.value=meta(p).status_estoque||((meta(p).esgotado)?'esgotado':'disponivel');s.onchange=()=>changeStock(p,s);return s;}
- async function changeStock(p,control){const previous=meta(p).status_estoque||'disponivel';if(!discard()){control.value=previous;return;}control.disabled=true;
+ function stockControl(p){const s=node('select');s.setAttribute('aria-label','Estoque de '+p.nome);s.className='pc-stock';s.append(...stockChoices.map(([value,label])=>new Option(label,value)));s.value=meta(p).status_estoque||((meta(p).esgotado)?'esgotado':'disponivel');s.dataset.stock=s.value;s.onchange=()=>changeStock(p,s);return s;}
+ async function changeStock(p,control){const previous=meta(p).status_estoque||'disponivel';if(!discard()){control.value=previous;return;}control.dataset.stock=control.value;control.disabled=true;
    try{const response=await fetch('https://n8n.orbbotia.com/webhook/produtos-acao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'editar',account_id:account,id:p.id,nome:p.nome,metadata:{status_estoque:control.value,esgotado:control.value!=='disponivel'}})});const result=await response.json();if(!response.ok||['erro','error','pendencia'].includes(result.status||result.resultado?.status))throw Error(result.mensagem||'Não foi possível alterar o estoque.');if(data){data=await request('consultar');render();}if(typeof carregarLista==='function')await carregarLista();notice('Estoque de '+p.nome+' atualizado.');}
-   catch(error){control.value=previous;notice(error.message,true);}finally{control.disabled=false;}
+   catch(error){control.value=previous;notice(error.message,true);}finally{control.dataset.stock=control.value;control.disabled=false;}
  }
  function renderList(source=null){
    if(source!==null)pizzaSource=source;

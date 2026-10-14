@@ -21,7 +21,7 @@
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
     </style>
-<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-transicoes1">
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-formularios1">
 <script src="../assets/admin-ui.js?v=20261013-transicoes1" defer></script>
 </head>
 <body class="p-4 md:p-6 space-y-6">
@@ -48,11 +48,10 @@
                     <h1 class="text-lg font-semibold text-slate-800">Base de Conhecimento (IA / Agentes)</h1>
                     <p id="badge-segmento" class="text-xs font-bold text-indigo-600 uppercase tracking-wide mt-1">Segmento: Carregando...</p>
                 </div>
-                <button type="button" id="btnSalvar" onclick="salvarConhecimento()" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
-                    Salvar Informações
-                </button>
+                <button type="button" id="knowledge-help-toggle" class="help-control" aria-haspopup="dialog" onclick="CadastroUI.abrirAjuda('knowledge-help','Base de conhecimento',this)">ℹ️ Como funciona?</button>
             </div>
 
+<div id="knowledge-help" hidden><p>Use esta base para orientar o agente sobre o estabelecimento: horários, localização, serviços, dúvidas frequentes e orientações gerais.</p><p>Produtos, preços, bordas, adicionais e sugestões de venda devem ser configurados no catálogo. A base não substitui o cadastro nem o estado real dos pedidos.</p><p>O tempo de espera é uma estimativa geral em minutos, não uma promessa de horário nem uma contagem regressiva. Deixe vazio se não houver previsão.</p><p>Depois de editar, clique em Salvar informações ao final. O conteúdo fica vinculado ao estabelecimento e ao perfil em uso.</p></div>
             <div class="p-4 md:p-6 space-y-6">
                 <!-- CAMPO TEXTO BASE -->
                 <div>
@@ -80,11 +79,15 @@
                         <span class="text-sm font-medium text-slate-600">minutos</span>
                     </div>
                 </div>
+<div class="form-actions"><button type="button" id="btnSalvar" onclick="salvarConhecimento()" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
+                    Salvar Informações
+                </button></div>
             </div>
         </div>
 
     </div>
 
+    <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
     <script>
         const urlDados = 'https://n8n.orbbotia.com/webhook/conhecimento-dados';
         const urlAcao  = 'https://n8n.orbbotia.com/webhook/conhecimento-acao';

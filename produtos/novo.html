@@ -53,7 +53,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 <link rel="stylesheet" href="pizzas-produtos.css">
-<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-transicoes1">
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-formularios1">
 <script src="../assets/admin-ui.js?v=20261013-transicoes1" defer></script>
 </head>
 
@@ -110,7 +110,7 @@
 <nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="new" aria-selected="true">Adicionar novo</button><button type="button" data-common-tab="list" aria-selected="false">Lista de itens</button></nav>
 <section id="pc-editor" class="pizza-ui" hidden>
 <div class="pc-card"><div class="pc-row section-heading"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" class="help-control" aria-haspopup="dialog">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
-<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e forma de precificação da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> reúna os sabores que podem ser combinados entre si. Exemplo: sabores premium podem formar uma pizza meio a meio apenas com outros sabores do agrupamento Premium.</li><li><strong>Sabores e preços:</strong> defina sabores e informe valores para cada opção de tamanho.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se desejar, limite a oferta a determinados agrupamentos. Exemplo: uma borda especial disponível apenas para pizzas premium.</li><li><strong>Lista de itens:</strong> confira pizzas cadastradas, disponibilidade e estoque.</li></ol><p>Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
+<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e forma de precificação da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> reúna os sabores que podem ser combinados entre si. Exemplo: sabores premium podem formar uma pizza meio a meio apenas com outros sabores do agrupamento Premium.</li><li><strong>Sabores e preços:</strong> defina sabores e informe valores para cada opção de tamanho. Informe apenas os preços dos tamanhos que seu estabelecimento oferece.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se desejar, limite a oferta a determinados agrupamentos. Exemplo: uma borda especial disponível apenas para pizzas premium.</li><li><strong>Lista de itens:</strong> confira pizzas cadastradas, disponibilidade e estoque.</li></ol><p>Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
 <p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" hidden></div></div>
 <fieldset id="pc-content" disabled>
@@ -140,17 +140,7 @@
                     <button type="button" onclick="toggleAjudaProduto()" id="common-help-toggle" class="help-control" aria-haspopup="dialog">ℹ️ Como funciona?</button>
                     </div>
 
-                    <div class="flex gap-2 flex-wrap justify-end">
-                        <button type="button" id="btnExcluir" onclick="excluirProduto()" class="hidden px-3 py-2 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors shadow-sm">
-                            🗑️ Excluir
-                        </button>
-                        <button type="button" onclick="limparFormulario()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
-                            Limpar
-                        </button>
-                        <button type="button" id="btnSalvar" onclick="salvarProduto()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                            Salvar Produto
-                        </button>
-                    </div>
+
                 </div>
 
                 <div id="common-help" hidden class="p-4 text-xs text-slate-600 bg-slate-50 border-b border-slate-200"><p>Cadastre nome, categoria e preço em “Adicionar novo”. Confira os itens em “Lista de itens” e escolha o estoque ali. Categorias e regras especiais ficam no card Adicionais, em “Configurações avançadas”. “Disponível para venda” tira o item do cardápio sem excluí-lo; o estoque informa se o item pode ser pedido agora.</p></div>
@@ -158,7 +148,7 @@
                 <div id="form-produto-wrapper">
                     <form id="formProduto" class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input type="hidden" id="produto_id" value="">
-                        <label class="md:col-span-2 flex items-center justify-between gap-3 p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 cursor-pointer"><span><strong class="block text-sm text-indigo-900">Disponível para venda</strong><small class="text-xs text-indigo-700">Desative para tirar do cardápio sem excluir o cadastro.</small></span><input type="checkbox" id="ativo_produto" checked class="w-5 h-5 accent-indigo-600"></label>
+                        <div class="md:col-span-2"><label class="availability-control"><input type="checkbox" id="ativo_produto" checked><span>Disponível para venda</span></label><p class="text-xs text-slate-500">Desative para tirar do cardápio sem excluir o cadastro.</p></div>
 
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome do Produto <span class="text-rose-500">*</span></label>
@@ -187,7 +177,7 @@
                         <!-- Sessão Preço Único -->
                         <div id="sessao-preco-simples" class="md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Preço Fixo (R$)</label>
-                            <input type="number" id="preco_base" class="input-field max-w-[200px] font-mono font-bold text-emerald-700" placeholder="0.00" step="0.01">
+                            <input type="number" id="preco_base" class="input-field max-w-[200px] font-mono font-bold text-slate-800" placeholder="0.00" step="0.01">
                         </div>
 
                         <!-- Sessão Variações -->
@@ -202,6 +192,17 @@
                             </button>
                         </div>
                     </form>
+                    <div class="form-actions">
+                        <button type="button" id="btnExcluir" data-destructive="true" onclick="excluirProduto()" class="hidden px-3 py-2 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors shadow-sm">
+                            🗑️ Excluir
+                        </button>
+                        <button type="button" onclick="limparFormulario()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+                            Limpar
+                        </button>
+                        <button type="button" id="btnSalvar" onclick="salvarProduto()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                            Salvar Produto
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -262,9 +263,9 @@
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Valor (R$) <span class="text-rose-500">*</span></label>
-                        <input type="number" id="entrega_valor" class="input-field font-mono font-bold text-emerald-700" placeholder="0.00" step="0.01">
+                        <input type="number" id="entrega_valor" class="input-field font-mono font-bold text-slate-800" placeholder="0.00" step="0.01">
                     </div>
-                    <div class="md:col-span-3 flex justify-end mt-2">
+                    <div class="form-actions md:col-span-3">
                         <button type="button" id="btnSalvarEntrega" onclick="adicionarTaxaEntrega()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
                             + Adicionar Taxa
                         </button>
@@ -290,14 +291,14 @@
                 <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-4 items-end">
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Valor estimado para Outros (R$)</label>
-                        <input type="number" id="entrega_outros_valor" class="input-field font-mono font-bold text-emerald-700" placeholder="Ex: 15.00" step="0.01" min="0">
+                        <input type="number" id="entrega_outros_valor" class="input-field font-mono font-bold text-slate-800" placeholder="Ex: 15.00" step="0.01" min="0">
                         <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
                             Se não houver valor salvo, a opção “Outro” não aparece para o cliente.
                             Esta opção é salva junto das demais taxas de entrega.
                         </p>
                         <p id="entrega-outros-status" class="text-[11px] font-semibold text-slate-500 mt-2"></p>
                     </div>
-                    <div class="flex gap-2 flex-wrap md:justify-end">
+                    <div class="form-actions w-full">
                         <button type="button" id="btnRemoverOutros" onclick="removerTaxaOutros()" class="hidden px-4 py-2 text-sm font-bold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors shadow-sm">
                             Remover
                         </button>
@@ -354,8 +355,8 @@
                         💡 Como organizar as sugestões
                     </div>
                     <p>Escolha o tipo de pedido e as categorias que combinam com ele, como bebidas ou sobremesas.</p>
-                    <p>Se mais de uma regra combinar com o pedido, a primeira da lista terá prioridade. Você pode mudar essa ordem a qualquer momento.</p>
-                    <p>As sugestões cadastradas aqui ainda não mudam as ofertas feitas durante o atendimento.</p>
+                    <p>Se mais de uma regra combinar com o pedido, a primeira da lista terá prioridade. Você pode mudar essa ordem a qualquer momento.</p><p>Antes da confirmação final, o agente oferece as categorias disponíveis da regra aplicável uma única vez. Se o cliente aceitar uma categoria, ele consulta e apresenta os itens disponíveis; se recusar, segue sem insistir. Nenhum item é adicionado sem a escolha do cliente.</p>
+                    <p>As regras salvas orientam as sugestões do atendimento, de acordo com o pedido e com as categorias disponíveis.</p>
                 </div>
 
                 <div class="p-5 md:p-6 space-y-6">
@@ -368,7 +369,7 @@
                             </div>
                             <button id="upsell-rule-new" type="button" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">+ Nova regra</button>
                         </div>
-                        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">As sugestões cadastradas aqui ainda não mudam as ofertas feitas durante o atendimento.</p>
+                        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">As regras salvas orientam as sugestões do atendimento, de acordo com o pedido e com as categorias disponíveis.</p>
                         <form id="upsell-rule-form" class="hidden rounded-xl border border-slate-200 bg-white p-4 space-y-4" novalidate>
                             <h4 id="upsell-rule-form-title" class="font-bold text-slate-800">Nova regra</h4>
                             <div class="grid gap-4 md:grid-cols-2">
@@ -380,14 +381,14 @@
                                 <label class="text-sm font-semibold text-slate-700">2ª categoria (opcional)<select id="upsell-rule-offer-2" class="input-field mt-1"></select></label>
                                 <label class="text-sm font-semibold text-slate-700">3ª categoria (opcional)<select id="upsell-rule-offer-3" class="input-field mt-1"></select></label>
                             </div>
-                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input id="upsell-rule-active" type="checkbox" checked>Deixar esta regra pronta para uso</label>
-                            <div class="flex justify-end gap-2"><button id="upsell-rule-cancel" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Cancelar</button><button id="upsell-rule-save" type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Salvar regra</button></div>
+                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input id="upsell-rule-active" type="checkbox" checked>Regra ativa</label>
+                            <div class="form-actions"><button id="upsell-rule-cancel" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Cancelar</button><button id="upsell-rule-save" type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Salvar regra</button></div>
                         </form>
                         <div id="upsell-rules-list" class="space-y-2" aria-live="polite"></div>
                     </section>
 
                     <details hidden class="border-t border-slate-200 pt-5"><summary class="cursor-pointer text-sm font-bold text-slate-800">Configuração anterior</summary>
-                    <div class="pt-4 space-y-4"><p class="text-xs text-slate-500">Ela permanece em uso até a integração das novas regras com o agente.</p>
+                    <div class="pt-4 space-y-4"><p class="text-xs text-slate-500">Configuração anterior, preservada para compatibilidade.</p>
 
                     <!-- Mensagem de Alerta se não houver categorias válidas -->
                     <div id="alerta-sem-categorias" class="hidden p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
@@ -430,7 +431,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1">
+                            <label class="block text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-1">
                                 🍰 2ª categoria
                             </label>
                             <select id="upsell_prioridade_2" class="input-field bg-emerald-50/30 border-emerald-200"></select>
@@ -462,8 +463,8 @@
 
     </div>
 
-    <script src="../assets/cadastro-ui.js?v=20261009-2"></script>
-<script src="pizzas-produtos.js?v=20261009-2"></script>
+    <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
+<script src="pizzas-produtos.js?v=20261013-formularios1"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS
@@ -802,7 +803,7 @@
             if (taxa && Number.isFinite(Number(taxa.valor)) && Number(taxa.valor) >= 0) {
                 input.value = Number(taxa.valor).toFixed(2);
                 status.textContent = `Ativo: clientes fora da lista verão uma taxa estimada de ${formatarMoeda(taxa.valor)}.`;
-                status.className = 'text-[11px] font-semibold text-emerald-700 mt-2';
+                status.className = 'text-[11px] font-semibold text-slate-800 mt-2';
                 btnRemover.classList.remove('hidden');
             } else {
                 input.value = '';
@@ -831,7 +832,7 @@
                 tr.className = `transition-colors hover:bg-slate-50 bg-white`;
                 tr.innerHTML = `
                     <td class="px-4 py-3 font-bold text-sm text-slate-800">${taxa.bairro}</td>
-                    <td class="px-4 py-3 font-mono font-bold text-emerald-700">${formatarMoeda(taxa.valor)}</td>
+                    <td class="px-4 py-3 font-mono font-bold text-slate-800">${formatarMoeda(taxa.valor)}</td>
                     <td class="px-4 py-3 text-right">
                         <button onclick="removerTaxaEntrega(${index})" class="text-rose-600 hover:text-rose-800 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors border border-rose-200 shadow-sm">
                             Excluir
@@ -1004,7 +1005,7 @@
             const campoPreco = document.createElement('input');
             campoPreco.type = 'number'; campoPreco.placeholder = 'Preço (Ex: 26.00)';
             campoPreco.value = preco; campoPreco.step = '0.01';
-            campoPreco.className = 'input-field w-1/3 input-variacao-preco font-mono font-bold text-emerald-700';
+            campoPreco.className = 'input-field w-1/3 input-variacao-preco font-mono font-bold text-slate-800';
             const remover = document.createElement('button');
             remover.type = 'button'; remover.textContent = '✕';
             remover.className = 'text-rose-500 font-bold px-3 py-1.5 hover:bg-rose-100 rounded-lg transition-colors';
@@ -1108,13 +1109,13 @@
 
                 let statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
 
-                const badgeEstoque = `<select aria-label="Estoque do produto" onchange="alterarStatusEstoque('${p.id}', this)" class="text-xs font-semibold px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-700"><option value="disponivel" ${statusEstoque === 'disponivel' ? 'selected' : ''}>Disponível</option><option value="em_falta" ${statusEstoque === 'em_falta' ? 'selected' : ''}>Em falta</option><option value="esgotado" ${statusEstoque === 'esgotado' ? 'selected' : ''}>Esgotado</option></select>`;
+                const badgeEstoque = `<select data-stock="${statusEstoque}" aria-label="Estoque do produto" onchange="alterarStatusEstoque('${p.id}', this)" class="text-xs font-semibold px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-700"><option value="disponivel" ${statusEstoque === 'disponivel' ? 'selected' : ''}>Disponível</option><option value="em_falta" ${statusEstoque === 'em_falta' ? 'selected' : ''}>Em falta</option><option value="esgotado" ${statusEstoque === 'esgotado' ? 'selected' : ''}>Esgotado</option></select>`;
 
-                let precoDisplay = `<span class="font-mono font-bold text-emerald-700">${formatarMoeda(p.preco_base)}</span>`;
+                let precoDisplay = `<span class="font-mono font-bold text-slate-800">${formatarMoeda(p.preco_base)}</span>`;
                 const listaOpcoes = meta?.variacoes || meta?.tamanhos;
 
                 if (meta && (meta.tipo === 'com_variacoes' || meta.tipo === 'com_tamanhos') && Array.isArray(listaOpcoes)) {
-                    let tags = listaOpcoes.map(t => `<span class="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded border border-slate-200 mr-1 mb-1 inline-block">${t.nome}: <span class="font-bold text-emerald-700">${formatarMoeda(t.preco)}</span></span>`).join('');
+                    let tags = listaOpcoes.map(t => `<span class="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded border border-slate-200 mr-1 mb-1 inline-block">${t.nome}: <span class="font-bold text-slate-800">${formatarMoeda(t.preco)}</span></span>`).join('');
                     precoDisplay = `<div class="flex flex-wrap mt-1">${tags}</div>`;
                 }
 
@@ -1156,6 +1157,7 @@
             if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
             const previous = meta.status_estoque || (meta.esgotado ? 'esgotado' : 'disponivel');
             control.disabled = true;
+            control.dataset.stock = control.value;
             const updated = { ...meta, status_estoque: control.value, esgotado: control.value !== 'disponivel' };
             try {
             const response = await fetch(urlAcao, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
@@ -1173,7 +1175,7 @@
             await carregarLista();
             CadastroUI.notify('Estoque atualizado.');
             } catch (error) { control.value = previous; CadastroUI.notify(error.message, true); }
-            finally { control.disabled = false; }
+            finally { control.dataset.stock = control.value; control.disabled = false; }
         }
 
         function editarProduto(id) {

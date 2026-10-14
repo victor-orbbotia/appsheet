@@ -17,7 +17,7 @@
         }
         .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
     </style>
-<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-transicoes1">
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261013-formularios1">
 <script src="../assets/admin-ui.js?v=20261013-transicoes1" defer></script>
 </head>
 <body class="p-4 md:p-6 space-y-6">
@@ -42,20 +42,7 @@
             <div class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
                 <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Profissional</h1>
 
-                <div class="flex gap-2 md:gap-3">
-                    <button type="button" id="btnExcluir" onclick="excluirProfissional()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded transition-colors">
-                        🗑️ Excluir
-                    </button>
-                    <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white rounded transition-colors shadow-sm">
-                        Desativar
-                    </button>
-                    <button type="button" onclick="limparFormulario()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="button" id="btnSalvar" onclick="salvarProfissional()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
-                        Salvar
-                    </button>
-                </div>
+
             </div>
 
             <form id="formProfissional" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -82,6 +69,20 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">WhatsApp <span class="text-blue-600">*</span></label>
                     <input type="text" id="telefone" required class="input-field" placeholder="5585900000000" maxlength="13">
                     <span class="text-[10px] text-slate-400 mt-1 block">Apenas números. Comece com 55 + DDD. Ex: 55119...</span>
+                </div>
+                <div class="form-actions md:col-span-2">
+                    <button type="button" id="btnExcluir" onclick="excluirProfissional()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded transition-colors">
+                        🗑️ Excluir
+                    </button>
+                    <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white rounded transition-colors shadow-sm">
+                        Desativar
+                    </button>
+                    <button type="button" onclick="limparFormulario()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnSalvar" onclick="salvarProfissional()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
+                        Salvar
+                    </button>
                 </div>
             </form>
         </div>

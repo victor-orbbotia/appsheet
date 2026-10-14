@@ -21,43 +21,43 @@ html.orbbotia-admin {
 }
 html.orbbotia-admin body { background:var(--admin-bg)!important; color:var(--admin-text)!important; font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif!important; }
 html.orbbotia-login main { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
-html.orbbotia-admin :is(.cadastro-help-dialog,.intro):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
+html.orbbotia-admin :is(.cadastro-help-dialog,.intro):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
 html.orbbotia-admin .cadastro-help-close { background:var(--admin-raised)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
 html.orbbotia-admin #toggleCircle { background:#edf3fa!important; }
-html.orbbotia-admin :is(th,td):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { border-color:var(--admin-line)!important; color:var(--admin-text)!important; }
+html.orbbotia-admin :is(th,td):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { border-color:var(--admin-line)!important; color:var(--admin-text)!important; }
 html.orbbotia-admin th:not(.pdf-page *,#preview-canvas *) { background:var(--admin-raised)!important; }
 /* :not protege também páginas PDF temporárias fora do preview. */
-html.orbbotia-admin :is(button,input,select,textarea,label,summary):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { font-family:inherit!important; }
-html.orbbotia-admin :is(h1,h2,h3,h4):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-text)!important; line-height:1.25; letter-spacing:-.02em; }
+html.orbbotia-admin :is(button,input,select,textarea,label,summary):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { font-family:inherit!important; }
+html.orbbotia-admin :is(h1,h2,h3,h4):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-text)!important; line-height:1.25; letter-spacing:-.02em; }
 html.orbbotia-admin h1:not(.pdf-page *) { font-size:24px!important; font-weight:750!important; }
 html.orbbotia-admin h2:not(.pdf-page *) { font-size:19px!important; font-weight:700!important; }
 html.orbbotia-admin h3:not(.pdf-page *) { font-size:16px!important; font-weight:700!important; }
-html.orbbotia-admin :is(p,small,.muted,.small,.subtext,.eyebrow,.list-caption,.session-note):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-muted)!important; }
-html.orbbotia-admin :is(.bg-white,.bg-slate-50,.bg-slate-100,.bg-gray-50,.bg-gray-100,.card,.pc-card,.workspace,.panel,.group,.pc-edit,.addon-setup,.group-scope):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
-html.orbbotia-admin :is(.border-slate-100,.border-slate-200,.border-slate-300,.border-gray-200,.border-indigo-100,.border-indigo-200):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { border-color:var(--admin-line)!important; }
-html.orbbotia-admin :is(.text-slate-300,.text-slate-400,.text-slate-500,.text-slate-600,.text-gray-400,.text-gray-500,.text-gray-600):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-muted)!important; }
-html.orbbotia-admin :is(.text-slate-700,.text-slate-800,.text-slate-900,.text-gray-700,.text-gray-800,.text-gray-900,.customer,.money):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-text)!important; }
-html.orbbotia-admin :is(a,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-blue-600,.brand):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-accent)!important; }
-html.orbbotia-admin :is(input:not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) {
+html.orbbotia-admin :is(p,small,.muted,.small,.subtext,.eyebrow,.list-caption,.session-note):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-muted)!important; }
+html.orbbotia-admin :is(.bg-white,.bg-slate-50,.bg-slate-100,.bg-gray-50,.bg-gray-100,.card,.pc-card,.workspace,.panel,.group,.pc-edit,.addon-setup,.group-scope):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
+html.orbbotia-admin :is(.border-slate-100,.border-slate-200,.border-slate-300,.border-gray-200,.border-indigo-100,.border-indigo-200):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { border-color:var(--admin-line)!important; }
+html.orbbotia-admin :is(.text-slate-300,.text-slate-400,.text-slate-500,.text-slate-600,.text-gray-400,.text-gray-500,.text-gray-600):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-muted)!important; }
+html.orbbotia-admin :is(.text-slate-700,.text-slate-800,.text-slate-900,.text-gray-700,.text-gray-800,.text-gray-900,.customer,.money):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-text)!important; }
+html.orbbotia-admin :is(a,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-blue-600,.brand):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-accent)!important; }
+html.orbbotia-admin :where(input:not([type=checkbox]):not([type=radio]):not([type=color]),select,textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) {
   background:var(--admin-field)!important; color:var(--admin-text)!important; border:1px solid var(--admin-line)!important; border-radius:9px; font-size:14px!important; min-height:40px;
 }
 html.orbbotia-admin :is(input,textarea)::placeholder { color:var(--admin-muted)!important; opacity:1; }
 html.orbbotia-admin :is(input[type=checkbox],input[type=radio]) { accent-color:#90aaff; }
-html.orbbotia-admin :is(button,.btn,.pc-link,.link):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { font-weight:650; border-radius:9px; }
-html.orbbotia-admin :is(.btn,.pizza-ui button,.catalog-tabs button,.addon-tabs button,.pc-choice,button.secondary,.link.secondary,button.danger-text):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-raised)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
-html.orbbotia-admin :is(.primary,.btn.primary,button.bg-indigo-600,button.bg-blue-600,.pizza-ui button.primary,#entrar):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-primary)!important; color:#fff!important; border-color:#8da7fb!important; }
-html.orbbotia-admin :is([aria-selected=true],[aria-pressed=true],.pc-choice[aria-pressed=true],.catalog-tabs button[aria-selected=true],.addon-tabs button[aria-selected=true]):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:#344d7a!important; color:#eef3ff!important; border-color:#a6bdff!important; }
-html.orbbotia-admin :is(.bg-indigo-50,.bg-blue-50,.bg-indigo-100,.bg-blue-100,.card-modulo-icon,.status,.scope-badge,.pc-badge,.view-switch):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:#2c4162!important; color:#c9d9ff!important; border-color:#718aaf!important; }
-html.orbbotia-admin :is(.bg-emerald-50,.bg-green-50,.bg-emerald-100,.pc-notice,.status.good):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-good-bg)!important; color:var(--admin-good)!important; border-color:#6fae94!important; }
-html.orbbotia-admin :is(.bg-amber-50,.bg-yellow-50,.notice,.alert,.status.warn,.connection):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-warn-bg)!important; color:var(--admin-warn)!important; border-color:#b69a5c!important; }
-html.orbbotia-admin :is(.text-amber-600,.text-amber-700,.text-amber-800,.payment.warn):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-warn)!important; }
-html.orbbotia-admin :is(.bg-rose-50,.bg-red-50,.pc-error,.notice.error,button.danger,.btn.danger,.danger-text):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-error-bg)!important; color:var(--admin-error)!important; border-color:#b97689!important; }
-html.orbbotia-admin :is(.text-rose-600,.text-rose-700,.text-red-600,.text-red-700):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-error)!important; }
-html.orbbotia-admin :is(.order,.detail-preview,.workspace-head,.orders,.item,.panel-head,.panel details):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { border-color:var(--admin-line)!important; }
+html.orbbotia-admin :is(button,.btn,.pc-link,.link):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { font-weight:650; border-radius:9px; }
+html.orbbotia-admin :is(.btn,.pizza-ui button,.catalog-tabs button,.addon-tabs button,.pc-choice,button.secondary,.link.secondary,button.danger-text):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-raised)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
+html.orbbotia-admin :is(.primary,.btn.primary,button.bg-indigo-600,button.bg-blue-600,.pizza-ui button.primary,#entrar):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-primary)!important; color:#fff!important; border-color:#8da7fb!important; }
+html.orbbotia-admin :is([aria-selected=true],[aria-pressed=true],.pc-choice[aria-pressed=true],.catalog-tabs button[aria-selected=true],.addon-tabs button[aria-selected=true]):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:#344d7a!important; color:#eef3ff!important; border-color:#a6bdff!important; }
+html.orbbotia-admin :is(.bg-indigo-50,.bg-blue-50,.bg-indigo-100,.bg-blue-100,.card-modulo-icon,.status,.scope-badge,.pc-badge,.view-switch):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:#2c4162!important; color:#c9d9ff!important; border-color:#718aaf!important; }
+html.orbbotia-admin :is(.bg-emerald-50,.bg-green-50,.bg-emerald-100,.pc-notice,.status.good):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-good-bg)!important; color:var(--admin-good)!important; border-color:#6fae94!important; }
+html.orbbotia-admin :is(.bg-amber-50,.bg-yellow-50,.notice,.alert,.status.warn,.connection):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-warn-bg)!important; color:var(--admin-warn)!important; border-color:#b69a5c!important; }
+html.orbbotia-admin :is(.text-amber-600,.text-amber-700,.text-amber-800,.payment.warn):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-warn)!important; }
+html.orbbotia-admin :is(.bg-rose-50,.bg-red-50,.pc-error,.notice.error,button.danger,.btn.danger,.danger-text):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-error-bg)!important; color:var(--admin-error)!important; border-color:#b97689!important; }
+html.orbbotia-admin :is(.text-rose-600,.text-rose-700,.text-red-600,.text-red-700):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-error)!important; }
+html.orbbotia-admin :is(.order,.detail-preview,.workspace-head,.orders,.item,.panel-head,.panel details):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { border-color:var(--admin-line)!important; }
 html.orbbotia-admin .order:hover,html.orbbotia-admin .order.selected { background:var(--admin-raised)!important; }
 html.orbbotia-admin .view-switch button[aria-pressed=false],html.orbbotia-admin .tab[aria-selected=false] { color:var(--admin-muted)!important; }
 html.orbbotia-admin .count { background:#364b65!important; color:var(--admin-text)!important; }
-html.orbbotia-admin :is(.check,.option,.destination-list label,.addon-help):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-panel)!important; border-color:var(--admin-line)!important; color:var(--admin-text)!important; }
+html.orbbotia-admin :is(.check,.option,.destination-list label,.addon-help):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-panel)!important; border-color:var(--admin-line)!important; color:var(--admin-text)!important; }
 html.orbbotia-admin :is(button,a,input,select,textarea,summary):focus-visible { outline:3px solid #b6caff!important; outline-offset:3px; }
 html.orbbotia-admin #admin-session-bar { display:flex!important; align-items:center!important; flex-wrap:nowrap!important; width:auto!important; min-width:0; max-width:100%!important; margin:0!important; padding:0!important; gap:8px!important; border:0; background:transparent!important; color:var(--admin-text)!important; font:12px/1.4 system-ui!important; border-radius:0!important; }
 html.orbbotia-admin #admin-session-bar>span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:320px; color:var(--admin-muted); }
@@ -65,7 +65,7 @@ html.orbbotia-admin #admin-session-bar button { display:inline-flex!important; a
 html.orbbotia-admin #admin-session-bar :is(#admin-refresh,#refresh-catalog,#btnAtualizar) { width:36px!important; min-width:36px!important; padding:0!important; font-size:23px!important; gap:0!important; }
 html.orbbotia-admin #admin-session-bar :is(#admin-refresh,#refresh-catalog,#btnAtualizar)>span { display:block!important; margin:0!important; line-height:1!important; transform:translateY(-1px); }
 html.orbbotia-admin #admin-session-bar :is(#refresh-catalog,#btnAtualizar) span:not([aria-hidden]),html.orbbotia-admin #admin-session-bar .refresh-label { display:none!important; }
-html.orbbotia-admin :is(.help-control,.addon-help-button):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { font:650 12px/1.3 system-ui!important; color:var(--admin-accent)!important; background:#2c4162!important; border-color:#718aaf!important; }
+html.orbbotia-admin :is(.help-control,.addon-help-button):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { font:650 12px/1.3 system-ui!important; color:var(--admin-accent)!important; background:#2c4162!important; border-color:#718aaf!important; }
 html.orbbotia-admin #cadastro-toast[data-error=false] { background:var(--admin-good-bg)!important; color:var(--admin-good)!important; }
 html.orbbotia-admin #cadastro-toast[data-error=true] { background:var(--admin-error-bg)!important; color:var(--admin-error)!important; }
 html.orbbotia-admin .pdf-page { color-scheme:light; color:var(--color-text); font-family:var(--font-body); }
@@ -85,9 +85,9 @@ html.orbbotia-admin #admin-quick-nav a[aria-current=page] { background:#344d7a; 
 html.orbbotia-admin .admin-shell-active :is(section[id],form[id],h1,h2,.pc-section) { scroll-margin-top:calc(var(--admin-shell-height,108px) + 20px); }
 html.orbbotia-admin .admin-studio-shell { box-sizing:border-box; padding-top:var(--admin-shell-height,108px)!important; }
 /* Tailwind gera classes distintas quando há opacidade: tratar o fundo, não só o texto. */
-html.orbbotia-admin :is([class^="bg-slate-50/"],[class*=" bg-slate-50/"],[class^="bg-slate-100/"],[class*=" bg-slate-100/"],[class^="bg-gray-50/"],[class*=" bg-gray-50/"],.glass-panel,.top,.pc-availability,.pc-price):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
-html.orbbotia-admin :is([class^="bg-indigo-50/"],[class*=" bg-indigo-50/"],[class^="bg-blue-50/"],[class*=" bg-blue-50/"]):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { background:#2c4162!important; color:var(--admin-text)!important; border-color:#718aaf!important; }
-html.orbbotia-admin :is(.pizza-ui,.pc-choice-copy,.text-indigo-900):not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *) { color:var(--admin-text)!important; }
+html.orbbotia-admin :is([class^="bg-slate-50/"],[class*=" bg-slate-50/"],[class^="bg-slate-100/"],[class*=" bg-slate-100/"],[class^="bg-gray-50/"],[class*=" bg-gray-50/"],.glass-panel,.top,.pc-availability,.pc-price):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:var(--admin-panel)!important; color:var(--admin-text)!important; border-color:var(--admin-line)!important; }
+html.orbbotia-admin :is([class^="bg-indigo-50/"],[class*=" bg-indigo-50/"],[class^="bg-blue-50/"],[class*=" bg-blue-50/"]):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { background:#2c4162!important; color:var(--admin-text)!important; border-color:#718aaf!important; }
+html.orbbotia-admin :is(.pizza-ui,.pc-choice-copy,.text-indigo-900):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-text)!important; }
 @media print { html.orbbotia-admin #admin-shell { display:none!important; } html.orbbotia-admin body.admin-shell-active { padding-top:0!important; } }
 @media(max-width:600px) {
  html.orbbotia-admin #admin-shell { padding:0 12px; }
@@ -122,3 +122,28 @@ html.orbbotia-admin.admin-view-ready #area-loading:not(.hidden) { flex:none; min
  html.orbbotia-admin:is(.admin-preparando,.admin-navegando)::after { background:var(--admin-accent); opacity:.65; }
 }
 @media print { html.orbbotia-admin::before,html.orbbotia-admin::after { display:none!important; } }
+
+/* Padrão de conclusão de cadastro, sem alterar os handlers de gravação. */
+html.orbbotia-admin .help-control { display:inline-flex; align-items:center; justify-content:center; gap:4px; flex:none; min-height:32px; padding:6px 10px; border:1px solid #718aaf; cursor:pointer; }
+html.orbbotia-admin .form-actions { display:flex; grid-column:1/-1; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; margin-top:18px; padding:16px 20px; border-top:1px solid var(--admin-line); }
+html.orbbotia-admin .form-actions button { min-height:40px; padding:9px 16px; font-size:14px!important; }
+html.orbbotia-admin .form-actions button:last-child:not(.secondary,.danger-text,.danger) { background:var(--admin-primary)!important; color:#fff!important; border:1px solid #8da7fb!important; }
+html.orbbotia-admin .form-actions button[data-destructive=true] { margin-right:auto; }
+html.orbbotia-admin .pizza-ui .form-actions { padding:16px 0 0; }
+html.orbbotia-admin .option.grid { align-items:end; }
+html.orbbotia-admin .option-limits { display:flex; align-items:flex-end; gap:18px; flex-wrap:wrap; }
+html.orbbotia-admin .grid>.option-limits { grid-column:1/-1; }
+html.orbbotia-admin .option-limits>label,html.orbbotia-admin .repeat-control { display:inline-flex!important; align-items:center; gap:8px; min-height:40px; margin:0!important; }
+html.orbbotia-admin .option-limits>div,html.orbbotia-admin .option-limits>label:has(input[type=number]) { flex:0 1 180px; display:block!important; }
+html.orbbotia-admin .option-limits input[type=checkbox] { flex:none; width:auto; margin:0; }
+html.orbbotia-admin :is(.availability-control,.pizza-ui .pc-availability) { display:inline-flex!important; align-items:center!important; justify-content:flex-start!important; width:fit-content!important; gap:10px!important; margin:10px 0!important; padding:0!important; background:transparent!important; border:0!important; color:var(--admin-text)!important; font-size:14px; font-weight:650; }
+html.orbbotia-admin .availability-control input { order:0; flex:none; }
+html.orbbotia-admin select[data-stock=disponivel] { background:var(--admin-good-bg)!important; color:var(--admin-good)!important; border-color:#6fae94!important; }
+html.orbbotia-admin select[data-stock=em_falta] { background:#493323!important; color:#ffd0a3!important; border-color:#d39a60!important; }
+html.orbbotia-admin select[data-stock=esgotado] { background:#442b2b!important; color:#ffc2c2!important; border-color:#d28686!important; }
+html.orbbotia-admin select[data-stock] option[value=disponivel] { background:var(--admin-good-bg); color:var(--admin-good); }
+html.orbbotia-admin select[data-stock] option[value=em_falta] { background:#493323; color:#ffd0a3; }
+html.orbbotia-admin select[data-stock] option[value=esgotado] { background:#442b2b; color:#ffc2c2; }
+html.orbbotia-admin .pizza-ui .pc-price-tag { background:var(--admin-raised); color:var(--admin-text); border-color:var(--admin-line); }
+html.orbbotia-admin .cadastro-help-dialog { top:50%!important; left:50%!important; right:auto!important; bottom:auto!important; transform:translate(-50%,-50%)!important; margin:0!important; }
+@media(max-width:600px) { html.orbbotia-admin .form-actions { padding:14px; gap:8px; } html.orbbotia-admin .form-actions button { flex:0 1 auto; } }

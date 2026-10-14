@@ -271,7 +271,7 @@ window.pizzasCadastro = (() => {
    $('pc-addons').hidden=type!=='addons';
    if(type==='pizza')setSection(activeSection);
    for(const name of ['common','pizza','addons'])$('pc-type-'+name).setAttribute('aria-pressed',String(name===type));
-   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src='./personalizacoes.html?modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment);
+   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src='./personalizacoes.html?v=20261014-adicionais-modelo1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment);
    if(type==='addons')window.switchAddonTab?.(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab||'new');
  }
  function open(id){choose('pizza');if($('pc-editor').hidden)return;setSection('flavors');pendingProduct=id||null;if(!data){notice('Carregue o cadastro para continuar.');$('pc-load').focus();return;}if(id){const p=flavors().find(p=>p.id===id);if(p)editorFlavor(p);else notice('Recarregue: este sabor não está disponível.',true);}else editorFlavor();}

@@ -4,6 +4,7 @@ window.AdminSession = (() => {
  const config=window.ORBBOTIA_ADMIN||{},enabled=config.enabled!==false;
  const scriptUrl=new URL(document.currentScript.src),root=new URL('../',scriptUrl);
  const loginUrl=new URL('acesso.html',root),loginPage=location.pathname===loginUrl.pathname;
+ const embeddedPage=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
  const routes=new Set(['admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot']);
  const originalFetch=window.fetch.bind(window);
  let client=null,session=null,redirecting=false,navigation=null;
@@ -11,7 +12,7 @@ window.AdminSession = (() => {
  function goLogin(){if(redirecting)return;redirecting=true;loginUrl.searchParams.set('retorno',location.pathname+location.search);location.replace(loginUrl.href);}
  function safeReturn(value){try{const u=new URL(value||'index.html',root);if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname)return u.href;}catch{}return new URL('index.html',root).href;}
  function banner(message){let bar=document.getElementById('admin-session-bar');if(!bar){bar=document.createElement('aside');bar.id='admin-session-bar';bar.setAttribute('aria-label','Sua sessão');bar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:#eef2ff;color:#312e81;font:14px system-ui;border-radius:12px;margin:8px;';document.body.prepend(bar);}bar.replaceChildren();const text=document.createElement('span');text.textContent=message;bar.append(text);return bar;}
- function showSession(){const account=new URLSearchParams(location.search).get('account_id');const bar=banner(`${session.user.email||'Sessão ativa'}${account?' · Estabelecimento '+account:''}`);const button=document.createElement('button');button.type='button';button.textContent='Sair';button.style.cssText='min-height:44px;padding:8px 16px;margin-left:auto;border:1px solid #c7d2fe;border-radius:8px;background:white;color:#312e81;cursor:pointer';button.onclick=async()=>{button.disabled=true;await client.auth.signOut({scope:'local'});goLogin();};bar.append(button);}
+ function showSession(){if(embeddedPage)return;const account=new URLSearchParams(location.search).get('account_id');const bar=banner(`${session.user.email||'Sessão ativa'}${account?' · Estabelecimento '+account:''}`);const button=document.createElement('button');button.type='button';button.textContent='Sair';button.style.cssText='min-height:44px;padding:8px 16px;margin-left:auto;border:1px solid #c7d2fe;border-radius:8px;background:white;color:#312e81;cursor:pointer';button.onclick=async()=>{button.disabled=true;await client.auth.signOut({scope:'local'});goLogin();};bar.append(button);}
  async function validarConta(account){
   const response=await originalFetch(config.apiOrigin+'/webhook/admin-contas',{headers:{Authorization:'Bearer '+session.access_token},redirect:'error'});
   if(!response.ok)throw Error('conta_nao_confirmada');

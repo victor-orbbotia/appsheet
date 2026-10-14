@@ -147,3 +147,9 @@ html.orbbotia-admin select[data-stock] option[value=esgotado] { background:#442b
 html.orbbotia-admin .pizza-ui .pc-price-tag { background:var(--admin-raised); color:var(--admin-text); border-color:var(--admin-line); }
 html.orbbotia-admin .cadastro-help-dialog { top:50%!important; left:50%!important; right:auto!important; bottom:auto!important; transform:translate(-50%,-50%)!important; margin:0!important; }
 @media(max-width:600px) { html.orbbotia-admin .form-actions { padding:14px; gap:8px; } html.orbbotia-admin .form-actions button { flex:0 1 auto; } }
+
+/* Cadastros incorporados usam a sessão do cabeçalho principal, sem duplicar controles. */
+html.orbbotia-admin.admin-embedded :is(#admin-session-bar,#admin-shell) { display:none!important; }
+html.orbbotia-admin :is(summary,.advanced-summary,.pc-choice-copy strong):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-text)!important; }
+html.orbbotia-admin .group>summary { background:var(--admin-raised); border-radius:8px; padding:12px; }
+html.orbbotia-admin .group>summary::before,html.orbbotia-admin .advanced-summary::before { color:var(--admin-accent)!important; }

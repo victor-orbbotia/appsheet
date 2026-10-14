@@ -14,6 +14,7 @@ window.ContextoConta = (() => {
     document.head.append(style);
   }
   document.documentElement.classList.add('orbbotia-admin');
+  if(params.get('embedded')==='1'&&window.parent!==window)document.documentElement.classList.add('admin-embedded');
   if(loginPage)document.documentElement.classList.add('orbbotia-login');
   function definir(account){if(!valido(account))return false;conta=String(account);if(!loginPage)document.documentElement.classList.add('admin-preparando');resolver(conta);return true;}
   function mensagemDoPainel(event){

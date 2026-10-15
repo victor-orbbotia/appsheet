@@ -5,7 +5,7 @@ window.AdminSession = (() => {
  const scriptUrl=new URL(document.currentScript.src),root=new URL('../',scriptUrl);
  const loginUrl=new URL('acesso.html',root),loginPage=location.pathname===loginUrl.pathname;
  const embeddedPage=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
- const routes=new Set(['admin-onboarding','admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot']);
+ const routes=new Set(['dashboard-dados','admin-onboarding','admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot']);
  const originalFetch=window.fetch.bind(window);
  let client=null,session=null,redirecting=false,navigation=null;
  const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
@@ -13,14 +13,20 @@ window.AdminSession = (() => {
  function safeReturn(value){try{const u=new URL(value||'index.html',root);if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname)return u.href;}catch{}return new URL('index.html',root).href;}
  function banner(message){let bar=document.getElementById('admin-session-bar');if(!bar){bar=document.createElement('aside');bar.id='admin-session-bar';bar.setAttribute('aria-label','Sua sessão');bar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:#eef2ff;color:#312e81;font:14px system-ui;border-radius:12px;margin:8px;';document.body.prepend(bar);}bar.replaceChildren();const text=document.createElement('span');text.textContent=message;bar.append(text);return bar;}
  function showSession(){if(embeddedPage)return;const account=new URLSearchParams(location.search).get('account_id');const bar=banner(`${session.user.email||'Sessão ativa'}${account?' · Estabelecimento '+account:''}`);const button=document.createElement('button');button.type='button';button.textContent='Sair';button.style.cssText='min-height:44px;padding:8px 16px;margin-left:auto;border:1px solid #c7d2fe;border-radius:8px;background:white;color:#312e81;cursor:pointer';button.onclick=async()=>{button.disabled=true;await client.auth.signOut({scope:'local'});goLogin();};bar.append(button);}
+ async function lerAcesso(url){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+  try{const response=await originalFetch(url,{headers:{Authorization:'Bearer '+session.access_token},redirect:'error',signal:controller.signal});
+   if(response.status===401||response.status===403)throw Error('conta_nao_autorizada');
+   if(!response.ok)throw Error('acesso_indisponivel');
+   return await response.json();
+  }catch(error){if(error.message==='conta_nao_autorizada')throw error;throw Error('Não foi possível verificar seu acesso agora. Tente novamente.');}
+  finally{clearTimeout(timer);}
+ }
  async function validarConta(account){
-  const response=await originalFetch(config.apiOrigin+'/webhook/admin-contas',{headers:{Authorization:'Bearer '+session.access_token},redirect:'error'});
-  if(!response.ok)throw Error('conta_nao_confirmada');
-  const data=await response.json();
-  if(!Array.isArray(data.contas)||!data.contas.some(a=>String(a.account_id)===account))throw Error('conta_nao_autorizada');
-  const empresaResponse=await originalFetch(config.apiOrigin+'/webhook/empresa-config?account_id='+encodeURIComponent(account),{headers:{Authorization:'Bearer '+session.access_token},redirect:'error'});
-  if(!empresaResponse.ok)throw Error('conta_nao_confirmada');
-  const raw=await empresaResponse.json();const empresa=Array.isArray(raw)?raw[0]:raw;
+  const data=await lerAcesso(config.apiOrigin+'/webhook/admin-contas');
+  if(!Array.isArray(data?.contas))throw Error('Não foi possível verificar seu acesso agora. Tente novamente.');
+  if(!data.contas.some(a=>String(a.account_id)===account))throw Error('conta_nao_autorizada');
+  const raw=await lerAcesso(config.apiOrigin+'/webhook/empresa-config?account_id='+encodeURIComponent(account));const empresa=Array.isArray(raw)?raw[0]:raw;
   if(!empresa||String(empresa.account_id)!==account)throw Error('conta_inexistente');
   let modulos=empresa.modulos;
   if(typeof modulos==='string'){try{modulos=JSON.parse(modulos);}catch{modulos={};}}
@@ -41,7 +47,7 @@ window.AdminSession = (() => {
   if(!loginPage){if(!session){goLogin();throw Error('Entre para continuar.');}await validarConta(account);await domReady;showSession();document.documentElement.classList.remove('admin-pending');window.ContextoConta.aprovar(account);window.dispatchEvent(new Event('admin-pronto'));}
   return client;
  })();
- ready.catch(async error=>{await domReady;if(loginPage)return;window.ContextoConta.bloquear();if(error.message.startsWith('conta_'))return;document.documentElement.classList.remove('admin-pending');const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Acesso administrativo';const p=document.createElement('p');p.textContent=error.message;box.append(h,p);document.body.replaceChildren(box);});
+ ready.catch(async error=>{await domReady;if(loginPage)return;window.ContextoConta.bloquear();if(error.message.startsWith('conta_')||redirecting)return;const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Não foi possível abrir o sistema';const p=document.createElement('p');p.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.onclick=()=>location.reload();box.append(h,p,retry);document.body.replaceChildren(box);document.documentElement.classList.remove('admin-pending');document.documentElement.classList.remove('conta-pendente');});
  window.fetch=async(input,init)=>{
   const url=new URL(input instanceof Request?input.url:String(input),location.href);
   const administrative=/^\/webhook(?:-test)?\//.test(url.pathname)&&routes.has(url.pathname.split('/').pop());

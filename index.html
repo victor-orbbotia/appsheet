@@ -1,214 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8">
-<script src="assets/contexto-conta.js?v=20261013-contraste2"></script>
-<script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script><script src="assets/admin-session.js?v=20261014-onboarding1"></script>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Início · Proposta em avaliação · Orbbotia</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .home-preview { display: grid; gap: 20px; padding-bottom: 32px; }
-        .home-intro { padding: 24px; border: 1px solid var(--admin-line); border-radius: 16px; background: var(--admin-panel); }
-        .home-label { display: inline-flex; padding: 5px 10px; border: 1px solid #b69a5c; border-radius: 999px; background: var(--admin-warn-bg); color: var(--admin-warn); font-size: 12px; font-weight: 650; }
-        .home-intro h2 { margin: 16px 0 10px; }
-        .home-intro p { max-width: 760px; margin: 0; }
-        .home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-        .home-placeholder { padding: 24px; border: 1px dashed var(--admin-line); border-radius: 16px; background: var(--admin-panel); }
-        .home-placeholder h3 { margin: 12px 0 8px; }
-        .home-placeholder p { margin: 0; }
-        .home-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--admin-raised); color: var(--admin-accent); font-size: 21px; }
-        .home-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
-        .home-examples span { padding: 6px 9px; border: 1px solid var(--admin-line); border-radius: 7px; color: var(--admin-muted); font-size: 12px; }
-        .home-note { font-size: 13px; margin: 0; }
-        #perfil-negocio[hidden], .home-preview[hidden], .home-preview.hidden { display: none !important; }
-        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @media (max-width: 640px) { .home-grid { grid-template-columns: 1fr; } .home-intro, .home-placeholder { padding: 20px; } }
-    </style>
-<link rel="stylesheet" href="assets/admin-ui.css?v=20261013-contraste2">
-<script src="assets/admin-ui.js?v=20261014-onboarding1" defer></script>
-<script src="assets/onboarding-entry.js?v=20261014-onboarding1" defer></script>
+ <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Visão geral · Orbbotia</title>
+ <script src="assets/contexto-conta.js?v=20261013-contraste2"></script>
+ <script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script>
+ <script src="assets/admin-session.js?v=20261015-dashboard1"></script>
+ <link rel="stylesheet" href="assets/admin-ui.css?v=20261013-contraste2">
+ <link rel="stylesheet" href="assets/dashboard.css?v=20261015-dashboard1">
+ <script src="assets/admin-ui.js?v=20261014-onboarding1" defer></script>
+ <script src="assets/onboarding-entry.js?v=20261014-onboarding1" defer></script>
+ <script src="assets/dashboard-core.js?v=20261015-dashboard1" defer></script>
+ <script src="assets/dashboard.js?v=20261015-dashboard1" defer></script>
 </head>
-
-<body class="flex flex-col h-screen p-4 md:p-8">
-
-    <!-- CABEÇALHO ORBBOTIA -->
-    <header id="main-header"
-        class="max-w-5xl mx-auto w-full flex flex-wrap gap-4 justify-between items-center mb-8 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hidden fade-in">
-        <div class="flex items-center gap-3">
-            <div class="w-11 h-11 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xl font-black shadow-md shadow-indigo-100 shrink-0">
-                🚀
-            </div>
-            <div>
-                <h1 class="text-xl font-black text-slate-900 tracking-tight leading-none">
-                    Orbbotia
-                </h1>
-                <p id="nome-empresa" class="text-xs font-bold text-indigo-600 uppercase tracking-wider mt-1">
-                    Carregando empresa...
-                </p>
-            </div>
-        </div>
-
-        <div id="perfil-negocio" hidden class="flex items-center gap-3">
-            <!-- Perfil preservado; controle oculto enquanto a página inicial é avaliada. -->
-            <div class="flex flex-col items-end">
-                <label for="seletor-segmento" class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Perfil do Negócio</label>
-                <select id="seletor-segmento" onchange="alterarSegmentoEmpresa(this.value)" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none cursor-pointer">
-                    <option value="restaurante">🍔 Restaurante / Delivery</option>
-                    <option value="institucional">🏢 Institucional / Geral</option>
-                    <option value="clinica">🩺 Clínica / Saúde & Beleza</option>
-                </select>
-            </div>
-        </div>
-    </header>
-
-    <!-- ÁREA DE LOADING -->
-    <div id="area-loading" class="flex-grow flex flex-col items-center justify-center space-y-4">
-        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p class="text-sm font-semibold text-slate-500 tracking-wide uppercase">Carregando Workspace...</p>
-    </div>
-
-    <!-- Prévia visual: nenhuma opção abaixo executa ações ou representa dados reais. -->
-    <main id="area-modulos" class="home-preview max-w-5xl mx-auto w-full hidden fade-in" aria-labelledby="home-preview-title">
-        <section class="home-intro">
-            <span class="home-label">Simulação · decisão pendente</span>
-            <h2 id="home-preview-title">Um possível novo início</h2>
-            <p>Esta página é apenas uma proposta para visualizarmos as possibilidades. O conteúdo ainda será decidido: não há dados reais nem opções de edição nesta prévia.</p>
-        </section>
-        <div class="home-grid">
-            <section class="home-placeholder">
-                <span class="home-icon" aria-hidden="true">▥</span>
-                <h3>Aqui pode ficar o dashboard</h3>
-                <p>Um resumo dos principais indicadores do estabelecimento. Vamos decidir quais informações realmente ajudam no dia a dia.</p>
-                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Indicadores a definir</span><span>Resumo da operação</span></div>
-            </section>
-            <section class="home-placeholder">
-                <span class="home-icon" aria-hidden="true">◉</span>
-                <h3>Aqui podem aparecer avisos</h3>
-                <p>Informações que precisam de atenção, como pendências ou itens indisponíveis, de acordo com os módulos utilizados.</p>
-                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Pendências</span><span>Lembretes importantes</span></div>
-            </section>
-            <section class="home-placeholder">
-                <span class="home-icon" aria-hidden="true">↗</span>
-                <h3>Aqui podem ficar atalhos úteis</h3>
-                <p>Acesso às tarefas mais frequentes. Podemos avaliar se isso acrescenta algo ao menu rápido que já está no topo.</p>
-                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Tarefas frequentes</span><span>Favoritos a avaliar</span></div>
-            </section>
-            <section class="home-placeholder">
-                <span class="home-icon" aria-hidden="true">◷</span>
-                <h3>Aqui podem aparecer atividades recentes</h3>
-                <p>Um resumo do que mudou no sistema, se essa informação for útil para acompanhar a rotina da equipe.</p>
-                <div class="home-examples" aria-label="Possibilidades em avaliação"><span>Atualizações recentes</span><span>Conteúdo a definir</span></div>
-            </section>
-        </div>
-        <p class="home-note">Nada aqui está definido ou habilitado. Para usar as páginas atuais, navegue pelo menu rápido no topo.</p>
-    </main>
-
-    <script>
-        const urlConfig = 'https://n8n.orbbotia.com/webhook/empresa-config';
-        const urlConfigSalvar = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
-
-        let globalAccountId = null;
-        let handshakeInterval;
-        let segmentoAtual = 'restaurante';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
-        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
-
-        // 1. Escuta Handshake do Chatwoot
-        window.addEventListener('message', function (event) {
-            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
-            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
-            let eventData = {};
-            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
-
-            if (eventData.event === 'appContext' && eventData.data) {
-                clearInterval(handshakeInterval);
-                const payload = eventData.data;
-                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
-
-                buscarConfiguracoesDaEmpresa();
-            }
-        });
-
-        handshakeInterval = setInterval(() => {
-            if (!globalAccountId) ContextoConta.solicitar();
-        }, 500);
-
-
-
-        if (globalAccountId) {
-            clearInterval(handshakeInterval);
-            buscarConfiguracoesDaEmpresa();
-        }
-
-        // 2. Busca Configurações no n8n
-        async function buscarConfiguracoesDaEmpresa() {
-            try {
-                const res = await fetch(`${urlConfig}?account_id=${globalAccountId}`);
-                if (!res.ok) throw new Error("Erro");
-
-                let rawConfig = await res.json();
-                const config = Array.isArray(rawConfig) ? rawConfig[0] : rawConfig;
-
-                if (typeof config.modulos === 'string') config.modulos = JSON.parse(config.modulos);
-                if (config.segmento) segmentoAtual = config.segmento;
-
-                aplicarVisaoInicial(config);
-
-            } catch (error) {
-                document.getElementById('main-header').classList.add('hidden');
-                document.getElementById('area-modulos').classList.add('hidden');
-                document.getElementById('area-loading').classList.add('hidden');
-            }
-        }
-
-        // A prévia é somente leitura; a navegação real está no cabeçalho compartilhado.
-        function aplicarVisaoInicial(config) {
-            if (!config || String(config.account_id) !== String(globalAccountId)) return;
-            document.getElementById('nome-empresa').innerText = config.nome_empresa || `Empresa (ID: ${globalAccountId})`;
-            document.getElementById('seletor-segmento').value = segmentoAtual;
-            document.getElementById('area-loading').classList.add('hidden');
-            document.getElementById('main-header').classList.remove('hidden');
-            document.getElementById('area-modulos').classList.remove('hidden');
-        }
-        // 4. Alterar Segmento
-        async function alterarSegmentoEmpresa(novoSegmento) {
-            document.getElementById('area-modulos').classList.add('hidden');
-            document.getElementById('main-header').classList.add('hidden');
-            document.getElementById('area-loading').classList.remove('hidden');
-
-            try {
-                await fetch(urlConfigSalvar, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ account_id: globalAccountId.toString(), segmento: novoSegmento })
-                });
-
-                segmentoAtual = novoSegmento;
-
-                setTimeout(async () => {
-                    await buscarConfiguracoesDaEmpresa();
-                }, 500);
-
-            } catch (err) {
-                alert("Erro ao alterar o perfil do negócio.");
-                document.getElementById('seletor-segmento').value = segmentoAtual;
-                document.getElementById('area-loading').classList.add('hidden');
-                document.getElementById('main-header').classList.remove('hidden');
-                document.getElementById('area-modulos').classList.remove('hidden');
-            }
-        }
-    </script>
+<body class="dashboard-page">
+ <div id="area-loading" class="dash-loading" role="status">Conferindo acesso ao estabelecimento…</div>
+ <main id="area-modulos" class="dashboard home-preview hidden" aria-labelledby="dashboard-title">
+  <div id="perfil-negocio" hidden><label for="seletor-segmento">Perfil do negócio</label><select id="seletor-segmento" disabled><option value="restaurante">Restaurante</option><option value="institucional">Institucional</option><option value="clinica">Clínica</option></select></div>
+  <header class="dash-heading"><div><span class="dash-kicker" id="nome-empresa">Seu estabelecimento</span><h1 id="dashboard-title">Seu negócio, por inteiro.</h1><p>Uma visão dos pedidos e do que precisa de atenção.</p></div><button type="button" class="dash-help" id="dash-help">ⓘ Como funciona?</button></header>
+  <form id="dash-period" class="dash-period">
+   <label>Período de criação<select id="dash-period-select"><option value="7">Últimos 7 dias</option><option value="1">Hoje</option><option value="30">Últimos 30 dias</option><option value="custom">Escolher período</option></select></label>
+   <div id="dash-custom" class="dash-custom" hidden><label>De<input id="dash-start" type="date" required></label><label>Até<input id="dash-end" type="date" required></label><button type="submit">Aplicar período</button></div>
+   <span class="dash-status" id="dash-freshness" role="status" aria-live="polite">Consultando pedidos…</span>
+  </form>
+  <div id="dash-error" class="dash-error" role="alert" hidden><p id="dash-error-text"></p><button id="dash-retry" type="button">Tentar novamente</button></div>
+  <div id="dash-data" class="dash-data" hidden>
+   <div class="dash-caption"><span id="dash-range"></span><span>Estados e valores atuais · horário de Brasília</span></div>
+   <div id="dash-coverage" class="dash-coverage" hidden></div>
+   <section id="dash-cards" class="dash-cards" aria-label="Resumo dos pedidos"></section>
+   <div class="dash-context-note"><p id="dash-empty-note"></p><button type="button" data-recorte="sem_produto">Ver registros sem produto</button></div>
+   <div class="dash-grid">
+    <section class="dash-panel"><div class="dash-panel-head"><div><h2>Pedidos ao longo dos dias</h2><p>Pela data de criação, incluindo cancelados e montagens.</p></div></div><div class="dash-panel-body"><div class="dash-legend"><span>Todos os registros</span><span>Com produto</span></div><div id="dash-chart" class="dash-chart"></div><details><summary>Ver valores por dia</summary><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Dia</th><th>Criados</th><th>Com produto</th></tr></thead><tbody id="dash-days"></tbody></table></div></details></div></section>
+    <section class="dash-panel"><div class="dash-panel-head"><div><h2>De onde vieram os pedidos</h2><p>Origem registrada, incluindo os não identificados.</p></div></div><div class="dash-panel-body dash-rows" id="dash-origins"></div><div class="dash-panel-foot">Origem não identifica quem concluiu o pedido.</div></section>
+   </div>
+   <section class="dash-panel"><div class="dash-panel-head"><div><h2>Situação dos pedidos do período</h2><p>Como estão agora os registros criados nas datas escolhidas.</p></div></div><div class="dash-panel-body dash-rows" id="dash-states"></div></section>
+   <section class="dash-panel" id="dash-orders" aria-labelledby="dash-list-title"><div class="dash-panel-head"><div><h2 id="dash-list-title">Pedidos criados no período</h2><p id="dash-list-caption">Os filtros abaixo alteram apenas esta lista.</p></div><button type="button" data-recorte="periodo">Todos do período</button></div>
+    <form class="dash-filters" id="dash-filter-form"><label>Buscar pedido ou cliente<input id="dash-search" type="search" maxlength="80" placeholder="Nome ou número do pedido"></label><label>Situação<select id="dash-state"><option value="">Todas as situações</option></select></label><label>Origem<select id="dash-origin"><option value="todas">Todas as origens</option><option value="whatsapp">WhatsApp</option><option value="webapp">Cardápio digital</option><option value="desconhecida">Outra / não informada</option></select></label><button type="submit">Filtrar</button><button id="dash-clear" type="button">Limpar</button></form>
+    <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Pedido / cliente</th><th>Criado em</th><th>Situação</th><th>Origem</th><th>Valor atual</th><th>Detalhes</th></tr></thead><tbody id="dash-order-rows"></tbody></table></div>
+    <div id="dash-no-orders" class="dash-empty" hidden><h3>Nenhum pedido neste recorte</h3><span>Experimente outro período ou ajuste os filtros da lista.</span></div>
+    <div class="dash-pagination"><span id="dash-list-count"></span><div><button id="dash-prev" type="button" aria-label="Página anterior">←</button><span id="dash-page"></span><button id="dash-next" type="button" aria-label="Próxima página">→</button></div></div>
+   </section>
+   <p class="dash-footer">Este painel acompanha registros do sistema, inclusive testes não separados. Aprovação ou entrega não comprova recebimento. Conversão e financeiro serão acrescentados quando houver histórico suficiente.</p>
+  </div>
+ </main>
+ <dialog id="dash-dialog" class="dash-dialog" aria-labelledby="dash-dialog-title"><header><h2 id="dash-dialog-title">Detalhes</h2><button type="button" id="dash-close" aria-label="Fechar">✕</button></header><div class="dash-dialog-body" id="dash-dialog-body"></div></dialog>
 </body>
-
-
-
 </html>

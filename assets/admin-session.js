@@ -13,13 +13,27 @@ window.AdminSession = (() => {
  function safeReturn(value){try{const u=new URL(value||'index.html',root);if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname)return u.href;}catch{}return new URL('index.html',root).href;}
  function banner(message){let bar=document.getElementById('admin-session-bar');if(!bar){bar=document.createElement('aside');bar.id='admin-session-bar';bar.setAttribute('aria-label','Sua sessão');bar.style.cssText='display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:10px 16px;background:#eef2ff;color:#312e81;font:14px system-ui;border-radius:12px;margin:8px;';document.body.prepend(bar);}bar.replaceChildren();const text=document.createElement('span');text.textContent=message;bar.append(text);return bar;}
  function showSession(){if(embeddedPage)return;const account=new URLSearchParams(location.search).get('account_id');const bar=banner(`${session.user.email||'Sessão ativa'}${account?' · Estabelecimento '+account:''}`);const button=document.createElement('button');button.type='button';button.textContent='Sair';button.style.cssText='min-height:44px;padding:8px 16px;margin-left:auto;border:1px solid #c7d2fe;border-radius:8px;background:white;color:#312e81;cursor:pointer';button.onclick=async()=>{button.disabled=true;await client.auth.signOut({scope:'local'});goLogin();};bar.append(button);}
+ function avisoAcesso(tipo){
+  let box=document.getElementById('admin-access-notice');
+  if(!box){box=document.createElement('section');box.id='admin-access-notice';box.setAttribute('role','alert');document.body.append(box);}
+  box.replaceChildren();const title=document.createElement('strong'),p=document.createElement('p'),button=document.createElement('button');button.type='button';
+  const denied=tipo==='permissao';title.textContent=denied?'Acesso não permitido':'Não foi possível verificar o acesso';
+  p.textContent=denied?'Seu usuário não tem permissão para esta operação neste estabelecimento.':'O serviço está demorando ou indisponível. Sua sessão foi mantida. Tente novamente.';
+  button.textContent=denied?'Entrar com outro usuário':'Tentar novamente';button.onclick=denied?async()=>{await client.auth.signOut({scope:'local'});goLogin();}:()=>location.reload();
+  box.append(title,p,button);
+ }
+ async function conferirResposta(response){
+  if(response.status===401){goLogin();const e=Error('Entre novamente para continuar.');e.acessoTratado=true;throw e;}
+  if(response.status===403||response.status===503){await domReady;avisoAcesso(response.status===403?'permissao':'indisponivel');const e=Error('Não foi possível concluir a consulta.');e.acessoTratado=true;e.tipoAcesso=response.status===403?'permissao':'indisponivel';throw e;}
+  return response;
+ }
  async function lerAcesso(url){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
   try{const response=await originalFetch(url,{headers:{Authorization:'Bearer '+session.access_token},redirect:'error',signal:controller.signal});
-   if(response.status===401||response.status===403)throw Error('conta_nao_autorizada');
+   await conferirResposta(response);
    if(!response.ok)throw Error('acesso_indisponivel');
    return await response.json();
-  }catch(error){if(error.message==='conta_nao_autorizada')throw error;throw Error('Não foi possível verificar seu acesso agora. Tente novamente.');}
+  }catch(error){if(error.acessoTratado)throw error;throw Error('Não foi possível verificar seu acesso agora. Tente novamente.');}
   finally{clearTimeout(timer);}
  }
  async function validarConta(account){
@@ -42,12 +56,12 @@ window.AdminSession = (() => {
   // Reject legacy service_role JWTs accidentally pasted as the public key.
   try{if(JSON.parse(atob(config.publishableKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).role==='service_role')throw Error('chave_privada');}catch(e){if(e.message==='chave_privada')throw Error('Use somente a chave pública do projeto para configurar o acesso.');}
   client=window.supabase.createClient(config.supabaseUrl,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
-  const result=await client.auth.getSession();if(result.error)throw result.error;session=result.data.session;
+  const result=await client.auth.getSession();if(result.error){if(!loginPage&&[400,401,403].includes(result.error.status))goLogin();throw Error('Não foi possível verificar sua sessão. Tente novamente.');}session=result.data.session;
   client.auth.onAuthStateChange((event,next)=>{session=next;if(event==='SIGNED_OUT'&&!loginPage)goLogin();});
   if(!loginPage){if(!session){goLogin();throw Error('Entre para continuar.');}await validarConta(account);await domReady;showSession();document.documentElement.classList.remove('admin-pending');window.ContextoConta.aprovar(account);window.dispatchEvent(new Event('admin-pronto'));}
   return client;
  })();
- ready.catch(async error=>{await domReady;if(loginPage)return;window.ContextoConta.bloquear();if(error.message.startsWith('conta_')||redirecting)return;const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Não foi possível abrir o sistema';const p=document.createElement('p');p.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.onclick=()=>location.reload();box.append(h,p,retry);document.body.replaceChildren(box);document.documentElement.classList.remove('admin-pending');document.documentElement.classList.remove('conta-pendente');});
+ ready.catch(async error=>{await domReady;if(loginPage)return;window.ContextoConta.bloquear();if(redirecting)return;if(error.acessoTratado||error.message==='conta_nao_autorizada'){document.body.replaceChildren();document.documentElement.classList.remove('admin-pending');document.documentElement.classList.remove('conta-pendente');avisoAcesso(error.message==='conta_nao_autorizada'?'permissao':error.tipoAcesso||'indisponivel');return;}if(error.message.startsWith('conta_'))return;const box=document.createElement('main');box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';const h=document.createElement('h1');h.textContent='Não foi possível abrir o sistema';const p=document.createElement('p');p.textContent=error.message;const retry=document.createElement('button');retry.type='button';retry.textContent='Tentar novamente';retry.onclick=()=>location.reload();box.append(h,p,retry);document.body.replaceChildren(box);document.documentElement.classList.remove('admin-pending');document.documentElement.classList.remove('conta-pendente');});
  window.fetch=async(input,init)=>{
   const url=new URL(input instanceof Request?input.url:String(input),location.href);
   const administrative=/^\/webhook(?:-test)?\//.test(url.pathname)&&routes.has(url.pathname.split('/').pop());
@@ -61,9 +75,9 @@ window.AdminSession = (() => {
   if(result.error||!current){goLogin();throw Error('Sua sessão terminou. Entre novamente.');}
   const request=new Request(input,init),headers=new Headers(request.headers);
   headers.set('Authorization','Bearer '+current.access_token);headers.delete('x-pizza-admin-key');
-  const response=await originalFetch(new Request(request,{headers,redirect:'error'}));
-  if(response.status===403){await domReady;const bar=banner('Você não tem acesso a esta operação neste estabelecimento. Confira a conta e sua permissão.');const b=document.createElement('button');b.textContent='Trocar usuário';b.onclick=async()=>{await client.auth.signOut({scope:'local'});goLogin();};bar.append(b);}
+  let response;try{response=await originalFetch(new Request(request,{headers,redirect:'error'}));}catch(error){if(error.name==='AbortError')throw error;await domReady;avisoAcesso('indisponivel');error.acessoTratado=true;throw error;}
+  await conferirResposta(response);
   return response;
  };
- return {enabled,ready,safeReturn,get client(){return client;},get navigation(){return navigation;}};
+ return {enabled,ready,safeReturn,avisoAcesso,get client(){return client;},get navigation(){return navigation;}};
 })();

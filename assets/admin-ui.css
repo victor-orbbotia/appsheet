@@ -153,3 +153,8 @@ html.orbbotia-admin.admin-embedded :is(#admin-session-bar,#admin-shell) { displa
 html.orbbotia-admin :is(summary,.advanced-summary,.pc-choice-copy strong):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)) { color:var(--admin-text)!important; }
 html.orbbotia-admin .group>summary { background:var(--admin-raised); border-radius:8px; padding:12px; }
 html.orbbotia-admin .group>summary::before,html.orbbotia-admin .advanced-summary::before { color:var(--admin-accent)!important; }
+
+/* Um aviso persistente de acesso, fora do cabeçalho compacto. */
+#admin-access-notice { position:fixed!important; z-index:10000; bottom:20px; left:50%; transform:translateX(-50%); box-sizing:border-box; width:min(600px,calc(100% - 32px)); max-height:calc(100dvh - 40px); overflow:auto; padding:20px; background:#263b50; color:#f1f5f9; border:1px solid #e5af65; border-radius:14px; box-shadow:0 12px 40px #0008; font:16px/1.5 system-ui; }
+#admin-access-notice p { white-space:normal!important; overflow:visible!important; color:#e2e8f0!important; margin:8px 0 16px; }
+#admin-access-notice button { min-height:44px; padding:10px 16px; border:1px solid #a9bfe2; border-radius:8px; background:#354f72; color:white; cursor:pointer; }

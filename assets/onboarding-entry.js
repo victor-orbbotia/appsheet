@@ -11,4 +11,4 @@ AdminSession.ready.then(async()=>{
  const p=document.createElement('p');p.textContent='Revise o modelo, a identidade e os cadastros do seu estabelecimento.';
  const a=document.createElement('a');a.href=url.href;a.textContent=data.onboarding.estado==='pendente'?'Continuar configuração':'Revisar configuração inicial';
  box.append(title,p,a);const area=document.querySelector('.home-preview');if(area)area.prepend(box);
-}).catch(()=>{const area=document.querySelector('.home-preview');if(!area)return;const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Não foi possível consultar a configuração inicial. Atualize a página para tentar novamente.';area.prepend(p);});
+}).catch(error=>{if(error.acessoTratado)return;AdminSession.ready.then(()=>AdminSession.avisoAcesso('indisponivel')).catch(()=>{});});

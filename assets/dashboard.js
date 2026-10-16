@@ -70,6 +70,7 @@
    render(r);if(rolar)$('dash-orders').scrollIntoView({block:'start',behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   }catch(e){
    if(seq!==sequencia)return;
+   if(e.acessoTratado){ultima=null;$('dash-data').hidden=true;texto('dash-freshness','Consulta indisponível');return;}
    if(e.bloqueado){ultima=null;$('dash-data').hidden=true;}
    texto('dash-freshness',ultima?'Dados desatualizados · leitura de '+C.horario(ultima.consultado_em):'Consulta indisponível');
    erro(e.name==='AbortError'?'A consulta demorou mais que o esperado. Tente novamente.':e.message);

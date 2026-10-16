@@ -2,7 +2,7 @@
 // Cadastro especializado integrado à página Produtos. A chave permanece em memória.
 window.pizzasCadastro = (() => {
  const endpoint='https://n8n.orbbotia.com/webhook/meia-pizza-admin';
- let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='sizes', pizzaSource=[], pizzaGroupFilter='Todas';
+ let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='items', pizzaSource=[], pizzaGroupFilter='Todas';
  let modelo=null,regras=null,contextLoaded=false;
  const regra=kind=>regras?.[kind==='borda'?'bordas':'adicionais'];
  function permitido(type){if(!contextLoaded)return type==='common';if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}

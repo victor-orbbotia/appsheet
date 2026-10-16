@@ -592,3 +592,5 @@ a {
     transition:none!important
   }
 }
+
+.fila-filters>summary{display:none;cursor:pointer;min-height:44px;align-items:center;font-weight:650}.fila-filters:not([open])>.toolbar{display:none}@media(max-width:640px){.fila-filters>summary{display:list-item;padding:12px 8px}.fila-filters{border-bottom:1px solid var(--admin-line,#52677f)}}

@@ -40,7 +40,7 @@ window.CatalogoRegrasUI=(()=>{
     const whole=cap.pizza?input(locations,'Permitir na pizza inteira',g.inteira,'checkbox'):null;
     const part=cap.pizza?input(locations,key==='bordas'?'Permitir borda por parte da pizza':'Permitir adicional por parte da pizza',g.por_parte,'checkbox'):null;
     const limits=el('div');limits.className='ob-field-grid';fields.append(limits);
-    const required=input(limits,'Novas opções obrigatórias por padrão',g.obrigatoria_padrao,'checkbox');const max=input(limits,'Limite individual inicial para cada nova opção',g.max_por_opcao,'number');
+    const required=input(limits,'Novas opções obrigatórias por padrão',g.obrigatoria_padrao,'checkbox');if(!options.avancado)required.parentElement.hidden=true;const max=input(limits,'Limite individual inicial para cada nova opção',g.max_por_opcao,'number');
     fields.append(el('p','Cada opção terá seu próprio limite e obrigatoriedade no cadastro. Não há limite total de escolhas.'));
     const charges=el('div');charges.className='ob-field-grid';fields.append(charges);
     const charge=cap.pizza?select(charges,'Cobrança na pizza inteira',[['maior','Maior preço dos sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']],g.cobranca_inteira):null;

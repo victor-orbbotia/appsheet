@@ -613,3 +613,8 @@ html.orbbotia-admin #detalhes .panel-head {background:var(--admin-raised,#2b4056
  .fila-layout.com-detalhes .toolbar {padding:18px}
  .fila-layout.com-detalhes .toolbar label {flex:1 1 150px;min-width:0}
 }
+
+html:has(#detalhes:modal),body:has(#detalhes:modal){overflow:hidden!important;overscroll-behavior:none}
+#detalhes {overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.fila-layout.com-detalhes .order {cursor:pointer}
+@media(max-width:1099px){#detalhes:modal{inset:0;margin:0;width:100%;max-width:100%;height:100dvh;max-height:100dvh;border-radius:0}}

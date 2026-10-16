@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<script src="../assets/contexto-conta.js?v=20261013-contraste2"></script><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fila de pedidos</title><script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261016-acesso1"></script><link rel="stylesheet" href="fila.css?v=20261016-painel1"><link rel="stylesheet" href="../assets/admin-ui.css?v=20261016-layout1">
+<script src="../assets/contexto-conta.js?v=20261013-contraste2"></script><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fila de pedidos</title><script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261016-acesso1"></script><link rel="stylesheet" href="fila.css?v=20261016-painel2"><link rel="stylesheet" href="../assets/admin-ui.css?v=20261016-layout1">
 <script src="../assets/admin-ui.js?v=20261013-transicoes1" defer></script>
 </head>
 <body><main class="shell"><div id="alerta-chatwoot" class="connection">Conectando ao estabelecimento…</div><div id="app-container" class="hidden"><a id="link-voltar" href="../index.html" class="small">← Menu principal</a>
@@ -221,7 +221,7 @@ function renderizarKanban(){
  document.getElementById('kanban-board').innerHTML=modelos.length?modelos.map(m=>{
   const p=m.p;const alerta=m.alertas.length?`<div class="alert">${m.alertas.map(esc).join('<br>')}</div>`:'';
   const preview=visaoAtual==='detalhada'?`<div class="detail-preview"><div><div class="eyebrow">Itens</div><ul>${FilaPedidos.itens(p).map(i=>`<li><strong>${esc(i.titulo)}</strong>${i.linhas.length?'<br>'+i.linhas.map(esc).join(' · '):''}</li>`).join('')||'<li>Itens não informados</li>'}</ul></div><div><div class="eyebrow">Destino e contato</div><p class="small">${esc(p.endereco_entrega||'Destino a conferir')}<br>${esc(p.cliente_telefone||'Telefone não informado')}</p></div></div>`:'';
-  return `<article class="order${m.atencao?' attention':''}${pedidoSelecionado===p.id?' selected':''}" aria-label="Pedido ${esc(String(p.id).slice(0,8))}"><div><div class="order-id">PEDIDO #${esc(String(p.id).slice(0,8))}</div><div class="customer">${esc(p.cliente_nome||'Cliente')}</div><div class="small">${esc(m.modalidadeTexto)} · ${esc(FilaPedidos.idade(p))}</div>${alerta}</div><div><span class="status${m.atencao?' warn':m.terminal?' good':''}">${esc(m.etapa)}</span><p class="small">${esc(dataPedido(p.created_at))}</p></div><div><div class="money">${esc(dinheiro(p.valor_total))}</div><div class="payment${m.pagamento!=='conferir'?' warn':''}">${esc(m.pagamentoTexto)}</div></div><div class="row-actions">${botaoAcao(m)}<button class="btn" data-acao="detalhes" data-id="${esc(p.id)}">Detalhes</button></div>${preview}</article>`;
+  return `<article data-pedido="${esc(p.id)}" tabindex="0" class="order${m.atencao?' attention':''}${pedidoSelecionado===p.id?' selected':''}" aria-label="Pedido ${esc(String(p.id).slice(0,8))}"><div><div class="order-id">PEDIDO #${esc(String(p.id).slice(0,8))}</div><div class="customer">${esc(p.cliente_nome||'Cliente')}</div><div class="small">${esc(m.modalidadeTexto)} · ${esc(FilaPedidos.idade(p))}</div>${alerta}</div><div><span class="status${m.atencao?' warn':m.terminal?' good':''}">${esc(m.etapa)}</span><p class="small">${esc(dataPedido(p.created_at))}</p></div><div><div class="money">${esc(dinheiro(p.valor_total))}</div><div class="payment${m.pagamento!=='conferir'?' warn':''}">${esc(m.pagamentoTexto)}</div></div><div class="row-actions">${botaoAcao(m)}<button class="btn" data-acao="detalhes" data-id="${esc(p.id)}">Detalhes</button></div>${preview}</article>`;
  }).join(''):`<div class="empty"><strong>Nenhum pedido neste recorte</strong>Confira os filtros${recorteAtual==='historico'?' ou escolha outra data':''}.<br><button class="btn quiet" onclick="limparFiltros()">Limpar filtros</button></div>`;
  if(pedidoSelecionado&&document.getElementById('detalhes').open)atualizarDetalhes();
 }
@@ -236,7 +236,7 @@ async function carregarPedidos(){
  }catch(error){aviso.textContent=error.message;mostrarToast(error.message,'error');}finally{botao.disabled=false;}
 }
 function abrirDetalhes(id,secao){
- pedidoSelecionado=id;atualizarDetalhes();const dialog=document.getElementById('detalhes');const lateral=window.matchMedia?.('(min-width: 1100px)').matches===true;document.getElementById('fila-layout').classList.toggle('com-detalhes',lateral);if(!dialog.open){if(lateral)dialog.show();else dialog.showModal();}
+ const mudou=pedidoSelecionado!==id;pedidoSelecionado=id;atualizarDetalhes();if(mudou)document.getElementById('detalhes').scrollTop=0;const dialog=document.getElementById('detalhes');const lateral=window.matchMedia?.('(min-width: 1100px)').matches===true;document.getElementById('fila-layout').classList.toggle('com-detalhes',lateral);if(!dialog.open){if(lateral)dialog.show();else dialog.showModal();}
  if(secao){const alvo=document.getElementById('secao-'+secao);if(alvo){alvo.open=true;alvo.scrollIntoView({block:'nearest'});}}
  renderizarKanban();
 }
@@ -256,11 +256,11 @@ function atualizarDetalhes(){
  for(const [id,open]of estadoSeccoes){const el=document.getElementById(id);if(el)el.open=open;}
  document.getElementById('detalhes').scrollTop=scroll;
 }
-window.addEventListener('click',event=>{const btn=event.target.closest?.('[data-acao]');if(!btn||btn.disabled)return;const id=btn.dataset.id,p=listaPedidos.map(x=>x.json||x).find(x=>x.id===id);if(!p)return;
+window.addEventListener('click',event=>{const btn=event.target.closest?.('[data-acao]');if(!btn){const row=event.target.closest?.('[data-pedido]');if(row&&document.getElementById('detalhes').open&&!event.target.closest?.('a,input,select,summary,button'))abrirDetalhes(row.dataset.pedido);return;}if(btn.disabled)return;const id=btn.dataset.id,p=listaPedidos.map(x=>x.json||x).find(x=>x.id===id);if(!p)return;
  if(btn.dataset.acao==='detalhes')abrirDetalhes(id,btn.dataset.secao);else if(btn.dataset.acao==='chat')abrirChat(p.conversa_id);else if(btn.dataset.acao==='status')moverStatus(id,btn.dataset.status,btn);else if(btn.dataset.acao==='cancelar')cancelarPedido(id,btn.dataset.status,btn);
 });
 document.getElementById('detalhes').addEventListener('cancel',()=>{document.getElementById('fila-layout').classList.remove('com-detalhes');pedidoSelecionado=null;renderizarKanban();});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('fila-layout').classList.contains('com-detalhes'))fecharDetalhes();});
+document.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches?.('[data-pedido]')&&document.getElementById('detalhes').open){event.preventDefault();abrirDetalhes(event.target.dataset.pedido);return;}if(event.key==='Escape'&&document.getElementById('fila-layout').classList.contains('com-detalhes'))fecharDetalhes();});
 const filaViewport=window.matchMedia?.('(min-width: 1100px)');filaViewport?.addEventListener?.('change',()=>{const d=document.getElementById('detalhes');if(!d.open)return;d.close();abrirDetalhes(pedidoSelecionado);});
 function mostrarToast(msg,tipo){const toast=document.getElementById('toast');clearTimeout(toastTimer);toast.textContent=msg;toast.className='toast '+(tipo==='success'?'success':'error');toastTimer=setTimeout(()=>toast.classList.add('hidden'),4500);}
 

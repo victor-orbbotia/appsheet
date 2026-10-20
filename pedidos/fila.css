@@ -618,3 +618,10 @@ html:has(#detalhes:modal),body:has(#detalhes:modal){overflow:hidden!important;ov
 #detalhes {overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .fila-layout.com-detalhes .order {cursor:pointer}
 @media(max-width:1099px){#detalhes:modal{inset:0;margin:0;width:100%;max-width:100%;height:100dvh;max-height:100dvh;border-radius:0}}
+
+/* Seções independentes e respiro em qualquer largura do painel. */
+#detalhes .panel-body {padding:20px clamp(16px,3vw,24px) 24px}
+#detalhes .panel-body>details {margin:16px 0}
+#detalhes .panel-note {margin:20px 4px 4px;padding:8px 4px;line-height:1.65;overflow-wrap:anywhere}
+body.admin-shell-active .shell {padding-top:12px}
+body.admin-shell-active .topbar {margin-top:0}

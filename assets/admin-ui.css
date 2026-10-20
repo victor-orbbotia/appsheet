@@ -70,7 +70,7 @@ html.orbbotia-admin #cadastro-toast[data-error=false] { background:var(--admin-g
 html.orbbotia-admin #cadastro-toast[data-error=true] { background:var(--admin-error-bg)!important; color:var(--admin-error)!important; }
 html.orbbotia-admin .pdf-page { color-scheme:light; color:var(--color-text); font-family:var(--font-body); }
 /* Faixa global fixa: navegação e utilitários compartilham o enquadramento do conteúdo. */
-html.orbbotia-admin body.admin-shell-active { padding-top:calc(var(--admin-shell-height,108px) + 20px)!important; scroll-padding-top:calc(var(--admin-shell-height,108px) + 20px); }
+html.orbbotia-admin body.admin-shell-active { padding-top:var(--admin-shell-height,108px)!important; scroll-padding-top:calc(var(--admin-shell-height,108px) + 20px); }
 html.orbbotia-admin #admin-shell { position:fixed; inset:0 0 auto; z-index:80; margin:0!important; padding:0 24px; background:var(--admin-bg); border-bottom:1px solid var(--admin-line); box-shadow:0 6px 18px #07101d40; box-sizing:border-box; }
 html.orbbotia-admin #admin-shell[hidden] { display:none!important; }
 html.orbbotia-admin .admin-shell-inner { max-width:var(--admin-shell-max,1152px); margin:0 auto; min-width:0; }

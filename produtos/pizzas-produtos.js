@@ -241,11 +241,10 @@ window.pizzasCadastro = (() => {
    const visible=items.filter(p=>(showInactive||(p.ativo!==false&&p.ativo!=='false'))&&(pizzaGroupFilter==='Todas'||groupName(p)===pizzaGroupFilter));
    if(!visible.length){mount.append(node('p',items.length?'Nenhum item nesta visão.':'Nenhuma pizza cadastrada. Cadastre um sabor para começar.'));return;}
    const wrap=node('div',undefined,'pc-list-scroll'),table=node('table',undefined,'pc-list-table'),head=node('thead'),headRow=node('tr');
-   for(const label of ['Status','Produto','Categoria / Agrupamento','Opções e preços','Estoque','Ação'])headRow.append(node('th',label));head.append(headRow);table.append(head);
+   for(const label of ['Produto','Categoria / Agrupamento','Opções e preços','Estoque','Ação'])headRow.append(node('th',label));head.append(headRow);table.append(head);
    const body=node('tbody');table.append(body);
    for(const p of visible){
      const active=p.ativo!==false&&p.ativo!=='false',row=node('tr');row.dataset.active=String(active);
-     const status=node('td'),dot=node('span',undefined,'pc-status-dot');dot.dataset.active=String(active);dot.title=active?'Ativo':'Desativado';status.append(dot);row.append(status);
      const product=node('td'),name=node('strong',p.nome);product.append(name);if(p.descricao)product.append(node('small',p.descricao));row.append(product);
      const category=node('td');category.append(node('span',p.categoria||'Pizzas','pc-category-tag'),node('small','Agrupamento: '+groupName(p)));row.append(category);
      const prices=node('td');for(const v of meta(p).variacoes||meta(p).tamanhos||[])prices.append(node('span',v.nome+': '+(v.ativo===false?'Indisponível':money(v.preco)),'pc-price-tag'));if(!prices.childNodes.length)prices.append(node('small','Sem tamanho disponível'));row.append(prices);

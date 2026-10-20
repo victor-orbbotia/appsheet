@@ -53,7 +53,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 <link rel="stylesheet" href="pizzas-produtos.css?v=20261014-modelo1">
-<link rel="stylesheet" href="../assets/admin-ui.css?v=20261016-layout1">
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261014-onboarding1" defer></script>
 <script src="../assets/catalogo-contexto.js?v=20261014-modelo1"></script>
 </head>
@@ -229,7 +229,7 @@
                     <table class="w-full text-left text-sm text-slate-600">
                         <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
                             <tr>
-                                <th class="px-4 py-3 w-16 text-center">Status</th>
+                                
                                 <th class="px-4 py-3">Produto</th>
                                 <th class="px-4 py-3">Categoria</th>
                                 <th class="px-4 py-3">Opções e Preços</th>
@@ -238,7 +238,7 @@
                             </tr>
                         </thead>
                         <tbody id="lista-produtos" class="divide-y divide-slate-100">
-                            <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400">Carregando produtos...</td></tr>
+                            <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Carregando produtos...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -341,7 +341,7 @@
             <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
                 <div class="p-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center flex-wrap gap-2">
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="section-heading">
                             <h2 class="text-md font-bold text-slate-800">🤖 Sugestões Automáticas</h2>
                             <button type="button" onclick="toggleInstrucoesUpsell()" class="help-control" aria-haspopup="dialog">
                                 ℹ️ Como funciona?
@@ -353,9 +353,7 @@
 
                 <!-- Painel Expansível de Instruções / Tooltip -->
                 <div id="painel-instrucoes-upsell" class="hidden p-4 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 space-y-2">
-                    <div class="font-bold text-slate-800 flex items-center gap-1.5 text-sm">
-                        💡 Como organizar as sugestões
-                    </div>
+
                     <p>Escolha o tipo de pedido e as categorias que combinam com ele, como bebidas ou sobremesas.</p>
                     <p>Se mais de uma regra combinar com o pedido, a primeira da lista terá prioridade. Você pode mudar essa ordem a qualquer momento.</p><p>Antes da confirmação final, o agente oferece as categorias disponíveis da regra aplicável uma única vez. Se o cliente aceitar uma categoria, ele consulta e apresenta os itens disponíveis; se recusar, segue sem insistir. Nenhum item é adicionado sem a escolha do cliente.</p>
                     <p>As regras salvas orientam as sugestões do atendimento, de acordo com o pedido e com as categorias disponíveis.</p>
@@ -466,7 +464,7 @@
     </div>
 
     <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
-<script src="pizzas-produtos.js?v=20261016-precos1"></script>
+<script src="pizzas-produtos.js?v=20261020-espacos1"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS
@@ -1037,7 +1035,7 @@
                 preencherDropdownsUpsell(configEmpresaCache);
                 CadastroUI.restore(view);
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
                 window.SugestoesRegras.reportLoadError('Não foi possível carregar as categorias. Atualize a página e tente novamente.');
             }
         }
@@ -1098,7 +1096,7 @@
             });
 
             if (listaFiltrada.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhum produto cadastrado nesta visão.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhum produto cadastrado nesta visão.</td></tr>`;
                 return;
             }
 
@@ -1124,11 +1122,6 @@
                 const tr = document.createElement('tr');
                 tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50 bg-white' : 'bg-slate-50 opacity-60 grayscale'}`;
                 tr.innerHTML = `
-                    <td class="px-4 py-3 text-center">
-                        ${isAtivo
-                        ? '<span class="inline-block w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm" title="Ativo"></span>'
-                        : '<span class="inline-block w-2.5 h-2.5 bg-slate-400 rounded-full shadow-sm" title="Inativo"></span>'}
-                    </td>
                     <td class="px-4 py-3">
                         <div class="font-bold text-sm ${isAtivo && statusEstoque === 'disponivel' ? 'text-slate-800' : 'text-slate-500'}">${p.nome}</div>
                         <div class="text-[11px] ${isAtivo ? 'text-slate-500' : 'text-slate-400'} max-w-[250px] truncate" title="${p.descricao || ''}">${p.descricao || ''}</div>

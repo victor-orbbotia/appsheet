@@ -606,8 +606,11 @@ html.orbbotia-admin #detalhes .panel-head {background:var(--admin-raised,#2b4056
 @media(min-width:1100px){
  .fila-layout.com-detalhes {grid-template-columns:minmax(0,1fr) minmax(360px,440px)}
  .fila-layout.com-detalhes #detalhes[open] {position:sticky;top:calc(var(--admin-shell-height,108px) + 20px);inset-inline:auto;bottom:auto;margin:0;width:100%;height:auto;max-height:calc(100dvh - var(--admin-shell-height,108px) - 40px);min-width:0;border:1px solid var(--admin-line,#52677f);border-radius:16px;box-shadow:none;overflow:auto}
- .fila-layout.com-detalhes .order {grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:18px}
- .fila-layout.com-detalhes .row-actions {justify-content:flex-start;max-width:none}
+ .fila-layout.com-detalhes .order {grid-template-columns:minmax(0,1fr) fit-content(340px);gap:14px 20px;padding:18px}
+ .fila-layout.com-detalhes .row-actions {justify-content:flex-end;max-width:340px}
+ .fila-layout.com-detalhes .order>div:nth-child(2) {text-align:right}
+ .fila-layout.com-detalhes .order>div {min-width:0}
+ .fila-layout.com-detalhes .row-actions .btn {min-height:44px}
  .fila-layout.com-detalhes .detail-preview {grid-template-columns:1fr}
  .fila-layout.com-detalhes .workspace-head {align-items:flex-start;padding:18px}
  .fila-layout.com-detalhes .toolbar {padding:18px}

@@ -30,9 +30,12 @@ window.CatalogoRegrasUI=(()=>{
   }
   return r.recursos.personalizacao&&r.adicionais.ativo?'Adicionais por item':'Catálogo sem personalizações';
  }
- function explainExtra(g,key,avancado=false,pizza=true){
+ function explainExtra(g,key,avancado=false,modelo='pizzaria'){
   if(!g.ativo)return [];
-  if(!pizza)return ['Defina o preço de cada adicional no catálogo. O valor é cobrado por unidade escolhida, respeitando o limite individual da opção.'];
+  if(modelo!=='pizzaria'){
+   const exemplo=modelo==='hamburgueria'?'Exemplo: se uma porção de queijo extra custar R$ 3, cada porção escolhida acrescenta R$ 3 ao hambúrguer.':'Exemplo: se uma porção de granola custar R$ 2, cada porção escolhida acrescenta R$ 2 ao açaí.';
+   return ['Defina o preço de cada adicional no catálogo. O valor é cobrado por unidade escolhida, respeitando o limite individual da opção.',exemplo];
+  }
   const nome=key==='bordas'?'borda':'adicional',out=[`Defina o preço de cada ${nome} por tamanho no catálogo. O cálculo dos sabores da pizza é separado.`];
   if(g.inteira)out.push(`Na pizza inteira, o preço da ${nome} é aplicado à unidade escolhida. Quando o preço é igual entre os sabores, não há diferença entre maior preço, média e proporcional.`);
   if(g.por_parte)out.push(g.cobranca_parte==='proporcional'?`Por parte: o preço da ${nome} acompanha a fração escolhida. Exemplo: uma opção de R$ 12 em metade da pizza acrescenta R$ 6.`:`Por parte: cobra o preço completo da ${nome} em cada parte escolhida. Exemplo: uma opção de R$ 12 em metade da pizza acrescenta R$ 12.`);
@@ -68,7 +71,7 @@ window.CatalogoRegrasUI=(()=>{
     const charge=cap.pizza?select(charges,'Cobrança na inteira quando existem exceções de preço',[['maior','Maior preço dos sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']],g.cobranca_inteira):null;
     const partial=cap.pizza?select(charges,'Cobrança por parte',[['integral','Valor integral em cada parte'],['proporcional','Proporcional ao tamanho da parte']],g.cobranca_parte):null;
     const help=el('div');help.className='ob-rule-help';fields.append(help);
-    const toggle=()=>{fields.hidden=!active.checked;max.required=active.checked;if(charge)charge.closest('label').hidden=!options.avancado||!whole.checked;if(partial)partial.closest('label').hidden=!part.checked;help.replaceChildren();for(const text of explainExtra({ativo:active.checked,inteira:whole?.checked||!cap.pizza,por_parte:part?.checked||false,cobranca_parte:partial?.value||g.cobranca_parte,cobranca_inteira:charge?.value||g.cobranca_inteira},key,options.avancado,cap.pizza))help.append(el('p',text));};active.onchange=toggle;if(part)part.onchange=toggle;if(whole)whole.onchange=toggle;if(partial)partial.onchange=toggle;if(charge)charge.onchange=toggle;toggle();
+    const toggle=()=>{fields.hidden=!active.checked;max.required=active.checked;if(charge)charge.closest('label').hidden=!options.avancado||!whole.checked;if(partial)partial.closest('label').hidden=!part.checked;help.replaceChildren();for(const text of explainExtra({ativo:active.checked,inteira:whole?.checked||!cap.pizza,por_parte:part?.checked||false,cobranca_parte:partial?.value||g.cobranca_parte,cobranca_inteira:charge?.value||g.cobranca_inteira},key,options.avancado,cap.pizza?'pizzaria':modelo))help.append(el('p',text));};active.onchange=toggle;if(part)part.onchange=toggle;if(whole)whole.onchange=toggle;if(partial)partial.onchange=toggle;if(charge)charge.onchange=toggle;toggle();
     readers[key]=()=>({ativo:active.checked,inteira:whole?whole.checked:true,por_parte:part?part.checked:false,obrigatoria_padrao:required.checked,max_por_opcao:Number(max.value),cobranca_inteira:charge?.value||'maior',cobranca_parte:partial?.value||'integral'});
    }
    readCurrent=()=>{const current={...r,preset_id:preset.value,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))};current.nome=ruleName(current);return current;};

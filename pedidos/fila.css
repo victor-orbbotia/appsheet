@@ -628,3 +628,8 @@ html:has(#detalhes:modal),body:has(#detalhes:modal){overflow:hidden!important;ov
 #detalhes .panel-note {margin:20px 4px 4px;padding:8px 4px;line-height:1.65;overflow-wrap:anywhere}
 body.admin-shell-active .shell {padding-top:12px}
 body.admin-shell-active .topbar {margin-top:0}
+
+.fila-periodos{padding:16px 24px 0}.fila-periodos>div{display:flex;gap:8px;flex-wrap:wrap}.fila-periodos .btn[aria-pressed=true]{background:var(--admin-primary);color:var(--admin-text)}
+.fila-periodos p{padding:12px;margin:12px 0 0;border:1px solid var(--admin-line);border-radius:8px;color:var(--admin-warn);background:var(--admin-warn-bg);font-size:13px}
+.order-age{display:inline-block;margin-top:9px;padding:5px 9px;border:1px solid var(--admin-line);border-radius:7px;background:var(--admin-field);color:var(--admin-text);font-size:13px;font-weight:700;line-height:1.4}
+@media(max-width:640px){.fila-periodos{padding:14px 16px 0}}

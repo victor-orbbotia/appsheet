@@ -20,11 +20,13 @@
    atencao:!terminal&&(!conhecido||p.editado===true||modalidade==='conferir'||['comprovante_enviado','pagamento_na_entrega','retirada_balcao'].includes(status)),
    alertas:[p.editado===true?'Pedido editado — confira os itens':'',p.observacoes?texto(p.observacoes):'',!conhecido?'Estado não reconhecido: confira na conversa':''].filter(Boolean)};
  }
+ function dia(value){const date=new Date(value);return Number.isFinite(date.getTime())?date.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'}):null;}
  function filtrar(pedidos,f){return pedidos.map(x=>x.json||x).filter(p=>p&&p.id&&!p.deletado).map(projetar).filter(m=>{
   const q=normalizar(f.busca);return (f.recorte==='historico'?m.terminal:f.recorte==='atencao'?m.atencao:!m.terminal)&&
+   (f.recorte==='historico'||!f.periodo||(f.periodo==='hoje'?dia(m.p.created_at)===dia(f.agora??Date.now()):dia(m.p.created_at)!==dia(f.agora??Date.now())))&&
    (!q||normalizar([m.p.id,m.p.cliente_nome,m.p.cliente_telefone,m.p.conversa_id].join(' ')).includes(q))&&
    (!f.etapa||m.status===f.etapa)&&(!f.modalidade||m.modalidade===f.modalidade)&&(!f.pagamento||m.pagamento===f.pagamento);
- }).sort((a,b)=>f.recorte==='historico'?data(b.p)-data(a.p):data(a.p)-data(b.p));}
+ }).sort((a,b)=>data(b.p)-data(a.p)||texto(a.p.id).localeCompare(texto(b.p.id)));}
  function data(p){const t=Date.parse(p.created_at);return Number.isFinite(t)?t:0;}
  function idade(p,agora=Date.now()){const t=data(p);if(!t||t>agora)return 'Criação a conferir';const minutos=Math.floor((agora-t)/60000);return minutos<60?`${minutos} min desde criação`:minutos<1440?`${Math.floor(minutos/60)} h desde criação`:`${Math.floor(minutos/1440)} d desde criação`;}
  function itens(p){return (Array.isArray(p.itens)?p.itens:[]).map(i=>{
@@ -33,5 +35,5 @@
   for(const m of mods){const destino=m.escopo==='parte'?partes.find(s=>s.produto_id===m.produto_id)?.nome||'parte a conferir':m.escopo==='inteira'?'pizza inteira':'';linhas.push(`${m.quantidade||1}× ${m.nome||'Opção'}${m.grupo_nome?' · '+m.grupo_nome:''}${destino?' · '+destino:''}`);}
   return {titulo:`${i.quantidade??1}× ${i.nome||'Item'}${i.variacao?' · '+i.variacao:''}`,linhas};
  });}
- return {projetar,filtrar,idade,itens,escapar};
+ return {projetar,filtrar,idade,itens,escapar,dia};
 });

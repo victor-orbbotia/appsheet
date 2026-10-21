@@ -19,8 +19,16 @@ window.CatalogoRegrasUI=(()=>{
   const cap=capabilities(modelo,{recursos});
   const make=(id,nome,dividir,bordas,adicionais,partes)=>{const r=defaults(modelo,{recursos:cap,nome,preset_id:id});r.pizza_combinada=dividir;r.bordas.ativo=bordas;r.adicionais.ativo=adicionais;if(id==='complementos')r.adicionais.max_por_opcao=1;r.bordas.por_parte=bordas&&partes;r.adicionais.por_parte=adicionais&&partes;return r;};
   if(cap.pizza)return[make('pizza_inteira','Pizza inteira, sem complementos',false,false,false,false),make('pizza_combinada','Pizza inteira e combinada, com borda inteira',true,cap.personalizacao,false,false),make('pizza_completa','Pizza com bordas e adicionais na inteira ou por parte',true,cap.personalizacao,cap.personalizacao,true)];
+  if(cap.personalizacao&&modelo==='hamburgueria')return[make('adicionais_opcionais','Adicionais',false,false,true,false)];
   if(cap.personalizacao)return[make('adicionais_opcionais','Adicionais opcionais por item',false,false,true,false),make('complementos','Complementos por item',false,false,true,false)];
   return[make('sem_personalizacao','Catálogo sem personalizações',false,false,false,false)];
+ }
+ function ruleName(r){
+  if(r.recursos.pizza){
+   const extras=[r.bordas.ativo?'bordas':'',r.adicionais.ativo?'adicionais':''].filter(Boolean);
+   return (r.pizza_combinada?'Pizza inteira e combinada':'Pizza inteira')+(extras.length?' com '+extras.join(' e '):' sem complementos');
+  }
+  return r.recursos.personalizacao&&r.adicionais.ativo?'Adicionais por item':'Catálogo sem personalizações';
  }
  function explainExtra(g,key,avancado=false,pizza=true){
   if(!g.ativo)return [];
@@ -40,8 +48,9 @@ window.CatalogoRegrasUI=(()=>{
    editor.replaceChildren();const r=defaults(modelo,value),cap=capabilities(modelo,r),readers={};
    const starter=el('div'),starterFields=el('div');starter.className='ob-preset';starterFields.className='ob-field-grid';starter.append(starterFields);editor.append(starter);
    const choices=presets(modelo,r.recursos),preset=select(starterFields,'Começar com este conjunto',[['personalizado','Personalizado'],...choices.map(x=>[x.preset_id,x.nome])],choices.some(x=>x.preset_id===r.preset_id)?r.preset_id:'personalizado');
-   const name=input(starterFields,'Nome do conjunto de regras',r.nome);name.required=true;name.maxLength=80;
-   starter.append(el('p','Escolha um ponto de partida e ajuste as regras abaixo para o seu negócio.'));
+   if(choices.length===1)preset.parentElement.hidden=true;
+   const name=el('h3');name.className='ob-rule-title';name.setAttribute('aria-live','polite');starterFields.append(name);
+   starter.append(el('p',choices.length===1?'Ajuste as regras abaixo para o seu negócio.':'Escolha um ponto de partida e ajuste as regras abaixo para o seu negócio.'));
    let resourcePizza,resourceExtras;
    if(options.avancado&&options.permitirRecursos!==false){const resources=el('fieldset');resources.append(el('legend','Recursos disponíveis no catálogo'));editor.append(resources);resourcePizza=input(resources,'Usar o cadastro especializado de pizzas',cap.pizza,'checkbox');resourceExtras=input(resources,'Usar personalizações e adicionais',cap.personalizacao,'checkbox');resources.append(el('p','Estes recursos podem mudar independentemente do modelo inicial. Os dados existentes não são apagados.'));}
    let split=null;if(cap.pizza){const splitPanel=el('div');splitPanel.className='ob-split';editor.append(splitPanel);split=input(splitPanel,'Oferecer pizza combinada (meio a meio e demais divisões dos tamanhos)',r.pizza_combinada,'checkbox');const pricingHelp=el('p','O preço dos sabores da pizza combinada é configurado em Pizza → Tamanhos. Cada tamanho pode usar maior preço, média ou proporcional; agrupamentos podem ter regras próprias. Bordas e adicionais são calculados separadamente.');splitPanel.append(pricingHelp);const updateSplit=()=>{pricingHelp.hidden=!split.checked;};split.onchange=updateSplit;updateSplit();}
@@ -53,6 +62,7 @@ window.CatalogoRegrasUI=(()=>{
     const part=cap.pizza?input(locations,key==='bordas'?'Permitir borda por parte da pizza':'Permitir adicional por parte da pizza',g.por_parte,'checkbox'):null;
     const limits=el('div');limits.className='ob-field-grid';fields.append(limits);
     const required=input(limits,'Novas opções obrigatórias por padrão',g.obrigatoria_padrao,'checkbox');if(!options.avancado)required.parentElement.hidden=true;const max=input(limits,'Limite individual inicial para cada nova opção',g.max_por_opcao,'number');
+    fields.append(el('p','Limite 1: não permite repetir a mesma opção. Acima de 1: permite repetir até o limite informado.'));
     fields.append(el('p',options.avancado?'Cada opção terá seu próprio limite e obrigatoriedade no cadastro. Não há limite total de escolhas.':'Cada opção terá seu próprio limite no cadastro. Não há limite total de escolhas.'));
     const charges=el('div');charges.className='ob-field-grid';fields.append(charges);
     const charge=cap.pizza?select(charges,'Cobrança na inteira quando existem exceções de preço',[['maior','Maior preço dos sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']],g.cobranca_inteira):null;
@@ -61,11 +71,12 @@ window.CatalogoRegrasUI=(()=>{
     const toggle=()=>{fields.hidden=!active.checked;max.required=active.checked;if(charge)charge.closest('label').hidden=!options.avancado||!whole.checked;if(partial)partial.closest('label').hidden=!part.checked;help.replaceChildren();for(const text of explainExtra({ativo:active.checked,inteira:whole?.checked||!cap.pizza,por_parte:part?.checked||false,cobranca_parte:partial?.value||g.cobranca_parte,cobranca_inteira:charge?.value||g.cobranca_inteira},key,options.avancado,cap.pizza))help.append(el('p',text));};active.onchange=toggle;if(part)part.onchange=toggle;if(whole)whole.onchange=toggle;if(partial)partial.onchange=toggle;if(charge)charge.onchange=toggle;toggle();
     readers[key]=()=>({ativo:active.checked,inteira:whole?whole.checked:true,por_parte:part?part.checked:false,obrigatoria_padrao:required.checked,max_por_opcao:Number(max.value),cobranca_inteira:charge?.value||'maior',cobranca_parte:partial?.value||'integral'});
    }
-   readCurrent=()=>({...r,nome:name.value.trim(),preset_id:preset.value,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))});
+   readCurrent=()=>{const current={...r,preset_id:preset.value,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))};current.nome=ruleName(current);return current;};
+   const updateName=()=>{name.textContent=readCurrent().nome;};editor.oninput=updateName;editor.onchange=updateName;updateName();
    preset.onchange=()=>{const selected=choices.find(x=>x.preset_id===preset.value);if(selected)build({...selected,recursos_personalizados:r.recursos_personalizados});};
    if(resourcePizza&&resourceExtras){const resourcesChanged=()=>{const current=readCurrent();current.recursos={pizza:resourcePizza.checked,personalizacao:resourceExtras.checked};current.preset_id='personalizado';current.recursos_personalizados=true;build(current);};resourcePizza.onchange=resourcesChanged;resourceExtras.onchange=resourcesChanged;}
   }
   build(stored);return()=>readCurrent();
  }
- return{capabilities,defaults,rulesForModel,presets,explainExtra,render};
+ return{capabilities,defaults,rulesForModel,presets,ruleName,explainExtra,render};
 })();

@@ -12,6 +12,9 @@ window.CatalogoRegrasUI=(()=>{
   if(!cap.personalizacao){r.adicionais.ativo=false;r.bordas.ativo=false;}
   return r;
  }
+ function rulesForModel(modelo,anteriorModelo,anterior){
+  return defaults(modelo,modelo!==anteriorModelo?{}:anterior);
+ }
  function presets(modelo,recursos){
   const cap=capabilities(modelo,{recursos});
   const make=(id,nome,dividir,bordas,adicionais,partes)=>{const r=defaults(modelo,{recursos:cap,nome,preset_id:id});r.pizza_combinada=dividir;r.bordas.ativo=bordas;r.adicionais.ativo=adicionais;if(id==='complementos')r.adicionais.max_por_opcao=1;r.bordas.por_parte=bordas&&partes;r.adicionais.por_parte=adicionais&&partes;return r;};
@@ -19,8 +22,9 @@ window.CatalogoRegrasUI=(()=>{
   if(cap.personalizacao)return[make('adicionais_opcionais','Adicionais opcionais por item',false,false,true,false),make('complementos','Complementos por item',false,false,true,false)];
   return[make('sem_personalizacao','Catálogo sem personalizações',false,false,false,false)];
  }
- function explainExtra(g,key,avancado=false){
+ function explainExtra(g,key,avancado=false,pizza=true){
   if(!g.ativo)return [];
+  if(!pizza)return ['Defina o preço de cada adicional no catálogo. O valor é cobrado por unidade escolhida, respeitando o limite individual da opção.'];
   const nome=key==='bordas'?'borda':'adicional',out=[`Defina o preço de cada ${nome} por tamanho no catálogo. O cálculo dos sabores da pizza é separado.`];
   if(g.inteira)out.push(`Na pizza inteira, o preço da ${nome} é aplicado à unidade escolhida. Quando o preço é igual entre os sabores, não há diferença entre maior preço, média e proporcional.`);
   if(g.por_parte)out.push(g.cobranca_parte==='proporcional'?`Por parte: o preço da ${nome} acompanha a fração escolhida. Exemplo: uma opção de R$ 12 em metade da pizza acrescenta R$ 6.`:`Por parte: cobra o preço completo da ${nome} em cada parte escolhida. Exemplo: uma opção de R$ 12 em metade da pizza acrescenta R$ 12.`);
@@ -54,7 +58,7 @@ window.CatalogoRegrasUI=(()=>{
     const charge=cap.pizza?select(charges,'Cobrança na inteira quando existem exceções de preço',[['maior','Maior preço dos sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']],g.cobranca_inteira):null;
     const partial=cap.pizza?select(charges,'Cobrança por parte',[['integral','Valor integral em cada parte'],['proporcional','Proporcional ao tamanho da parte']],g.cobranca_parte):null;
     const help=el('div');help.className='ob-rule-help';fields.append(help);
-    const toggle=()=>{fields.hidden=!active.checked;max.required=active.checked;if(charge)charge.closest('label').hidden=!options.avancado||!whole.checked;if(partial)partial.closest('label').hidden=!part.checked;help.replaceChildren();for(const text of explainExtra({ativo:active.checked,inteira:whole?.checked||!cap.pizza,por_parte:part?.checked||false,cobranca_parte:partial?.value||g.cobranca_parte,cobranca_inteira:charge?.value||g.cobranca_inteira},key,options.avancado))help.append(el('p',text));};active.onchange=toggle;if(part)part.onchange=toggle;if(whole)whole.onchange=toggle;if(partial)partial.onchange=toggle;if(charge)charge.onchange=toggle;toggle();
+    const toggle=()=>{fields.hidden=!active.checked;max.required=active.checked;if(charge)charge.closest('label').hidden=!options.avancado||!whole.checked;if(partial)partial.closest('label').hidden=!part.checked;help.replaceChildren();for(const text of explainExtra({ativo:active.checked,inteira:whole?.checked||!cap.pizza,por_parte:part?.checked||false,cobranca_parte:partial?.value||g.cobranca_parte,cobranca_inteira:charge?.value||g.cobranca_inteira},key,options.avancado,cap.pizza))help.append(el('p',text));};active.onchange=toggle;if(part)part.onchange=toggle;if(whole)whole.onchange=toggle;if(partial)partial.onchange=toggle;if(charge)charge.onchange=toggle;toggle();
     readers[key]=()=>({ativo:active.checked,inteira:whole?whole.checked:true,por_parte:part?part.checked:false,obrigatoria_padrao:required.checked,max_por_opcao:Number(max.value),cobranca_inteira:charge?.value||'maior',cobranca_parte:partial?.value||'integral'});
    }
    readCurrent=()=>({...r,nome:name.value.trim(),preset_id:preset.value,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))});
@@ -63,5 +67,5 @@ window.CatalogoRegrasUI=(()=>{
   }
   build(stored);return()=>readCurrent();
  }
- return{capabilities,defaults,presets,explainExtra,render};
+ return{capabilities,defaults,rulesForModel,presets,explainExtra,render};
 })();

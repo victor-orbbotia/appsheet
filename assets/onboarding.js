@@ -11,7 +11,7 @@
  let data,step=1,busy=false,readRules=null;
  const hasRules=()=>{const c=CatalogoRegrasUI.capabilities(data?.onboarding.modelo,data?.onboarding.regras_catalogo);return c.pizza||c.personalizacao;};
  const nextStep=()=>step===2&&!hasRules()?4:Math.min(5,step+1);
- function url(path){const u=new URL(path,location.href);u.searchParams.set('account_id',account);if(data?.segmento)u.searchParams.set('segmento',data.segmento);if(path.startsWith('produtos/')){u.searchParams.set('onboarding','1');if(data?.onboarding.modelo==='pizzaria')u.searchParams.set('tipo','pizza');}return u.href;}
+ function url(path){const u=globalThis.OrbbotiaRoutes?OrbbotiaRoutes.url(path,(document.baseURI||location.href)):new URL(path,(document.baseURI||location.href));u.searchParams.set('account_id',account);if(data?.segmento)u.searchParams.set('segmento',data.segmento);if(path.startsWith('produtos/')){u.searchParams.set('onboarding','1');if(data?.onboarding.modelo==='pizzaria')u.searchParams.set('tipo','pizza');}return u.href;}
  function el(tag,text){const e=document.createElement(tag);if(text)e.textContent=text;return e;}
  function link(text,path){const a=el('a',text);a.href=url(path);return a;}
  async function request(acao,dados={}){const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account_id:account,acao,dados,versao_esperada:data?.onboarding.versao??null})});let j;try{j=await r.json();}catch{throw Error('Não foi possível confirmar a configuração. Atualize e tente novamente.');}if(!r.ok||j.status!=='sucesso')throw Error(j.mensagem||'Não foi possível carregar a configuração.');data=j;}

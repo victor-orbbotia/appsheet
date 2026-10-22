@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="index.html"></script>
+ <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>Visão geral · Orbbotia</title>
+ <script src="assets/contexto-conta.js?v=20261021-publico1"></script>
+ <script src="assets/admin-config.js"></script><script src="assets/supabase-2.57.4.js"></script>
+ <script src="assets/admin-session.js?v=20261021-publico1"></script>
+ <link rel="stylesheet" href="assets/admin-ui.css?v=20261020-espacos1">
+ <link rel="stylesheet" href="assets/dashboard.css?v=20261015-dashboard1">
+ <script src="assets/admin-ui.js?v=20261021-publico1" defer></script>
+ <script src="assets/onboarding-entry.js?v=20261021-publico1" defer></script>
+ <script src="assets/dashboard-core.js?v=20261015-dashboard1" defer></script>
+ <script src="assets/dashboard.js?v=20261016-acesso1" defer></script>
+</head>
+<body class="dashboard-page">
+ <div id="area-loading" class="dash-loading" role="status">Conferindo acesso ao estabelecimento…</div>
+ <main id="area-modulos" class="dashboard home-preview hidden" aria-labelledby="dashboard-title">
+  <div id="perfil-negocio" hidden><label for="seletor-segmento">Perfil do negócio</label><select id="seletor-segmento" disabled><option value="restaurante">Restaurante</option><option value="institucional">Institucional</option><option value="clinica">Clínica</option></select></div>
+  <header class="dash-heading"><div><span class="dash-kicker" id="nome-empresa">Seu estabelecimento</span><h1 id="dashboard-title">Seu negócio, por inteiro.</h1><p>Uma visão dos pedidos e do que precisa de atenção.</p></div><button type="button" class="dash-help" id="dash-help">ⓘ Como funciona?</button></header>
+  <form id="dash-period" class="dash-period">
+   <label>Período de criação<select id="dash-period-select"><option value="7">Últimos 7 dias</option><option value="1">Hoje</option><option value="30">Últimos 30 dias</option><option value="custom">Escolher período</option></select></label>
+   <div id="dash-custom" class="dash-custom" hidden><label>De<input id="dash-start" type="date" required></label><label>Até<input id="dash-end" type="date" required></label><button type="submit">Aplicar período</button></div>
+   <span class="dash-status" id="dash-freshness" role="status" aria-live="polite">Consultando pedidos…</span>
+  </form>
+  <div id="dash-error" class="dash-error" role="alert" hidden><p id="dash-error-text"></p><button id="dash-retry" type="button">Tentar novamente</button></div>
+  <div id="dash-data" class="dash-data" hidden>
+   <div class="dash-caption"><span id="dash-range"></span><span>Estados e valores atuais · horário de Brasília</span></div>
+   <div id="dash-coverage" class="dash-coverage" hidden></div>
+   <section id="dash-cards" class="dash-cards" aria-label="Resumo dos pedidos"></section>
+   <div class="dash-context-note"><p id="dash-empty-note"></p><button type="button" data-recorte="sem_produto">Ver registros sem produto</button></div>
+   <div class="dash-grid">
+    <section class="dash-panel"><div class="dash-panel-head"><div><h2>Pedidos ao longo dos dias</h2><p>Pela data de criação, incluindo cancelados e montagens.</p></div></div><div class="dash-panel-body"><div class="dash-legend"><span>Todos os registros</span><span>Com produto</span></div><div id="dash-chart" class="dash-chart"></div><details><summary>Ver valores por dia</summary><div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Dia</th><th>Criados</th><th>Com produto</th></tr></thead><tbody id="dash-days"></tbody></table></div></details></div></section>
+    <section class="dash-panel"><div class="dash-panel-head"><div><h2>De onde vieram os pedidos</h2><p>Origem registrada, incluindo os não identificados.</p></div></div><div class="dash-panel-body dash-rows" id="dash-origins"></div><div class="dash-panel-foot">Origem não identifica quem concluiu o pedido.</div></section>
+   </div>
+   <section class="dash-panel"><div class="dash-panel-head"><div><h2>Situação dos pedidos do período</h2><p>Como estão agora os registros criados nas datas escolhidas.</p></div></div><div class="dash-panel-body dash-rows" id="dash-states"></div></section>
+   <section class="dash-panel" id="dash-orders" aria-labelledby="dash-list-title"><div class="dash-panel-head"><div><h2 id="dash-list-title">Pedidos criados no período</h2><p id="dash-list-caption">Os filtros abaixo alteram apenas esta lista.</p></div><button type="button" data-recorte="periodo">Todos do período</button></div>
+    <form class="dash-filters" id="dash-filter-form"><label>Buscar pedido ou cliente<input id="dash-search" type="search" maxlength="80" placeholder="Nome ou número do pedido"></label><label>Situação<select id="dash-state"><option value="">Todas as situações</option></select></label><label>Origem<select id="dash-origin"><option value="todas">Todas as origens</option><option value="whatsapp">WhatsApp</option><option value="webapp">Cardápio digital</option><option value="desconhecida">Outra / não informada</option></select></label><button type="submit">Filtrar</button><button id="dash-clear" type="button">Limpar</button></form>
+    <div class="dash-table-wrap"><table class="dash-table"><thead><tr><th>Pedido / cliente</th><th>Criado em</th><th>Situação</th><th>Origem</th><th>Valor atual</th><th>Detalhes</th></tr></thead><tbody id="dash-order-rows"></tbody></table></div>
+    <div id="dash-no-orders" class="dash-empty" hidden><h3>Nenhum pedido neste recorte</h3><span>Experimente outro período ou ajuste os filtros da lista.</span></div>
+    <div class="dash-pagination"><span id="dash-list-count"></span><div><button id="dash-prev" type="button" aria-label="Página anterior">←</button><span id="dash-page"></span><button id="dash-next" type="button" aria-label="Próxima página">→</button></div></div>
+   </section>
+   <p class="dash-footer">Este painel acompanha registros do sistema, inclusive testes não separados. Aprovação ou entrega não comprova recebimento. Conversão e financeiro serão acrescentados quando houver histórico suficiente.</p>
+  </div>
+ </main>
+ <dialog id="dash-dialog" class="dash-dialog" aria-labelledby="dash-dialog-title"><header><h2 id="dash-dialog-title">Detalhes</h2><button type="button" id="dash-close" aria-label="Fechar">✕</button></header><div class="dash-dialog-body" id="dash-dialog-body"></div></dialog>
+</body>
+</html>

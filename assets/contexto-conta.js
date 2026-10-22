@@ -1,6 +1,6 @@
 /* Contexto administrativo. Identidade e autorização continuam no servidor. */
 window.ContextoConta = (() => {
-  const loginPage=/\/acesso\.html$/.test(location.pathname);
+  const loginPage=/\/acesso\.html$/.test(location.pathname)||window.OrbbotiaRoutes?.source==='acesso.html';
   const origens=new Set([location.origin,'https://chat.orbbotia.com']);
   const valido=value=>/^[1-9]\d{0,14}$/.test(String(value??''));
   const params=new URLSearchParams(location.search);

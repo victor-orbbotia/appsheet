@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="app/index.html"></script>
+<meta charset="UTF-8">
   <meta name="referrer" content="no-referrer">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Cardápio digital com navegação por categorias e pedido pelo WhatsApp.">
+  <meta name="description" content="Cardápio digital com navegação por categorias e pedidos online.">
   <meta name="theme-color" content="#111513">
   <title>Cardápio Digital</title>
   <link rel="preconnect" href="https://images.unsplash.com">
@@ -637,8 +638,9 @@
 
         <div class="options-group">
           <h3>Contato</h3>
-          <p class="section-note">Usaremos este número para confirmar o pedido.</p>
+          <p class="section-note">Informe um número com DDD para contato sobre o pedido.</p>
           <div class="field">
+            <div id="nome-publico" hidden><label class="field-label" for="input-nome">Seu nome</label><input type="text" id="input-nome" autocomplete="name" maxlength="200" placeholder="Como podemos chamar você?"></div>
             <label class="field-label" for="input-telefone">WhatsApp</label>
             <input type="tel" id="input-telefone" placeholder="Ex.: 31 99999-9999" autocomplete="tel" inputmode="tel" aria-describedby="telefone-error" required>
             <p class="field-error" id="telefone-error" aria-live="polite"></p>
@@ -727,6 +729,7 @@
       <h2>Pedido enviado!</h2>
       <p>Seu pedido foi enviado com sucesso. Continue o atendimento pelo WhatsApp.</p>
       <button id="btn-return-whatsapp" hidden class="btn" type="button">Voltar para o WhatsApp</button>
+      <a id="acompanhar-publico" hidden class="btn" href="#">Acompanhar meu pedido</a>
       <button id="close-webapp" type="button" class="btn btn-secondary">Fechar página</button>
       <p id="close-webapp-help" hidden>O navegador não permite fechar esta aba automaticamente. Você já pode fechá-la com segurança e voltar à conversa.</p>
     </div>
@@ -754,6 +757,9 @@
       const cacheEndereco = window.criarCacheEndereco(storage);
       const params = new URLSearchParams(location.search);
       const ACESSO = params.get('acesso') || '';
+      const LOJA = params.get('loja') || '';
+      const PUBLICO = Boolean(LOJA && !ACESSO);
+      const RASTREIO_PUBLICO = ACESSO.startsWith('p.');
       let ACCOUNT_ID = '', CLIENTE_TEL = '', CLIENTE_NOME = 'Cliente';
       // Estado de navegação pertence a esta entrada e chave; não vai no link compartilhado.
       const anterior = history.state?.webapp;
@@ -769,10 +775,12 @@
         const limpa = new URL(location.href);
         limpa.search = new URLSearchParams({acesso:ACESSO}).toString(); limpa.hash = '';
         history.replaceState({webapp:{acesso:ACESSO,modo:MODO,pedido_id:params.get('pedido_id')||'',repetir:params.get('repetir')||''}},'',limpa.href);
+      } else if (LOJA) {
+        const limpa=new URL(location.href);limpa.search=new URLSearchParams({loja:LOJA}).toString();limpa.hash='';history.replaceState(null,'',limpa.href);
       }
       const TERMINAIS = ['cancelado','cancelado_cliente','cancelado_atendente','entregue','retirado','concluido','finalizado','resolvido'];
       const EDITAVEIS = ['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','retirada_balcao'];
-      const IS_DEMO = !ACESSO && params.get("demo") === "1";
+      const IS_DEMO = !ACESSO && !LOJA && params.get("demo") === "1";
       const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
       const DEMO_PRODUTOS = [
@@ -1866,6 +1874,8 @@
       }
 
       async function submitOrder() {
+        if (RASTREIO_PUBLICO) return;
+        if (PUBLICO && $('#input-nome').value.trim().length < 2) {showToast('Informe seu nome para concluir.', 'error');$('#input-nome').focus();return;}
         if (!IS_DEMO && !['novo','editar'].includes(MODO)) return showToast('Selecione novo pedido ou editar.', 'error');
         if (!state.cart.length) return showToast("Adicione pelo menos um item antes de enviar.", "error");
         if (state.cart.some(i => i.indisponivel)) return showToast("Revise os itens marcados no carrinho antes de enviar.", "error");
@@ -1885,6 +1895,7 @@
           ...(entregaOutro ? { estimada: true, local_informado: localOutro } : {})
         });
         const payload = {
+          ...(PUBLICO ? {loja:LOJA,cliente_nome:$('#input-nome').value.trim(),cliente_telefone:valid.phoneDigits} : {}),
           acesso: ACESSO, modo: state.pedido ? 'editar' : 'novo',
           pedido_id: state.pedido?.id || null,
           versao: state.pedido?.versao || null,
@@ -1907,10 +1918,20 @@
         try {
           if (IS_DEMO) await new Promise(resolve => setTimeout(resolve, 450));
           else {
-            const response = await fetch(URL_WEBHOOK_PEDIDO, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            const response = await fetch(PUBLICO ? URL_WEBHOOK_PEDIDO.replace(/webapp-pedido$/, 'webapp-publico-pedido') : URL_WEBHOOK_PEDIDO, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
             const result = await response.json();
             if (!response.ok || result.success !== true) throw new Error(result.message || 'Não foi possível atualizar o pedido.');
             state.pedido = result.pedido || state.pedido;
+            if (PUBLICO) {
+              if (!/^p\.[0-9a-f-]{36}$/i.test(result.acesso || '')) throw new Error('Pedido recebido, mas o acompanhamento não foi retornado. Confira com a equipe antes de enviar outro pedido.');
+              const url = new URL(location.href);url.search = new URLSearchParams({acesso:result.acesso}).toString();url.hash='';
+              $('#acompanhar-publico').href=url.href;$('#acompanhar-publico').hidden=false;
+              $('#whatsapp-return h2').textContent='Pedido registrado!';
+              $('#whatsapp-return p').textContent='Seu pedido está aguardando aprovação da equipe. Acompanhe por aqui; para conversar, abra o WhatsApp e envie a mensagem preenchida.';
+              state.whatsapp=/^\d{10,15}$/.test(String(result.whatsapp_empresa||'')) ? 'https://wa.me/'+result.whatsapp_empresa+'?text='+encodeURIComponent('Olá! Fiz o pedido '+String(result.pedido.id).slice(0,8)+' no cardápio digital e gostaria de acompanhar.') : '';
+              $('#btn-return-whatsapp').textContent='Acompanhar pelo WhatsApp';$('#btn-return-whatsapp').hidden=!state.whatsapp;
+              MODO='registrado';
+            }
             if (delivery) cacheEndereco.salvar(ACCOUNT_ID, valid.phoneDigits, {
               rua, numero, bairro: entregaOutro ? TAXA_OUTROS_KEY : bairro, outroLocal: localOutro
             });
@@ -1919,7 +1940,7 @@
           syncBadges();
           updateCartBar();
           closeModal($("#cart-modal"));
-          showToast(IS_DEMO ? "Pedido demonstrativo concluído com sucesso." : "Pedido enviado. Confira o WhatsApp para continuar.");
+          showToast(IS_DEMO ? "Pedido demonstrativo concluído com sucesso." : PUBLICO ? 'Pedido registrado. Aguardando aprovação da equipe.' : "Pedido enviado. Confira o WhatsApp para continuar.");
           if (!IS_DEMO) {
             $('#whatsapp-return').hidden = false;
             (state.whatsapp ? $('#btn-return-whatsapp') : $('#close-webapp')).focus();
@@ -2004,6 +2025,21 @@
         );
       }
       async function init() {
+        if (RASTREIO_PUBLICO) {
+          $('.hero-content h1').textContent='Acompanhar pedido';
+          $('.hero-content p').textContent='Consulte o andamento e, se precisar, entre em contato com a equipe.';
+          try {
+            const query=new URLSearchParams({acesso:ACESSO});
+            const response=await fetch(URL_WEBHOOK_DADOS.replace(/webapp-dados$/,'webapp-publico')+'?'+query,{cache:'no-store',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(20000)});
+            const data=await response.json();
+            if(!response.ok||data.acesso_valido!==true||!data.pedido)throw Error('Este acesso expirou ou não está disponível. Para recuperar o acompanhamento, fale com a equipe.');
+            setDashboardMode();menu.replaceChildren(element('h2','','Acompanhar meu pedido'),element('p','','Pedido sujeito à aprovação da equipe. Pagamento só é confirmado após conferência.'),buildOrderCard(data.pedido));
+            const actions=element('div','order-card-actions');actions.append(acaoBotao('Atualizar pedido',()=>location.reload()));
+            const novo=document.createElement('a');const u=new URL(location.href);u.search=new URLSearchParams({loja:data.loja}).toString();novo.href=u.href;novo.className='btn';novo.textContent='Abrir cardápio';actions.append(novo);
+            if(/^\d{10,15}$/.test(String(data.whatsapp_empresa||''))){const a=document.createElement('a');a.className='btn';a.href='https://wa.me/'+data.whatsapp_empresa+'?text='+encodeURIComponent('Olá! Gostaria de acompanhar o pedido '+data.pedido.id.slice(0,8)+'.');a.textContent='Conversar pelo WhatsApp';a.rel='noreferrer';actions.append(a);}
+            menu.append(actions);return;
+          }catch(error){menu.replaceChildren(element('div','loading-state error-text',error.message));return;}
+        }
         $("#input-telefone").value = CLIENTE_TEL;
         try {
           if (IS_DEMO) {
@@ -2011,20 +2047,27 @@
             state.produtos = DEMO_PRODUTOS;
             state.taxas = DEMO_TAXAS;
           } else {
-            if (!ACESSO) throw new Error('Abra o link de acesso enviado pelo atendimento.');
-            const query = new URLSearchParams({ pedido_id: params.get("pedido_id") || "", acesso: ACESSO });
-            const response = await fetch(`${URL_WEBHOOK_DADOS}?${query}`, { cache:'no-store', referrerPolicy:'no-referrer', signal: AbortSignal.timeout(20000) });
+            if (!ACESSO && !PUBLICO) throw new Error('Abra o link do cardápio da loja ou o acesso enviado pelo atendimento.');
+            const query = new URLSearchParams(PUBLICO ? {loja:LOJA} : { pedido_id: params.get("pedido_id") || "", acesso: ACESSO });
+            const endpoint=PUBLICO ? URL_WEBHOOK_DADOS.replace(/webapp-dados$/,'webapp-publico') : URL_WEBHOOK_DADOS;
+            const response = await fetch(`${endpoint}?${query}`, { cache:'no-store', referrerPolicy:'no-referrer', signal: AbortSignal.timeout(20000) });
             if (!response.ok) throw new Error(`Cardápio indisponível: ${response.status}`);
             const data = await response.json();
             if (data.acesso_valido !== true) throw new Error('Este link expirou ou não é válido. Peça um novo link no WhatsApp.');
-            const contexto = data.contexto_acesso;
-            if (!contexto?.account_id || !contexto.cliente_telefone) throw new Error('Não foi possível conferir o acesso. Reabra o link do atendimento.');
+            const contexto = PUBLICO ? {account_id:data.account_id,cliente_telefone:'',modo_inicial:'novo'} : data.contexto_acesso;
+            if (!contexto?.account_id || (!PUBLICO && !contexto.cliente_telefone)) throw new Error('Não foi possível conferir o acesso. Reabra o link do atendimento.');
             ACCOUNT_ID = contexto.account_id; CLIENTE_TEL = contexto.cliente_telefone;
             CLIENTE_NOME = contexto.cliente_nome || 'Cliente';
             $('#input-telefone').value = CLIENTE_TEL;
-            $('#input-telefone').readOnly = true;
-            $('#input-telefone').title = 'WhatsApp vinculado ao link deste atendimento';
-            if (!MODO) MODO = contexto.modo_inicial || 'selecionar';
+            $('#input-telefone').readOnly = !PUBLICO;
+            $('#nome-publico').hidden = !PUBLICO;
+            if (PUBLICO) {
+              $('.hero-content h1').textContent=data.nome_empresa||'Cardápio Digital';
+              $('.hero-content p').textContent='Escolha seus itens e envie o pedido por aqui. Você pode acompanhar sem abrir o WhatsApp.';
+            }
+            $('#input-telefone').title = PUBLICO ? 'Informe seu WhatsApp com país e DDD' : 'WhatsApp vinculado ao link deste atendimento';
+            if (PUBLICO) MODO='novo';
+            else if (!MODO) MODO = contexto.modo_inicial || 'selecionar';
             if (MODO === 'acompanhar' && !params.get('pedido_id')) MODO = 'andamento';
             state.pedidos = Array.isArray(data.pedidos) ? data.pedidos : [];
             state.contextoPedido = data.contexto_pedido || null;
@@ -2091,7 +2134,7 @@
               $("#btn-submit").disabled = true;
               $("#btn-submit").textContent = 'Alterações com a equipe pelo WhatsApp';
             }
-          } else preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, CLIENTE_TEL.replace(/\D/g, '')));
+          } else preencherEndereco(PUBLICO ? null : cacheEndereco.ler(ACCOUNT_ID, CLIENTE_TEL.replace(/\D/g, '')));
           if (CLIENTE_TEL) $("#input-telefone").readOnly = true;
           updateCartBar();
           toggleDeliveryFields();
@@ -2107,7 +2150,7 @@
         toggleOutroLocalField();
       }
       $("#input-telefone").addEventListener('change', () => {
-        if (!CLIENTE_TEL && !state.pedido) preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, '')));
+        if (!PUBLICO && !CLIENTE_TEL && !state.pedido) preencherEndereco(cacheEndereco.ler(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, '')));
       });
       $("#forget-address").addEventListener('click', () => {
         cacheEndereco.apagar(ACCOUNT_ID, $("#input-telefone").value.replace(/\D/g, ''));

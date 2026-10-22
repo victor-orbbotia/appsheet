@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="profissionais/novo.html"></script>
+<meta charset="UTF-8">
+<script src="../assets/contexto-conta.js?v=20261021-publico1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261021-publico1"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Profissionais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: system-ui, sans-serif; }
+        .input-field {
+            width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1;
+            border-radius: 0.375rem; outline: none; transition: border-color 0.2s;
+            font-size: 0.875rem;
+        }
+        .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+    </style>
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
+<script src="../assets/admin-ui.js?v=20261021-publico1" defer></script>
+</head>
+<body class="p-4 md:p-6 space-y-6">
+
+    <div id="alerta-chatwoot" class="max-w-4xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
+        ⏳ Aguardando conexão com o Chatwoot para identificar a conta...
+    </div>
+
+    <div id="app-container" class="max-w-4xl mx-auto space-y-6 hidden">
+
+        <!-- BOTÃO VOLTAR -->
+        <div class="mb-2">
+            <a id="link-voltar" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Voltar ao Menu Principal
+            </a>
+        </div>
+
+        <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+            <div class="flex flex-wrap justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 gap-4">
+                <h1 id="titulo-form" class="text-lg font-semibold text-slate-800">Novo Profissional</h1>
+
+
+            </div>
+
+            <form id="formProfissional" class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="profissional_id" value="">
+
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nome Completo <span class="text-blue-600">*</span></label>
+                    <input type="text" id="nome" required class="input-field" placeholder="Ex: Joao Silva">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Especialidade</label>
+                    <input list="lista-especialidades" id="especialidade" class="input-field" placeholder="Selecione ou digite nova...">
+                    <datalist id="lista-especialidades">
+                        <option value="Clínico Geral">
+                        <option value="Cardiologista">
+                        <option value="Ginecologista">
+                        <option value="Pediatra">
+                        <option value="Ortopedista">
+                    </datalist>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">WhatsApp <span class="text-blue-600">*</span></label>
+                    <input type="text" id="telefone" required class="input-field" placeholder="5585900000000" maxlength="13">
+                    <span class="text-[10px] text-slate-400 mt-1 block">Apenas números. Comece com 55 + DDD. Ex: 55119...</span>
+                </div>
+                <div class="form-actions md:col-span-2">
+                    <button type="button" id="btnExcluir" onclick="excluirProfissional()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded transition-colors">
+                        🗑️ Excluir
+                    </button>
+                    <button type="button" id="btnStatus" onclick="alternarStatus()" class="hidden px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white rounded transition-colors shadow-sm">
+                        Desativar
+                    </button>
+                    <button type="button" onclick="limparFormulario()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnSalvar" onclick="salvarProfissional()" class="px-3 md:px-4 py-2 text-xs md:text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 class="text-md font-semibold text-slate-800">Profissionais Cadastrados</h2>
+                <button onclick="carregarLista()" class="text-xs text-slate-500 hover:text-blue-600 font-medium">🔄 Atualizar</button>
+            </div>
+
+            <div class="p-0 overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="px-4 py-3 border-b">Status</th>
+                            <th class="px-4 py-3 border-b">Nome</th>
+                            <th class="px-4 py-3 border-b">Especialidade</th>
+                            <th class="px-4 py-3 border-b">WhatsApp</th>
+                            <th class="px-4 py-3 border-b text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-profissionais" class="divide-y divide-slate-100">
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-400">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlDados = 'https://n8n.orbbotia.com/webhook/profissionais-dados';
+        const urlAcao  = 'https://n8n.orbbotia.com/webhook/profissionais-acao';
+
+        let globalAccountId = null;
+        let handshakeInterval;
+        let listaAtual = [];
+        let statusAtualEdicao = true;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+
+        /* =========================================
+           NORMALIZAÇÃO
+           ========================================= */
+        const inputNome = document.getElementById('nome');
+        const inputTelefone = document.getElementById('telefone');
+
+        inputNome.addEventListener('input', function() {
+            let val = this.value.replace(/[^a-zA-ZÀ-ÿ\s]/g, '');
+            val = val.replace(/\b\w/g, char => char.toUpperCase());
+            this.value = val;
+        });
+
+        // DDD Flexível
+        inputTelefone.addEventListener('focus', function() {
+            if (!this.value) this.value = '55';
+        });
+
+        inputTelefone.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+            if (this.value.length >= 2 && !this.value.startsWith('55')) {
+                this.value = '55' + this.value.substring(2).replace(/\D/g, '');
+            }
+            if (this.value.length > 13) this.value = this.value.substring(0, 13);
+        });
+
+        /* =========================================
+           COMUNICAÇÃO
+           ========================================= */
+        window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                const payload = eventData.data;
+                globalAccountId = (payload.account && payload.account.id) || (payload.conversation && payload.conversation.account_id) || globalAccountId;
+                iniciarApp();
+            }
+        });
+
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) ContextoConta.solicitar();
+        }, 500);
+
+
+
+        if (globalAccountId) {
+            clearInterval(handshakeInterval);
+            iniciarApp();
+        }
+
+        function iniciarApp() {
+            document.getElementById('alerta-chatwoot').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            const params = new URLSearchParams({ account_id: globalAccountId });
+            if (urlParams.get('segmento')) params.set('segmento', urlParams.get('segmento'));
+            document.getElementById('link-voltar').href = `../index.html?${params}`;
+            carregarLista();
+        }
+
+        /* =========================================
+           LÓGICA DE DADOS
+           ========================================= */
+        async function carregarLista() {
+            const tbody = document.getElementById('lista-profissionais');
+            tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-blue-500">⏳ Sincronizando...</td></tr>`;
+
+            try {
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error("Erro ao buscar dados");
+                const dados = await res.json();
+                listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
+                renderizarTabela();
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-center text-red-500">Erro ao carregar lista.</td></tr>`;
+            }
+        }
+
+        function renderizarTabela() {
+            const tbody = document.getElementById('lista-profissionais');
+            tbody.innerHTML = '';
+
+            const listaFiltrada = listaAtual.filter(item => {
+                const p = item.json ? item.json : item;
+                return p.deletado !== true;
+            });
+
+            if (listaFiltrada.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-400 font-medium">Nenhum profissional cadastrado.</td></tr>`;
+                return;
+            }
+
+            listaFiltrada.forEach(prof => {
+                const p = prof.json ? prof.json : prof;
+                const isAtivo = p.ativo !== false;
+
+                const tr = document.createElement('tr');
+                tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50' : 'bg-slate-50/70 opacity-70'}`;
+                tr.innerHTML = `
+                    <td class="px-4 py-3">
+                        ${isAtivo
+                            ? '<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Ativo</span>'
+                            : '<span class="bg-slate-200 text-slate-600 border border-slate-300 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Inativo</span>'}
+                    </td>
+                    <td class="px-4 py-3 font-medium text-slate-800">${p.nome || '-'}</td>
+                    <td class="px-4 py-3"><span class="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded font-medium">${p.especialidade || '-'}</span></td>
+                    <td class="px-4 py-3 font-mono text-xs">${p.telefone || '-'}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="editarProfissional('${p.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors">
+                            Editar ✏️
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function editarProfissional(id) {
+            const profObj = listaAtual.find(item => {
+                const p = item.json ? item.json : item;
+                return p.id == id;
+            });
+            if (!profObj) return;
+            const p = profObj.json ? profObj.json : profObj;
+
+            document.getElementById('profissional_id').value = p.id;
+            document.getElementById('nome').value = p.nome || '';
+            document.getElementById('especialidade').value = p.especialidade || '';
+            document.getElementById('telefone').value = p.telefone || '';
+
+            statusAtualEdicao = p.ativo !== false;
+            const btnStatus = document.getElementById('btnStatus');
+            btnStatus.classList.remove('hidden', 'bg-slate-600', 'hover:bg-slate-700', 'bg-emerald-600', 'hover:bg-emerald-700');
+            if (statusAtualEdicao) {
+                btnStatus.innerText = "Desativar";
+                btnStatus.classList.add('bg-slate-600', 'hover:bg-slate-700');
+            } else {
+                btnStatus.innerText = "Reativar 🟢";
+                btnStatus.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            }
+
+            document.getElementById('btnExcluir').classList.remove('hidden');
+            document.getElementById('titulo-form').innerText = "Editando: " + p.nome;
+            document.getElementById('btnSalvar').innerText = "Atualizar Cadastro";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function limparFormulario() {
+            document.getElementById('formProfissional').reset();
+            document.getElementById('profissional_id').value = '';
+            document.getElementById('titulo-form').innerText = "Novo Profissional";
+            document.getElementById('btnSalvar').innerText = "Salvar";
+            document.getElementById('btnStatus').classList.add('hidden');
+            document.getElementById('btnExcluir').classList.add('hidden');
+        }
+
+        async function enviarAcao(payload, btnElement, txtSucesso) {
+            const txtOriginal = btnElement.innerText;
+            btnElement.innerText = 'Processando...';
+            btnElement.disabled = true;
+
+            try {
+                const response = await fetch(urlAcao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    btnElement.innerText = txtSucesso;
+
+                    // CORREÇÃO: Removemos da memória local instantaneamente antes de recarregar a tela
+                    if (payload.action === 'deletar') {
+                        listaAtual = listaAtual.filter(item => {
+                            const p = item.json ? item.json : item;
+                            return p.id != payload.id;
+                        });
+                    }
+
+                    setTimeout(() => {
+                        btnElement.innerText = txtOriginal;
+                        limparFormulario();
+                        renderizarTabela(); // Atualiza a tela imediatamente
+                        carregarLista();    // Atualiza em background
+                        btnElement.disabled = false;
+                    }, 1000);
+                } else {
+                    throw new Error("Erro na requisição");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erro de comunicação com o servidor.");
+                btnElement.innerText = txtOriginal;
+                btnElement.disabled = false;
+            }
+        }
+
+        function alternarStatus() {
+            const id = document.getElementById('profissional_id').value;
+            if (!id) return;
+            const btnStatus = document.getElementById('btnStatus');
+            const payload = { action: 'status', account_id: globalAccountId.toString(), id: id, ativo: !statusAtualEdicao };
+            enviarAcao(payload, btnStatus, 'Feito ✓');
+        }
+
+        function excluirProfissional() {
+            const id = document.getElementById('profissional_id').value;
+            if (!id) return;
+            if (confirm("ATENÇÃO: Tem certeza que deseja apagar este profissional? Ele sumirá desta lista.")) {
+                const btnExcluir = document.getElementById('btnExcluir');
+                const payload = { action: 'deletar', account_id: globalAccountId.toString(), id: id };
+                enviarAcao(payload, btnExcluir, 'Excluído!');
+            }
+        }
+
+        function salvarProfissional() {
+            const id = document.getElementById('profissional_id').value;
+            const nome = document.getElementById('nome').value.trim();
+            const especialidade = document.getElementById('especialidade').value.trim();
+            const telefone = document.getElementById('telefone').value;
+            const btnSalvar = document.getElementById('btnSalvar');
+
+            if (!nome) return alert("O campo Nome é obrigatório!");
+
+            if (telefone.length !== 13 || !telefone.startsWith('55')) {
+                alert("Telefone inválido! Deve começar com 55 e ter exatamente 13 números.");
+                document.getElementById('telefone').focus();
+                return;
+            }
+
+            const payload = {
+                action: id ? 'editar' : 'criar',
+                account_id: globalAccountId.toString(),
+                id: id,
+                nome: nome,
+                especialidade: especialidade,
+                telefone: telefone
+            };
+
+            enviarAcao(payload, btnSalvar, 'Sucesso! ✓');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="conhecimento/novo.html"></script>
+<meta charset="UTF-8">
+<script src="../assets/contexto-conta.js?v=20261021-publico1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261021-publico1"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base de Conhecimento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: system-ui, sans-serif; }
+        .input-field {
+            width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1;
+            border-radius: 0.375rem; outline: none; transition: border-color 0.2s;
+            font-size: 0.875rem; line-height: 1.5;
+        }
+        .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+        /* Remove setinhas do input number */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"] { -moz-appearance: textfield; }
+    </style>
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
+<script src="../assets/admin-ui.js?v=20261021-publico1" defer></script>
+</head>
+<body class="p-4 md:p-6 space-y-6">
+
+    <div id="alerta-chatwoot" class="max-w-4xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded border border-amber-200 shadow-sm">
+        ⏳ Conectando ao painel...
+    </div>
+
+    <div id="app-container" class="max-w-4xl mx-auto space-y-4 hidden">
+
+        <!-- BOTÃO VOLTAR -->
+        <div>
+            <a id="link-voltar" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Voltar ao Menu Principal
+            </a>
+        </div>
+
+        <div class="bg-white shadow-sm border border-slate-200 rounded-lg overflow-hidden">
+            <div class="flex justify-between items-center p-4 md:p-6 border-b border-slate-100 bg-slate-50/50">
+                <div>
+                    <h1 class="text-lg font-semibold text-slate-800">Base de Conhecimento (IA / Agentes)</h1>
+                    <p id="badge-segmento" class="text-xs font-bold text-indigo-600 uppercase tracking-wide mt-1">Segmento: Carregando...</p>
+                </div>
+                <button type="button" id="knowledge-help-toggle" class="help-control" aria-haspopup="dialog" onclick="CadastroUI.abrirAjuda('knowledge-help','Base de conhecimento',this)">ℹ️ Como funciona?</button>
+            </div>
+
+<div id="knowledge-help" hidden><p>Use esta base para orientar o agente sobre o estabelecimento: horários, localização, serviços, dúvidas frequentes e orientações gerais.</p><p>Produtos, preços, bordas, adicionais e sugestões de venda devem ser configurados no catálogo. A base não substitui o cadastro nem o estado real dos pedidos.</p><p>O tempo de espera é uma estimativa geral em minutos, não uma promessa de horário nem uma contagem regressiva. Deixe vazio se não houver previsão.</p><p>Depois de editar, clique em Salvar informações ao final. O conteúdo fica vinculado ao estabelecimento e ao perfil em uso.</p></div>
+            <div class="p-4 md:p-6 space-y-6">
+                <!-- CAMPO TEXTO BASE -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Instruções da Base</label>
+                    <textarea id="texto_base" class="input-field h-64 resize-y" maxlength="3000" placeholder="Ex:&#10;1. Nosso horário de funcionamento é de segunda a sexta, das 08h às 18h.&#10;2. O prazo de entrega padrão é de 45 minutos.&#10;3. Aceitamos PIX, Cartões de Crédito e Dinheiro."></textarea>
+
+                    <div class="flex justify-end mt-2">
+                        <span id="contador" class="text-xs font-medium text-slate-400">0 / 3000 caracteres</span>
+                    </div>
+                </div>
+
+                <!-- NOVO CAMPO TEMPO DE ESPERA (NUMÉRICO) -->
+                <div>
+                    <label for="tempo_espera" class="block text-sm font-medium text-slate-700 mb-1 flex items-center">
+                        Tempo de Espera
+                        <span class="ml-2 cursor-help text-blue-500" title="Estimativa padrão informada pela IA. Não representa tempo restante nem horário garantido.">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                        </span>
+                    </label>
+                    <p class="text-xs text-slate-500 mb-2">Estimativa geral em minutos, editável por empresa. Deixe vazio se não houver previsão padrão.</p>
+
+                    <div class="flex items-center space-x-2">
+                        <!-- Type number para aceitar apenas números -->
+                        <input type="number" id="tempo_espera" min="1" step="1" class="input-field !w-24 text-center font-semibold text-slate-700" placeholder="Ex: 45">
+                        <span class="text-sm font-medium text-slate-600">minutos</span>
+                    </div>
+                </div>
+<div class="form-actions"><button type="button" id="btnSalvar" onclick="salvarConhecimento()" class="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 transition-colors shadow-sm">
+                    Salvar Informações
+                </button></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
+    <script>
+        const urlDados = 'https://n8n.orbbotia.com/webhook/conhecimento-dados';
+        const urlAcao  = 'https://n8n.orbbotia.com/webhook/conhecimento-acao';
+
+        let globalAccountId = null;
+        let segmentoAtual = 'institucional';
+        let handshakeInterval;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+        if (urlParams.get('segmento')) segmentoAtual = urlParams.get('segmento');
+
+        const textArea = document.getElementById('texto_base');
+        const tempoEsperaInput = document.getElementById('tempo_espera');
+        const contador = document.getElementById('contador');
+
+        textArea.addEventListener('input', function() {
+            const qtd = this.value.length;
+            contador.innerText = `${qtd} / 3000 caracteres`;
+            if (qtd >= 2900) contador.classList.replace('text-slate-400', 'text-amber-500');
+            else contador.classList.replace('text-amber-500', 'text-slate-400');
+        });
+
+        window.addEventListener('message', function (event) {
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
+            let eventData = {};
+            try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
+
+            if (eventData.event === 'appContext' && eventData.data) {
+                clearInterval(handshakeInterval);
+                globalAccountId = (eventData.data.account && eventData.data.account.id) || (eventData.data.conversation && eventData.data.conversation.account_id) || globalAccountId;
+                iniciarApp();
+            }
+        });
+
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) ContextoConta.solicitar();
+        }, 500);
+
+
+
+        if (globalAccountId) {
+            clearInterval(handshakeInterval);
+            iniciarApp();
+        }
+
+        function iniciarApp() {
+            document.getElementById('alerta-chatwoot').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+
+            document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
+            document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
+
+            carregarDados();
+        }
+
+        async function carregarDados() {
+            try {
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}&segmento=${segmentoAtual}`);
+                if (res.ok) {
+                    const dados = await res.json();
+                    if (dados && dados.length > 0) {
+                        textArea.value = dados[0].texto_base || '';
+                        tempoEsperaInput.value = dados[0].tempo_espera || '';
+                        textArea.dispatchEvent(new Event('input'));
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao carregar base de conhecimento", error);
+            }
+        }
+
+        async function salvarConhecimento() {
+            const btnSalvar = document.getElementById('btnSalvar');
+            const texto = textArea.value.trim();
+            const tempoEsperaRaw = tempoEsperaInput.value.trim();
+
+            // Converte para número inteiro para cálculos matemáticos. Se vazio, envia nulo.
+            const tempoEsperaNumber = tempoEsperaRaw ? Number(tempoEsperaRaw) : null;
+            if (tempoEsperaNumber !== null && (!Number.isInteger(tempoEsperaNumber) || tempoEsperaNumber <= 0)) { alert('Informe uma quantidade inteira e positiva de minutos ou deixe vazio.'); return; }
+
+            btnSalvar.innerText = 'Salvando...';
+            btnSalvar.disabled = true;
+
+            const payload = {
+                account_id: globalAccountId.toString(),
+                segmento: segmentoAtual,
+                texto_base: texto,
+                tempo_espera: tempoEsperaNumber // Agora enviamos um número real
+            };
+
+            try {
+                const response = await fetch(urlAcao, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    btnSalvar.innerText = 'Salvo! ✓';
+                    btnSalvar.classList.replace('bg-blue-700', 'bg-emerald-600');
+                    setTimeout(() => {
+                        btnSalvar.classList.replace('bg-emerald-600', 'bg-blue-700');
+                        btnSalvar.innerText = 'Salvar Informações';
+                        btnSalvar.disabled = false;
+                    }, 1500);
+                } else {
+                    throw new Error();
+                }
+            } catch (error) {
+                alert("Erro ao salvar.");
+                btnSalvar.innerText = 'Salvar Informações';
+                btnSalvar.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

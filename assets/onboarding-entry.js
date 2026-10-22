@@ -2,7 +2,7 @@
 // Convite para contas atuais; redirecionamento apenas no ponto de entrada.
 AdminSession.ready.then(async()=>{
  const account=AdminSession.navigation.accountId;
- const url=new URL('onboarding.html',location.href);url.searchParams.set('account_id',account);
+ const url=(globalThis.OrbbotiaRoutes?OrbbotiaRoutes.url('onboarding.html',(document.baseURI||location.href)):new URL('onboarding.html',(document.baseURI||location.href)));url.searchParams.set('account_id',account);
  const response=await fetch(ORBBOTIA_ADMIN.apiOrigin+'/webhook/admin-onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account_id:account,acao:'consultar'})});
  const data=await response.json();if(!response.ok||data.status!=='sucesso')throw Error('Configuração inicial indisponível. Tente atualizar a página.');
  if(data.onboarding.novo&&data.onboarding.estado==='pendente'&&data.pode_editar&&new URLSearchParams(location.search).get('configuracao')!=='pausada'){location.replace(url.href);return;}

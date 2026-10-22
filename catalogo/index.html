@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="produtos/novo.html"></script>
+<meta charset="UTF-8">
+<script src="../assets/contexto-conta.js?v=20261021-publico1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261021-publico1"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo e Entregas · Orbbotia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        #admin-session-bar { width: fit-content !important; max-width: calc(100% - 16px); margin: 0 8px 8px auto !important; padding: 5px 9px !important; gap: 8px !important; font-size: 12px !important; }
+        #admin-session-bar button { min-height: 32px !important; padding: 4px 9px !important; margin-left: 0 !important; }
+        .catalog-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+        .catalog-tabs button { border: 1px solid #c7d2fe; background: white; color: #475569; border-radius: 9px; padding: 10px 14px; font-weight: 600; }
+        .catalog-tabs button[aria-selected="true"] { background: #eef2ff; color: #3730a3; border-color: #6366f1; }
+        .module-tabs { margin: 0 0 22px; padding: 0 0 12px; border-bottom: 1px solid #e2e8f0; }
+        .module-tabs button { white-space: nowrap; }
+        .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .help-control { display: inline-flex; align-items: center; gap: 4px; flex: none; min-height: 32px; padding: 6px 10px; border: 1px solid #c7d2fe; border-radius: 999px; background: #eef2ff; color: #3730a3; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor: pointer; }
+        .help-control:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
+        .edit-focus { animation: edit-pulse 1.7s ease-out; }
+        @keyframes edit-pulse { 0%, 45% { box-shadow: 0 0 0 4px #a5b4fc; } 100% { box-shadow: 0 0 0 0 transparent; } }
+        #ativo_produto { appearance: none; width: 44px; height: 24px; flex: none; border-radius: 24px; background: #94a3b8; position: relative; cursor: pointer; }
+        #ativo_produto::before { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform .18s; }
+        #ativo_produto:checked { background: #4f46e5; }
+        #ativo_produto:checked::before { transform: translateX(20px); }
+        #ativo_produto:focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
+        body {
+            background-color: #f8fafc;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+        button, input, select, textarea { font-family: inherit; }
+
+        .input-field {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            outline: none;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .input-field:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<link rel="stylesheet" href="pizzas-produtos.css?v=20261014-modelo1">
+<link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
+<script src="../assets/admin-ui.js?v=20261021-publico1" defer></script>
+<script src="../assets/catalogo-contexto.js?v=20261014-modelo1"></script>
+</head>
+
+<body class="p-4 md:p-6 space-y-6">
+
+    <!-- Alerta Chatwoot -->
+    <div id="alerta-chatwoot" class="max-w-5xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm transition-all">
+        ⏳ Carregando o contexto do estabelecimento...
+    </div>
+
+    <div id="app-container" class="max-w-5xl mx-auto hidden transition-all">
+
+        <!-- Header e Navegação das Abas -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between gap-3 mb-4">
+            <a id="link-voltar-menu" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Voltar ao Menu Principal
+            </a>
+            <div id="catalog-header-actions"><button id="refresh-catalog" type="button" onclick="atualizarPagina()" title="Atualizar dados da página" aria-label="Atualizar dados da página" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50"><span aria-hidden="true">⟳</span><span>Atualizar</span></button></div>
+            </div>
+
+            <!-- Barra de Submenu (Abas) -->
+            <nav class="catalog-tabs module-tabs" aria-label="Áreas do módulo">
+                <button id="tab-btn-produtos" type="button" onclick="switchTab('produtos')" aria-selected="true">
+                    🛍️ Catálogo
+                </button>
+                <button id="tab-btn-entregas" type="button" onclick="switchTab('entregas')" aria-selected="false">
+                    🛵 Entregas
+                </button>
+                <button id="tab-btn-upsell" type="button" onclick="switchTab('upsell')" aria-selected="false">
+                    🤖 Sugestões
+                </button>
+            </nav>
+        </div>
+
+        <!-- ==========================================
+             ABA 1: PRODUTOS
+             ========================================== -->
+        <div id="view-produtos" class="space-y-6 block">
+
+
+<section id="pc-type-cards" class="pizza-ui pc-type-cards" aria-label="Tipo de cadastro" hidden>
+<button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span><span class="pc-choice-copy"><strong>Produto comum</strong><small>Nome, preço e variações.</small></span></button>
+<button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false" hidden><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button>
+<button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false" hidden><span class="pc-icon" aria-hidden="true">🧀</span><span class="pc-choice-copy"><strong>Adicionais</strong><small>Opções, preços e disponibilidade.</small></span></button>
+</section>
+<section id="pc-addons" hidden>
+<nav id="pc-addon-tabs" class="catalog-tabs" aria-label="Etapas dos adicionais"><button type="button" data-addon-tab="list" aria-selected="true">Lista de itens</button><button type="button" data-addon-tab="new" aria-selected="false">Adicionar novo</button><button type="button" data-addon-tab="where" aria-selected="false">Onde oferecer</button><button type="button" data-addon-tab="advanced" aria-selected="false">Configurações avançadas</button></nav>
+<p><a id="pc-regras-negocio" href="../onboarding.html?avancado=1">⚙ Configurações avançadas · conjuntos de regras do catálogo</a></p>
+<section class="pizza-ui pc-card" id="pc-advanced" hidden><h2>Configurações avançadas do catálogo</h2><p>Escolha a configuração que deseja revisar.</p><nav class="catalog-tabs" aria-label="Configurações avançadas dos adicionais"><button type="button" data-advanced-tab="prices" aria-selected="true">Preços por tamanho</button><button type="button" data-advanced-tab="rules" aria-selected="false">Regras completas</button></nav><div id="pc-advanced-rules" hidden><p>Edite exceções por produto, vínculos especiais e outras regras do catálogo abaixo.</p></div><section id="pc-category-section" hidden><div id="pc-categories"></div></section></section>
+<iframe id="pc-addons-frame" title="Cadastro de adicionais" style="width:100%;height:1800px;border:0" loading="lazy"></iframe><iframe id="pc-rules-frame" title="Regras completas das personalizações" style="width:100%;height:1800px;border:0" loading="lazy" hidden></iframe></section>
+<nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="list" aria-selected="true">Lista de itens</button><button type="button" data-common-tab="new" aria-selected="false">Adicionar novo</button></nav>
+<section id="pc-editor" class="pizza-ui" hidden>
+<div class="pc-card"><div class="pc-row section-heading"><h2>Cadastro de pizzas</h2><button type="button" id="pc-help-toggle" class="help-control" aria-haspopup="dialog">ℹ️ Como funciona?</button></div><p>Tamanhos, agrupamentos, sabores e opções.</p>
+<div id="pc-help" hidden class="pc-help"><ol><li><strong>Tamanhos:</strong> defina medidas, disponibilidade e forma de precificação da pizza inteira ou combinada.</li><li><strong>Agrupamentos:</strong> reúna os sabores que podem ser combinados entre si. Exemplo: sabores premium podem formar uma pizza meio a meio apenas com outros sabores do agrupamento Premium.</li><li><strong>Sabores e preços:</strong> defina sabores e informe valores para cada opção de tamanho. Informe apenas os preços dos tamanhos que seu estabelecimento oferece.</li><li><strong>Bordas e adicionais:</strong> cadastre opções, preço por tamanho e, se desejar, limite a oferta a determinados agrupamentos. Exemplo: uma borda especial disponível apenas para pizzas premium.</li><li><strong>Lista de itens:</strong> confira pizzas cadastradas, disponibilidade e estoque.</li></ol><p>Para buscar mudanças feitas em outra sessão, use ⟳ Atualizar no cabeçalho.</p></div>
+<label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
+<p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" hidden></div></div>
+<fieldset id="pc-content" disabled>
+<nav class="pc-row pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="items">Lista de itens</button><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav>
+<section id="pc-sizes" class="pc-card pc-section"><h2>Tamanhos</h2><p>Medidas e regras de combinação.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-form" hidden></div><div id="pc-size-list"></div></section>
+<section id="pc-lines" class="pc-card pc-section" hidden><h2>Agrupamentos de pizzas</h2><p>Separe sabores que podem combinar entre si.</p><button id="pc-new-line" type="button">Novo agrupamento</button><div id="pc-line-form" hidden></div><div id="pc-line-list"></div></section>
+<section id="pc-flavors" class="pc-card pc-section" hidden><h2>Sabores e preços</h2><p>Informe o preço da pizza inteira por tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
+<section id="pc-borders" class="pc-card pc-section" hidden><h2>Bordas</h2><p>Opções e preços por tamanho.</p><button id="pc-new-borda" type="button">Adicionar borda</button><details><summary>Organizar bordas em conjuntos</summary><p>Ex.: recheadas e premium.</p><button id="pc-new-group-borda" type="button">Criar conjunto de bordas</button></details><div id="pc-borda-form" hidden></div><div id="pc-borda-list"></div></section>
+<section id="pc-extras" class="pc-card pc-section" hidden><h2>Adicionais</h2><p>Opções, quantidade e cobrança.</p><button id="pc-new-adicional" type="button">Adicionar adicional</button><details><summary>Organizar adicionais em conjuntos</summary><button id="pc-new-group-adicional" type="button">Criar conjunto de adicionais</button></details><div id="pc-adicional-form" hidden></div><div id="pc-adicional-list"></div>
+</section>
+<section id="pc-items" class="pc-card pc-section" hidden><div id="pc-pizza-list-section"><div class="pc-list-head"><h2>Itens cadastrados</h2><label><input type="checkbox" id="pc-show-inactive"> Mostrar desativados</label></div><div id="pc-pizza-filters" class="pc-filter-row" aria-label="Filtrar pizzas por agrupamento"></div><p class="pc-scroll-hint">Deslize a tabela para ver preços, estoque e ações →</p><div id="pc-pizza-list"></div></div></section>
+
+</fieldset></section>
+
+            <!-- BLOCO 1: FORMULÁRIO -->
+            <div id="pc-common" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
+                <div class="p-4 md:p-5 border-b border-slate-100 bg-slate-50/80 space-y-3">
+                    <div class="section-heading">
+                    <div class="flex items-center gap-3">
+                        <button id="btnToggleFormProduto" onclick="toggleSection('form-produto-wrapper', this)" title="Expandir/Recolher formulário" class="flex items-center justify-center w-8 h-8 bg-white border border-slate-300 text-slate-500 hover:text-indigo-600 hover:border-indigo-300 hover:bg-indigo-50 rounded-lg shadow-sm transition-all focus:outline-none">
+                            <svg class="w-5 h-5 transition-transform duration-300 transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <h1 id="titulo-form" class="text-lg font-bold text-slate-800">Adicionar Novo Produto</h1>
+                    </div>
+                    <button type="button" onclick="toggleAjudaProduto()" id="common-help-toggle" class="help-control" aria-haspopup="dialog">ℹ️ Como funciona?</button>
+                    </div>
+
+
+                </div>
+
+                <div id="common-help" hidden class="p-4 text-xs text-slate-600 bg-slate-50 border-b border-slate-200"><p>Cadastre nome, categoria e preço em “Adicionar novo”. Confira os itens em “Lista de itens” e escolha o estoque ali. Categorias e regras especiais ficam no card Adicionais, em “Configurações avançadas”. “Disponível para venda” tira o item do cardápio sem excluí-lo; o estoque informa se o item pode ser pedido agora.</p></div>
+
+                <div id="form-produto-wrapper">
+                    <form id="formProduto" class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <input type="hidden" id="produto_id" value="">
+                        <div class="md:col-span-2"><label class="availability-control"><input type="checkbox" id="ativo_produto" checked><span>Disponível para venda</span></label><p class="text-xs text-slate-500">Desative para tirar do cardápio sem excluir o cadastro.</p></div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome do Produto <span class="text-rose-500">*</span></label>
+                            <input type="text" id="nome" required class="input-field" placeholder="Ex: Tutu à Mineira com Pernil">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Descrição do Item</label>
+                            <textarea id="descricao" class="input-field" rows="2" placeholder="Ex: Acompanha arroz, couve e mandioca frita."></textarea>
+                        </div>
+
+                        <div>
+                            <label for="categoria" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Categoria <span class="text-rose-500">*</span> <span class="normal-case font-normal text-slate-500">Para adicionar uma nova categoria, basta digitar o nome no campo abaixo.</span></label>
+                            <input list="lista-categorias" id="categoria" required class="input-field bg-amber-50/50 border-amber-200 focus:border-amber-400" placeholder="Ex: Prato Executivo, Bebidas...">
+                            <datalist id="lista-categorias"></datalist>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Estrutura de Preço</label>
+                            <select id="tipo_venda" class="input-field bg-white" onchange="alternarCamposPreco()">
+                                <option value="simples">Preço Único</option>
+                                <option value="variacoes">Opções e Variações de Preço (Porção, Tamanho, Serve X pessoas)</option>
+                            </select>
+                        </div>
+
+                        <!-- Sessão Preço Único -->
+                        <div id="sessao-preco-simples" class="md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Preço Fixo (R$)</label>
+                            <input type="number" id="preco_base" class="input-field max-w-[200px] font-mono font-bold text-slate-800" placeholder="0.00" step="0.01">
+                        </div>
+
+                        <!-- Sessão Variações -->
+                        <div id="sessao-variacoes" class="md:col-span-2 p-4 bg-indigo-50 border border-indigo-100 rounded-xl hidden space-y-3">
+                            <h3 class="text-xs font-bold text-indigo-800 uppercase tracking-wide">Opções de Preço e Porção</h3>
+                            <p class="text-[11px] text-indigo-600">Cadastre opções como "1 Pessoa", "2 Pessoas", "500ml", "Combo", etc.</p>
+
+                            <div id="lista-de-variacoes" class="space-y-2"></div>
+
+                            <button type="button" onclick="adicionarVariacao()" class="text-[11px] font-bold text-indigo-700 bg-white border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm mt-2">
+                                + Adicionar Opção
+                            </button>
+                        </div>
+                    </form>
+                    <div class="form-actions">
+                        <button type="button" id="btnExcluir" data-destructive="true" onclick="excluirProduto()" class="hidden px-3 py-2 text-xs font-bold text-rose-700 bg-white border border-rose-200 hover:bg-rose-50 rounded-lg transition-colors shadow-sm">
+                            🗑️ Excluir
+                        </button>
+                        <button type="button" onclick="limparFormulario()" class="px-3 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm">
+                            Limpar
+                        </button>
+                        <button type="button" id="btnSalvar" onclick="salvarProduto()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                            Salvar Produto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOCO 2: LISTA DE PRODUTOS -->
+            <div id="pc-common-list" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col" hidden>
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-wrap gap-3">
+                    <h2 class="text-md font-bold text-slate-800">Itens Cadastrados</h2>
+
+                    <div class="flex items-center gap-4">
+                        <!-- FILTRO: MOSTRAR/OCULTAR DESATIVADOS -->
+                        <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 cursor-pointer select-none">
+                            <input type="checkbox" id="check-mostrar-desativados" onchange="renderizarTabela()" class="accent-indigo-600 rounded cursor-pointer w-4 h-4">
+                            Mostrar desativados
+                        </label>
+
+                    </div>
+                </div>
+
+                <div id="filtro-categorias-container" class="flex gap-2 overflow-x-auto px-4 py-3 bg-white border-b border-slate-100 hide-scroll"></div>
+
+                <div class="p-0 overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <tr>
+
+                                <th class="px-4 py-3">Produto</th>
+                                <th class="px-4 py-3">Categoria</th>
+                                <th class="px-4 py-3">Opções e Preços</th>
+                                <th class="px-4 py-3 text-center">Estoque</th>
+                                <th class="px-4 py-3 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-produtos" class="divide-y divide-slate-100">
+                            <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400">Carregando produtos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             ABA 2: TAXAS DE ENTREGA
+             ========================================== -->
+        <div id="view-entregas" class="space-y-6 hidden">
+            <nav class="catalog-tabs" aria-label="Etapas das entregas"><button type="button" data-delivery-tab="new" aria-selected="true">Adicionar taxa</button><button type="button" data-delivery-tab="list" aria-selected="false">Regiões cadastradas</button><button type="button" data-delivery-tab="other" aria-selected="false">Outros locais</button></nav>
+
+            <div data-delivery-panel="new" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/80">
+                    <div class="section-heading"><h2 class="text-md font-bold text-slate-800">Nova Taxa de Entrega</h2><button type="button" class="help-control" onclick="toggleAjudaEntrega()" id="delivery-help-toggle" aria-haspopup="dialog">ℹ️ Como funciona?</button></div>
+                    <p class="text-xs text-slate-500 mt-1">Defina os valores de entrega por bairro ou região.</p>
+                </div>
+                <div id="delivery-help" class="hidden p-4 text-xs text-slate-600 bg-slate-50 border-b border-slate-200">Cadastre um valor por bairro em “Adicionar taxa”. Confira os registros em “Regiões cadastradas”. Use “Outros locais” quando o bairro do cliente não estiver na lista; o valor será mostrado como estimativa.</div>
+
+                <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Bairro / Região <span class="text-rose-500">*</span></label>
+                        <input type="text" id="entrega_bairro" class="input-field" placeholder="Ex: Centro, Zona Sul, Jardim Botânico">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Valor (R$) <span class="text-rose-500">*</span></label>
+                        <input type="number" id="entrega_valor" class="input-field font-mono font-bold text-slate-800" placeholder="0.00" step="0.01">
+                    </div>
+                    <div class="form-actions md:col-span-3">
+                        <button type="button" id="btnSalvarEntrega" onclick="adicionarTaxaEntrega()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                            + Adicionar Taxa
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAXA ESPECIAL: OUTROS LOCAIS -->
+            <div data-delivery-panel="other" class="bg-white shadow-sm border border-indigo-200 rounded-xl overflow-hidden" hidden>
+                <div class="p-4 md:p-5 border-b border-indigo-100 bg-indigo-50/70 flex flex-wrap justify-between items-start gap-3">
+                    <div>
+                        <div class="section-heading w-full">
+                            <h2 class="text-md font-bold text-slate-800">📍 Taxa para Outros Locais</h2>
+                            <span class="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5">Estimativa</span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1 max-w-3xl">
+                            Esta configuração cria a opção <strong>“Outro / Meu bairro não está na lista”</strong> no cardápio digital.
+                            O cliente digita o próprio bairro ou local, e o valor abaixo é apresentado como uma <strong>taxa estimada</strong>.
+                            O cardápio avisa que o valor pode variar após a conferência do endereço pela equipe.
+                        </p>
+                    </div>
+                </div>
+                <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-4 items-end">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Valor estimado para Outros (R$)</label>
+                        <input type="number" id="entrega_outros_valor" class="input-field font-mono font-bold text-slate-800" placeholder="Ex: 15.00" step="0.01" min="0">
+                        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                            Se não houver valor salvo, a opção “Outro” não aparece para o cliente.
+                            Esta opção é salva junto das demais taxas de entrega.
+                        </p>
+                        <p id="entrega-outros-status" class="text-[11px] font-semibold text-slate-500 mt-2"></p>
+                    </div>
+                    <div class="form-actions w-full">
+                        <button type="button" id="btnRemoverOutros" onclick="removerTaxaOutros()" class="hidden px-4 py-2 text-sm font-bold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-colors shadow-sm">
+                            Remover
+                        </button>
+                        <button type="button" id="btnSalvarOutros" onclick="salvarTaxaOutros()" class="px-4 py-2 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                            Salvar Outros
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div data-delivery-panel="list" class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden flex flex-col" hidden>
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h2 class="text-md font-bold text-slate-800">Regiões Cadastradas</h2>
+                </div>
+
+                <div class="p-0 overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3">Bairro / Região</th>
+                                <th class="px-4 py-3">Valor da Entrega</th>
+                                <th class="px-4 py-3 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-entregas" class="divide-y divide-slate-100">
+                            <tr><td colspan="3" class="px-4 py-10 text-center text-slate-400">Carregando taxas...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             ABA 3: SUGESTÕES (UPSELL)
+             ========================================== -->
+        <div id="view-upsell" class="space-y-6 hidden">
+
+            <div class="bg-white shadow-sm border border-slate-200 rounded-xl overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/80 flex justify-between items-center flex-wrap gap-2">
+                    <div class="upsell-heading" style="width:100%;min-width:0">
+                        <div class="section-heading">
+                            <h2 class="text-md font-bold text-slate-800">🤖 Sugestões Automáticas</h2>
+                            <button type="button" onclick="toggleInstrucoesUpsell()" class="help-control" aria-haspopup="dialog">
+                                ℹ️ Como funciona?
+                            </button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">Ofereça bebidas, sobremesas ou acompanhamentos automaticamente no fechamento do pedido.</p>
+                    </div>
+                </div>
+
+                <!-- Painel Expansível de Instruções / Tooltip -->
+                <div id="painel-instrucoes-upsell" class="hidden p-4 bg-slate-50 border-b border-slate-200 text-xs text-slate-600 space-y-2">
+
+                    <p>Escolha o tipo de pedido e as categorias que combinam com ele, como bebidas ou sobremesas.</p>
+                    <p>Se mais de uma regra combinar com o pedido, a primeira da lista terá prioridade. Você pode mudar essa ordem a qualquer momento.</p><p>Antes da confirmação final, o agente oferece as categorias disponíveis da regra aplicável uma única vez. Se o cliente aceitar uma categoria, ele consulta e apresenta os itens disponíveis; se recusar, segue sem insistir. Nenhum item é adicionado sem a escolha do cliente.</p>
+                    <p>As regras salvas orientam as sugestões do atendimento, de acordo com o pedido e com as categorias disponíveis.</p>
+                </div>
+
+                <div class="p-5 md:p-6 space-y-6">
+
+                    <section id="upsell-rules" class="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 md:p-5 space-y-4" aria-label="Regras de sugestões por pedido">
+                        <div class="flex items-start justify-between gap-3 flex-wrap">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800">Regras por tipo de pedido</h3>
+                                <p class="text-sm text-slate-600 mt-1">Defina o que sugerir quando o pedido tiver uma categoria específica. Se duas regras combinarem, vence a primeira da lista com sugestões disponíveis.</p>
+                            </div>
+                            <button id="upsell-rule-new" type="button" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-700">+ Nova regra</button>
+                        </div>
+                        <p class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">As regras salvas orientam as sugestões do atendimento, de acordo com o pedido e com as categorias disponíveis.</p>
+                        <form id="upsell-rule-form" class="hidden rounded-xl border border-slate-200 bg-white p-4 space-y-4" novalidate>
+                            <h4 id="upsell-rule-form-title" class="font-bold text-slate-800">Nova regra</h4>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <label class="text-sm font-semibold text-slate-700">Nome da regra<input id="upsell-rule-name" class="input-field mt-1" maxlength="80" placeholder="Ex.: Pedido com pizza" required></label>
+                                <label class="text-sm font-semibold text-slate-700">Quando o pedido tiver<select id="upsell-rule-trigger" class="input-field mt-1" required></select></label>
+                            </div>
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <label class="text-sm font-semibold text-slate-700">1ª categoria a sugerir<select id="upsell-rule-offer-1" class="input-field mt-1" required></select></label>
+                                <label class="text-sm font-semibold text-slate-700">2ª categoria (opcional)<select id="upsell-rule-offer-2" class="input-field mt-1"></select></label>
+                                <label class="text-sm font-semibold text-slate-700">3ª categoria (opcional)<select id="upsell-rule-offer-3" class="input-field mt-1"></select></label>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input id="upsell-rule-active" type="checkbox" checked>Regra ativa</label>
+                            <div class="form-actions"><button id="upsell-rule-cancel" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold">Cancelar</button><button id="upsell-rule-save" type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white">Salvar regra</button></div>
+                        </form>
+                        <div id="upsell-rules-list" class="space-y-2" aria-live="polite"></div>
+                    </section>
+
+                    <details hidden class="border-t border-slate-200 pt-5"><summary class="cursor-pointer text-sm font-bold text-slate-800">Configuração anterior</summary>
+                    <div class="pt-4 space-y-4"><p class="text-xs text-slate-500">Configuração anterior, preservada para compatibilidade.</p>
+
+                    <!-- Mensagem de Alerta se não houver categorias válidas -->
+                    <div id="alerta-sem-categorias" class="hidden p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-medium">
+                        ⚠️ <strong>Atenção:</strong> Você precisa ter produtos ativos cadastrados em pelo menos uma categoria para configurar o módulo de sugestões.
+                    </div>
+
+                    <!-- Chave Ativar/Desativar Feature -->
+                    <div class="flex items-center justify-between p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl">
+                        <div>
+                            <h3 class="text-sm font-bold text-indigo-900">Ativar Sugestões de Vendas</h3>
+                            <p class="text-xs text-indigo-700 mt-0.5">Ativa ou desativa a oferta automática de produtos no fechamento do pedido.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="upsell_ativo" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Formulário de Seleção de Categorias Reais -->
+                    <div id="form-upsell-campos" class="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+
+                        <div class="md:col-span-3">
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">
+                                🍕 Categorias Gatilho (Pratos Principais) <span class="text-rose-500">*</span>
+                            </label>
+                            <p class="text-[10px] text-slate-400 mb-2">Selecione uma ou mais categorias existentes que acionam o vendedor automático (Segure CTRL para selecionar várias):</p>
+                            <select id="upsell_gatilhos" multiple class="input-field h-28 bg-white" required></select>
+                        </div>
+
+                        <div class="md:col-span-3 border-t border-slate-100 pt-3">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">Categorias da oferta atual</h3>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-700 uppercase tracking-wide mb-1">
+                                🥤 1ª categoria
+                            </label>
+                            <select id="upsell_prioridade_1" class="input-field bg-indigo-50/30 border-indigo-200"></select>
+                            <p class="text-[10px] text-slate-400 mt-1">A ordem orienta a apresentação; as elegíveis são oferecidas juntas.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-800 uppercase tracking-wide mb-1">
+                                🍰 2ª categoria
+                            </label>
+                            <select id="upsell_prioridade_2" class="input-field bg-emerald-50/30 border-emerald-200"></select>
+                            <p class="text-[10px] text-slate-400 mt-1">Ignorada se já estiver no carrinho ou sem produto disponível.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-1">
+                                🍟 3ª categoria (opcional)
+                            </label>
+                            <select id="upsell_prioridade_3" class="input-field bg-amber-50/30 border-amber-200"></select>
+                            <p class="text-[10px] text-slate-400 mt-1">Também integra a mesma pergunta, quando elegível.</p>
+                        </div>
+
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-slate-100">
+                        <button type="button" id="btnSalvarUpsell" onclick="salvarConfiguracoesUpsell()" class="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                            💾 Salvar Configurações
+                        </button>
+                    </div>
+
+                    </div></details>
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
+<script src="pizzas-produtos.js?v=20261020-espacos1"></script>
+<script src="sugestoes-regras.js?v=20261009-4"></script>
+    <script>
+        // ROTAS GERAIS
+        const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
+        const urlAcao = 'https://n8n.orbbotia.com/webhook/produtos-acao';
+
+        // ROTAS EMPRESA CONFIG
+        const urlConfigGet = 'https://n8n.orbbotia.com/webhook/empresa-config';
+        const urlConfigPost = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
+        async function confirmarConfigSalva(response) {
+            const body = await response.json().catch(() => null);
+            if (!body || !response.ok || body.success === false || [body.status, body.resultado?.status].some(status => ['erro', 'error', 'pendencia'].includes(status))) {
+                throw new Error(body?.mensagem || body?.resultado?.mensagem || body?.message || 'O servidor não confirmou a alteração.');
+            }
+            return body;
+        }
+
+        let globalAccountId = null;
+        let handshakeInterval;
+
+        // ESTADOS (PRODUTOS)
+        let listaAtual = [];
+        let statusAtualEdicao = true;
+        let categoriaSelecionadaFiltro = 'Todas';
+        let commonDirty = false;
+
+        // ESTADOS (ENTREGAS E CONFIGS)
+        let listaTaxas = [];
+        let configEmpresaCache = {};
+        const TAXA_OUTROS_KEY = '__outros__';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
+
+        window.addEventListener('message', function (event) {
+            const context = ContextoConta.mensagemDoPainel(event);
+            if (!context) return;
+            clearInterval(handshakeInterval);
+            const segment = typeof context.segmento === 'string' ? context.segmento : (urlParams.get('segmento') || 'restaurante');
+            if (String(globalAccountId || '') === context.account && segment === (urlParams.get('segmento') || 'restaurante')) return;
+            if (globalAccountId && !confirm('Trocar de estabelecimento descarta alterações não salvas nesta tela. Continuar?')) return;
+            ContextoConta.navegar(context.account, segment);
+        });
+        handshakeInterval = setInterval(() => {
+            if (!globalAccountId) ContextoConta.solicitar();
+        }, 500);
+
+        setTimeout(() => {
+            if (!globalAccountId) document.getElementById('alerta-chatwoot').textContent = 'Abra pelo painel do estabelecimento ou informe account_id no endereço.';
+        }, 1500);
+
+        function iniciarApp() {
+            document.getElementById('alerta-chatwoot').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+
+            document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
+            window.pizzasCadastro.init(globalAccountId, urlParams.get('segmento') || 'restaurante');
+            document.querySelectorAll('[data-common-tab]').forEach(button => button.addEventListener('click', () => switchCommonTab(button.dataset.commonTab)));
+            document.querySelectorAll('[data-addon-tab]').forEach(button => button.addEventListener('click', () => switchAddonTab(button.dataset.addonTab)));
+            document.querySelectorAll('[data-advanced-tab]').forEach(button => button.addEventListener('click', () => switchAdvancedTab(button.dataset.advancedTab)));
+            document.querySelectorAll('[data-delivery-tab]').forEach(button => button.addEventListener('click', () => switchDeliveryTab(button.dataset.deliveryTab)));
+            document.getElementById('pc-addons-frame').addEventListener('load', () => switchAddonTab(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab || 'new'));
+            document.getElementById('formProduto').addEventListener('input', () => { commonDirty = true; });
+            switchCommonTab('list');
+            switchAddonTab('list');
+            switchAdvancedTab('prices');
+            switchDeliveryTab('new');
+
+            carregarLista();
+            carregarTaxasEntrega();
+            if (document.getElementById('lista-de-variacoes').children.length === 0) adicionarVariacao();
+        }
+
+        function switchCommonTab(tab) {
+            document.getElementById('pc-common').hidden = tab !== 'new';
+            document.getElementById('pc-common-list').hidden = tab !== 'list';
+            document.querySelectorAll('[data-common-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.commonTab === tab)));
+            if (tab === 'new') document.getElementById('form-produto-wrapper').classList.remove('hidden');
+        }
+
+        function switchAddonTab(tab) {
+            const tabs = ['new', 'list', 'where', 'advanced'];
+            if (!tabs.includes(tab)) return;
+            document.querySelectorAll('[data-addon-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.addonTab === tab)));
+            document.getElementById('pc-advanced').hidden = tab !== 'advanced';
+            const frame = document.getElementById('pc-addons-frame');
+            const rules = tab === 'advanced' && document.querySelector('[data-advanced-tab][aria-selected="true"]')?.dataset.advancedTab === 'rules';
+            frame.hidden = rules;
+            document.getElementById('pc-rules-frame').hidden = !rules;
+            if (rules) carregarRegrasCompletas();
+            if (frame?.contentWindow && frame.getAttribute('src')) frame.contentWindow.postMessage({type: 'cadastro-aba', tab, accountId: String(globalAccountId)}, location.origin);
+        }
+
+        function switchAdvancedTab(tab) {
+            if (!['prices', 'rules'].includes(tab)) return;
+            document.querySelectorAll('[data-advanced-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.advancedTab === tab)));
+            document.getElementById('pc-advanced-rules').hidden = tab !== 'rules';
+            const rules = tab === 'rules' && !document.getElementById('pc-advanced').hidden;
+            document.getElementById('pc-addons-frame').hidden = rules;
+            document.getElementById('pc-rules-frame').hidden = !rules;
+            if (rules) carregarRegrasCompletas();
+        }
+
+        function carregarRegrasCompletas() {
+            const frame = document.getElementById('pc-rules-frame');
+            if (!frame.getAttribute('src')) frame.src = `./personalizacoes.html?embedded=1&account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
+        }
+
+        function switchDeliveryTab(tab) {
+            if (!['new', 'list', 'other'].includes(tab)) return;
+            document.querySelectorAll('[data-delivery-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.deliveryTab === tab)));
+            document.querySelectorAll('[data-delivery-panel]').forEach(panel => panel.hidden = panel.dataset.deliveryPanel !== tab);
+        }
+
+        function posicionarAtualizacao() {
+            const barra = document.getElementById('admin-session-bar');
+            const botao = document.getElementById('refresh-catalog');
+            if (!barra || !botao) return;
+            if (botao.parentElement !== barra) barra.insertBefore(botao, barra.querySelector('button'));
+            if (!barra.dataset.refreshObserved) {
+                barra.dataset.refreshObserved = 'true';
+                new MutationObserver(posicionarAtualizacao).observe(barra, {childList: true});
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.AdminSession?.enabled) window.AdminSession.ready.then(posicionarAtualizacao).catch(() => {});
+        });
+
+        function atualizarPagina() {
+            if (commonDirty && !confirm('Há alterações não salvas no produto. Deseja atualizar a página e descartá-las?')) return;
+            if (!window.pizzasCadastro?.canReload()) return;
+            window.location.reload();
+        }
+
+        function toggleAjudaProduto() {
+            CadastroUI.abrirAjuda('common-help','Produtos comuns',document.getElementById('common-help-toggle'));
+        }
+
+        function toggleAjudaEntrega() {
+            CadastroUI.abrirAjuda('delivery-help','Taxas de entrega',document.getElementById('delivery-help-toggle'));
+        }
+
+        // ==========================================
+        // GESTÃO DE ABAS (SPA)
+        // ==========================================
+        function switchTab(tabName) {
+            const btnProdutos = document.getElementById('tab-btn-produtos');
+            const btnEntregas = document.getElementById('tab-btn-entregas');
+            const btnUpsell = document.getElementById('tab-btn-upsell');
+
+            const viewProdutos = document.getElementById('view-produtos');
+            const viewEntregas = document.getElementById('view-entregas');
+            const viewUpsell = document.getElementById('view-upsell');
+
+            [btnProdutos, btnEntregas, btnUpsell].forEach(btn => btn.setAttribute('aria-selected', String(btn.id === 'tab-btn-' + tabName)));
+            [viewProdutos, viewEntregas, viewUpsell].forEach(view => view.classList.add('hidden'));
+
+            if (tabName === 'produtos') {
+                viewProdutos.classList.remove('hidden');
+            } else if (tabName === 'entregas') {
+                viewEntregas.classList.remove('hidden');
+            } else if (tabName === 'upsell') {
+                viewUpsell.classList.remove('hidden');
+                preencherDropdownsUpsell(configEmpresaCache); 
+            }
+        }
+
+        function toggleInstrucoesUpsell() {
+            CadastroUI.abrirAjuda('painel-instrucoes-upsell','Sugestões automáticas',document.activeElement);
+        }
+
+        // ==========================================
+        // ABA 3: SUGESTÕES (UPSELL)
+        // ==========================================
+        function obterCategoriasValidas() {
+            const categorias = new Set();
+            listaAtual.forEach(prod => {
+                const p = prod.json || prod;
+                const isAtivo = p.ativo !== false && p.ativo !== "false";
+                if (p.deletado !== true && isAtivo && p.categoria && p.categoria.trim() !== '') {
+                    categorias.add(p.categoria.trim());
+                }
+            });
+            return Array.from(categorias).sort();
+        }
+
+        function preencherDropdownsUpsell(dadosConfig = {}) {
+            const categoriasValidas = obterCategoriasValidas();
+            const alerta = document.getElementById('alerta-sem-categorias');
+            const btnSalvar = document.getElementById('btnSalvarUpsell');
+
+            if (categoriasValidas.length === 0) {
+                alerta.classList.remove('hidden');
+                btnSalvar.disabled = true;
+                btnSalvar.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            } else {
+                alerta.classList.add('hidden');
+                btnSalvar.disabled = false;
+                btnSalvar.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            const selectGatilhos = document.getElementById('upsell_gatilhos');
+            const selectP1 = document.getElementById('upsell_prioridade_1');
+            const selectP2 = document.getElementById('upsell_prioridade_2');
+            const selectP3 = document.getElementById('upsell_prioridade_3');
+
+            selectGatilhos.innerHTML = '';
+            selectP1.innerHTML = '<option value="">-- Nenhuma --</option>';
+            selectP2.innerHTML = '<option value="">-- Nenhuma --</option>';
+            selectP3.innerHTML = '<option value="">-- Nenhuma --</option>';
+
+            categoriasValidas.forEach(cat => {
+                selectGatilhos.appendChild(new Option(cat, cat));
+                selectP1.appendChild(new Option(cat, cat));
+                selectP2.appendChild(new Option(cat, cat));
+                selectP3.appendChild(new Option(cat, cat));
+            });
+
+            if (dadosConfig.upsell_gatilhos) {
+                const gatilhosSalvos = Array.isArray(dadosConfig.upsell_gatilhos) 
+                    ? dadosConfig.upsell_gatilhos 
+                    : dadosConfig.upsell_gatilhos.split(',').map(s => s.trim());
+
+                Array.from(selectGatilhos.options).forEach(opt => {
+                    opt.selected = gatilhosSalvos.includes(opt.value);
+                });
+            }
+            if (dadosConfig.upsell_prioridade_1) selectP1.value = dadosConfig.upsell_prioridade_1;
+            if (dadosConfig.upsell_prioridade_2) selectP2.value = dadosConfig.upsell_prioridade_2;
+            if (dadosConfig.upsell_prioridade_3) selectP3.value = dadosConfig.upsell_prioridade_3;
+        }
+
+        async function salvarConfiguracoesUpsell() {
+            const btn = document.getElementById('btnSalvarUpsell');
+            const upsellAtivo = document.getElementById('upsell_ativo').checked;
+
+            const selectGatilhos = document.getElementById('upsell_gatilhos');
+            const gatilhosSelecionados = Array.from(selectGatilhos.selectedOptions).map(opt => opt.value);
+
+            const p1 = document.getElementById('upsell_prioridade_1').value;
+            const p2 = document.getElementById('upsell_prioridade_2').value;
+            const p3 = document.getElementById('upsell_prioridade_3').value;
+
+            if (upsellAtivo && gatilhosSelecionados.length === 0) {
+                return CadastroUI.notify("Selecione pelo menos uma categoria gatilho para ativar o recurso!", true);
+            }
+
+            btn.innerText = "⏳ Salvando...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account_id: globalAccountId.toString(),
+                        taxas_entrega: listaTaxas,
+                        upsell_ativo: upsellAtivo,
+                        upsell_gatilhos: gatilhosSelecionados.join(', '),
+                        upsell_prioridade_1: p1,
+                        upsell_prioridade_2: p2,
+                        upsell_prioridade_3: p3
+                    })
+                });
+
+                await confirmarConfigSalva(response);
+                    configEmpresaCache.upsell_ativo = upsellAtivo;
+                    configEmpresaCache.upsell_gatilhos = gatilhosSelecionados.join(', ');
+                    configEmpresaCache.upsell_prioridade_1 = p1;
+                    configEmpresaCache.upsell_prioridade_2 = p2;
+                    configEmpresaCache.upsell_prioridade_3 = p3;
+                    CadastroUI.notify("Configurações de sugestões salvas com sucesso!");
+            } catch (error) {
+                CadastroUI.notify("Erro ao salvar configurações no servidor.", true);
+            } finally {
+                btn.innerText = "💾 Salvar Configurações";
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // ABA 2: LÓGICA DE TAXAS DE ENTREGA E CONFIGS
+        // ==========================================
+        async function carregarTaxasEntrega() {
+            const tbody = document.getElementById('lista-entregas');
+            tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-indigo-500 font-bold">⏳ Sincronizando com o banco...</td></tr>`;
+            try {
+                const res = await fetch(`${urlConfigGet}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error(`empresa-config respondeu HTTP ${res.status}`);
+
+                const respostaTexto = await res.text();
+                if (!respostaTexto.trim()) throw new Error(`empresa-config respondeu HTTP ${res.status} sem conteúdo`);
+                let data;
+                try { data = JSON.parse(respostaTexto); }
+                catch { throw new Error(`empresa-config respondeu HTTP ${res.status} com JSON inválido`); }
+                if (Array.isArray(data)) data = data[0];
+
+                configEmpresaCache = data || {};
+                window.SugestoesRegras.loadConfig(configEmpresaCache, globalAccountId);
+
+                listaTaxas = data.taxas_entrega || [];
+                if (typeof listaTaxas === 'string') {
+                    try { listaTaxas = JSON.parse(listaTaxas); } catch(e) { listaTaxas = []; }
+                }
+                renderizarTabelaTaxas();
+                sincronizarTaxaOutrosUI();
+
+                document.getElementById('upsell_ativo').checked = data.upsell_ativo === true || data.upsell_ativo === 'true';
+                preencherDropdownsUpsell(data);
+
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar taxas.</td></tr>`;
+                console.error('Falha ao carregar a configuração da empresa:', error);
+                window.SugestoesRegras?.reportLoadError('Não foi possível carregar as sugestões. Atualize a página e tente novamente.');
+            }
+        }
+
+        function normalizarTaxaTexto(value) {
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+        }
+
+        function obterTaxaOutros() {
+            return Array.isArray(listaTaxas)
+                ? listaTaxas.find(t => normalizarTaxaTexto(t?.bairro) === TAXA_OUTROS_KEY) || null
+                : null;
+        }
+
+        function sincronizarTaxaOutrosUI() {
+            const taxa = obterTaxaOutros();
+            const input = document.getElementById('entrega_outros_valor');
+            const status = document.getElementById('entrega-outros-status');
+            const btnRemover = document.getElementById('btnRemoverOutros');
+            if (!input || !status || !btnRemover) return;
+
+            if (taxa && Number.isFinite(Number(taxa.valor)) && Number(taxa.valor) >= 0) {
+                input.value = Number(taxa.valor).toFixed(2);
+                status.textContent = `Ativo: clientes fora da lista verão uma taxa estimada de ${formatarMoeda(taxa.valor)}.`;
+                status.className = 'text-[11px] font-semibold text-slate-800 mt-2';
+                btnRemover.classList.remove('hidden');
+            } else {
+                input.value = '';
+                status.textContent = 'Não configurado: a opção “Outro” não será exibida no cardápio.';
+                status.className = 'text-[11px] font-semibold text-slate-500 mt-2';
+                btnRemover.classList.add('hidden');
+            }
+        }
+
+        function renderizarTabelaTaxas() {
+            const tbody = document.getElementById('lista-entregas');
+            tbody.innerHTML = '';
+
+            const regulares = Array.isArray(listaTaxas)
+                ? listaTaxas.map((taxa, index) => ({ taxa, index }))
+                    .filter(({ taxa }) => normalizarTaxaTexto(taxa?.bairro) !== TAXA_OUTROS_KEY)
+                : [];
+
+            if (!regulares.length) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhuma taxa de entrega cadastrada.</td></tr>`;
+                return;
+            }
+
+            regulares.forEach(({ taxa, index }) => {
+                const tr = document.createElement('tr');
+                tr.className = `transition-colors hover:bg-slate-50 bg-white`;
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-bold text-sm text-slate-800">${taxa.bairro}</td>
+                    <td class="px-4 py-3 font-mono font-bold text-slate-800">${formatarMoeda(taxa.valor)}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="removerTaxaEntrega(${index})" class="text-rose-600 hover:text-rose-800 font-bold text-xs bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors border border-rose-200 shadow-sm">
+                            Excluir
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function salvarTaxaOutros() {
+            const input = document.getElementById('entrega_outros_valor');
+            const btn = document.getElementById('btnSalvarOutros');
+            const valor = Number(input.value);
+            if (!Number.isFinite(valor) || valor < 0) return CadastroUI.notify('Informe um valor válido para a taxa estimada de Outros.', true);
+
+            btn.innerText = '⏳ Salvando...';
+            btn.disabled = true;
+            const novaLista = (Array.isArray(listaTaxas) ? listaTaxas : [])
+                .filter(t => normalizarTaxaTexto(t?.bairro) !== TAXA_OUTROS_KEY);
+            novaLista.push({ bairro: TAXA_OUTROS_KEY, valor: Math.round(valor * 100) / 100, estimada: true });
+
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: globalAccountId.toString(), taxas_entrega: novaLista })
+                });
+                await confirmarConfigSalva(response);
+                listaTaxas = novaLista;
+                sincronizarTaxaOutrosUI();
+                renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa estimada de Outros salva.');
+            } catch (error) {
+                CadastroUI.notify('Erro ao salvar a taxa estimada de Outros.', true);
+            } finally {
+                btn.innerText = 'Salvar Outros';
+                btn.disabled = false;
+            }
+        }
+
+        async function removerTaxaOutros() {
+            if (!confirm('Deseja remover a opção “Outro” do cardápio digital?')) return;
+            const novaLista = (Array.isArray(listaTaxas) ? listaTaxas : [])
+                .filter(t => normalizarTaxaTexto(t?.bairro) !== TAXA_OUTROS_KEY);
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: globalAccountId.toString(), taxas_entrega: novaLista })
+                });
+                await confirmarConfigSalva(response);
+                listaTaxas = novaLista;
+                sincronizarTaxaOutrosUI();
+                renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa de Outros removida.');
+            } catch (error) {
+                CadastroUI.notify('Erro ao remover a taxa de Outros.', true);
+            }
+        }
+
+        async function adicionarTaxaEntrega() {
+            const inputBairro = document.getElementById('entrega_bairro');
+            const inputValor = document.getElementById('entrega_valor');
+            const btn = document.getElementById('btnSalvarEntrega');
+
+            const bairro = inputBairro.value.trim();
+            const valor = parseFloat(inputValor.value);
+
+            if (!bairro) return CadastroUI.notify("Digite o nome do bairro ou região!", true);
+            if (normalizarTaxaTexto(bairro) === TAXA_OUTROS_KEY) return CadastroUI.notify('Use o campo separado “Taxa para Outros Locais”.', true);
+            if (listaTaxas.some(t => normalizarTaxaTexto(t?.bairro) === normalizarTaxaTexto(bairro))) return CadastroUI.notify('Este bairro/região já está cadastrado.', true);
+            if (isNaN(valor) || valor < 0) return CadastroUI.notify("Digite um valor válido para a entrega!", true);
+
+            btn.innerText = "⏳ Salvando...";
+            btn.disabled = true;
+
+            const novaLista = [...listaTaxas, { bairro: bairro, valor: valor }];
+
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account_id: globalAccountId.toString(),
+                        taxas_entrega: novaLista
+                    })
+                });
+
+                await confirmarConfigSalva(response);
+
+                listaTaxas = novaLista;
+                inputBairro.value = '';
+                inputValor.value = '';
+                renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa de entrega salva.');
+
+            } catch (error) {
+                CadastroUI.notify("Erro ao salvar taxa no servidor.", true);
+            } finally {
+                btn.innerText = "+ Adicionar Taxa";
+                btn.disabled = false;
+            }
+        }
+
+        async function removerTaxaEntrega(index) {
+            if (!confirm("Deseja realmente remover esta taxa de entrega?")) return;
+
+            const novaLista = [...listaTaxas];
+            novaLista.splice(index, 1);
+
+            try {
+                const response = await fetch(urlConfigPost, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account_id: globalAccountId.toString(),
+                        taxas_entrega: novaLista
+                    })
+                });
+
+                await confirmarConfigSalva(response);
+
+                listaTaxas = novaLista;
+                renderizarTabelaTaxas();
+                CadastroUI.notify('Taxa de entrega removida.');
+
+            } catch (error) {
+                CadastroUI.notify("Erro ao remover taxa no servidor.", true);
+            }
+        }
+
+        // ==========================================
+        // ABA 1: LÓGICA DE PRODUTOS E ESTOQUE
+        // ==========================================
+        function toggleSection(wrapperId, btn) {
+            const wrapper = document.getElementById(wrapperId);
+            const isHidden = wrapper.classList.toggle('hidden');
+            const svg = btn.querySelector('svg');
+            if (svg) {
+                if (isHidden) {
+                    svg.classList.add('-rotate-90');
+                    btn.classList.remove('bg-indigo-50', 'border-indigo-300', 'text-indigo-600');
+                } else {
+                    svg.classList.remove('-rotate-90');
+                    btn.classList.add('bg-indigo-50', 'border-indigo-300', 'text-indigo-600');
+                }
+            }
+        }
+
+        function alternarCamposPreco() {
+            const tipo = document.getElementById('tipo_venda').value;
+            if (tipo === 'simples') {
+                document.getElementById('sessao-preco-simples').classList.remove('hidden');
+                document.getElementById('sessao-variacoes').classList.add('hidden');
+            } else {
+                document.getElementById('sessao-preco-simples').classList.add('hidden');
+                document.getElementById('sessao-variacoes').classList.remove('hidden');
+            }
+        }
+
+        function adicionarVariacao(nome = '', preco = '', variacaoId = '') {
+            const container = document.getElementById('lista-de-variacoes');
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center";
+            div.dataset.variacaoId = variacaoId || '';
+            const campoNome = document.createElement('input');
+            campoNome.type = 'text'; campoNome.placeholder = 'Nome da opção (Ex: Individual, 500ml)';
+            campoNome.value = nome; campoNome.className = 'input-field w-1/2 input-variacao-nome text-sm font-medium';
+            const campoPreco = document.createElement('input');
+            campoPreco.type = 'number'; campoPreco.placeholder = 'Preço (Ex: 26.00)';
+            campoPreco.value = preco; campoPreco.step = '0.01';
+            campoPreco.className = 'input-field w-1/3 input-variacao-preco font-mono font-bold text-slate-800';
+            const remover = document.createElement('button');
+            remover.type = 'button'; remover.textContent = '✕';
+            remover.className = 'text-rose-500 font-bold px-3 py-1.5 hover:bg-rose-100 rounded-lg transition-colors';
+            remover.addEventListener('click', () => div.remove());
+            div.append(campoNome, campoPreco, remover);
+            container.appendChild(div);
+        }
+
+        function formatarMoeda(valor) {
+            return parseFloat(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        async function carregarLista() {
+            const tbody = document.getElementById('lista-produtos');
+            const view=CadastroUI.capture();
+            try {
+                const res = await fetch(`${urlDados}?account_id=${globalAccountId}`);
+                if (!res.ok) throw new Error("Erro");
+                const dados = await res.json();
+                listaAtual = Array.isArray(dados) ? dados : (dados.data || []);
+                window.SugestoesRegras.updateCatalog(listaAtual);
+
+                window.pizzasCadastro.renderList(listaAtual.map(x=>x.json||x).filter(p=>window.pizzasCadastro.isPizza(p)&&!p.deletado));
+                atualizarDatalistCategorias();
+                renderizarFiltros();
+                renderizarTabela();
+                preencherDropdownsUpsell(configEmpresaCache);
+                CadastroUI.restore(view);
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-10 text-center text-rose-500 font-bold">⚠️ Erro ao carregar dados.</td></tr>`;
+                window.SugestoesRegras.reportLoadError('Não foi possível carregar as categorias. Atualize a página e tente novamente.');
+            }
+        }
+
+        function atualizarDatalistCategorias() {
+            const datalist = document.getElementById('lista-categorias');
+            const categoriasUnicas = new Set();
+            listaAtual.forEach(prod => {
+                const p = prod.json || prod;
+                if (!window.pizzasCadastro.isPizza(p) && p.categoria && p.categoria.trim() !== '') categoriasUnicas.add(p.categoria.trim());
+            });
+            datalist.innerHTML = '';
+            Array.from(categoriasUnicas).sort().forEach(cat => datalist.appendChild(new Option(cat)));
+        }
+
+        function renderizarFiltros() {
+            const container = document.getElementById('filtro-categorias-container');
+            const categoriasUnicas = new Set();
+            listaAtual.forEach(prod => {
+                const p = prod.json || prod;
+                if (p.deletado !== true && !window.pizzasCadastro.isPizza(p) && p.categoria) categoriasUnicas.add(p.categoria.trim());
+            });
+
+            const catOrdenadas = Array.from(categoriasUnicas).sort();
+            let html = `<button onclick="aplicarFiltro('Todas')" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${categoriaSelecionadaFiltro === 'Todas' ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">📋 Todas</button>`;
+
+            catOrdenadas.forEach(cat => {
+                const isActive = categoriaSelecionadaFiltro === cat;
+                html += `<button onclick="aplicarFiltro('${cat}')" class="shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm border ${isActive ? 'bg-slate-800 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${cat}</button>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function aplicarFiltro(categoria) {
+            categoriaSelecionadaFiltro = categoria;
+            renderizarFiltros();
+            renderizarTabela();
+        }
+
+        function renderizarTabela() {
+            window.pizzasCadastro.renderList(listaAtual.map(x=>x.json||x).filter(p=>window.pizzasCadastro.isPizza(p)&&!p.deletado));
+            const tbody = document.getElementById('lista-produtos');
+            tbody.innerHTML = '';
+
+            const mostrarDesativados = document.getElementById('check-mostrar-desativados').checked;
+
+            const listaFiltrada = listaAtual.filter(item => {
+                const p = item.json || item;
+                if (p.deletado === true || window.pizzasCadastro.isPizza(p)) return false;
+
+                // Filtro para ocultar/mostrar desativados (padrão: ocultar desativados)
+                const isAtivo = p.ativo !== false && p.ativo !== "false";
+                if (!mostrarDesativados && !isAtivo) return false;
+
+                if (categoriaSelecionadaFiltro !== 'Todas' && p.categoria !== categoriaSelecionadaFiltro) return false;
+                return true;
+            });
+
+            if (listaFiltrada.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-12 text-center text-slate-400 font-medium">Nenhum produto cadastrado nesta visão.</td></tr>`;
+                return;
+            }
+
+            listaFiltrada.forEach(prod => {
+                const p = prod.json || prod;
+                const isAtivo = p.ativo !== false && p.ativo !== "false";
+
+                let meta = p.metadata;
+                if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+
+                let statusEstoque = meta?.status_estoque || (meta?.esgotado ? 'esgotado' : 'disponivel');
+
+                const badgeEstoque = `<select data-stock="${statusEstoque}" aria-label="Estoque do produto" onchange="alterarStatusEstoque('${p.id}', this)" class="text-xs font-semibold px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-700"><option value="disponivel" ${statusEstoque === 'disponivel' ? 'selected' : ''}>Disponível</option><option value="em_falta" ${statusEstoque === 'em_falta' ? 'selected' : ''}>Em falta</option><option value="esgotado" ${statusEstoque === 'esgotado' ? 'selected' : ''}>Esgotado</option></select>`;
+
+                let precoDisplay = `<span class="font-mono font-bold text-slate-800">${formatarMoeda(p.preco_base)}</span>`;
+                const listaOpcoes = meta?.variacoes || meta?.tamanhos;
+
+                if (meta && (meta.tipo === 'com_variacoes' || meta.tipo === 'com_tamanhos') && Array.isArray(listaOpcoes)) {
+                    let tags = listaOpcoes.map(t => `<span class="bg-slate-100 text-slate-700 text-[10px] px-2 py-0.5 rounded border border-slate-200 mr-1 mb-1 inline-block">${t.nome}: <span class="font-bold text-slate-800">${formatarMoeda(t.preco)}</span></span>`).join('');
+                    precoDisplay = `<div class="flex flex-wrap mt-1">${tags}</div>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `transition-colors ${isAtivo ? 'hover:bg-slate-50 bg-white' : 'bg-slate-50 opacity-60 grayscale'}`;
+                tr.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="font-bold text-sm ${isAtivo && statusEstoque === 'disponivel' ? 'text-slate-800' : 'text-slate-500'}">${p.nome}</div>
+                        <div class="text-[11px] ${isAtivo ? 'text-slate-500' : 'text-slate-400'} max-w-[250px] truncate" title="${p.descricao || ''}">${p.descricao || ''}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-lg border border-indigo-100 uppercase tracking-wide whitespace-nowrap">${p.categoria || 'Sem Categoria'}</span>
+                    </td>
+                    <td class="px-4 py-3">${precoDisplay}</td>
+                    <td class="px-4 py-3 text-center">${badgeEstoque}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="editarProduto('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors border border-indigo-200 shadow-sm">
+                            Editar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function alterarStatusEstoque(id, control) {
+            if (!id) return;
+
+            const prodObj = listaAtual.find(i => (i.json || i).id == id);
+            if (!prodObj) return;
+            const p = prodObj.json || prodObj;
+
+            let meta = p.metadata || {};
+            if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+            const previous = meta.status_estoque || (meta.esgotado ? 'esgotado' : 'disponivel');
+            control.disabled = true;
+            control.dataset.stock = control.value;
+            const updated = { ...meta, status_estoque: control.value, esgotado: control.value !== 'disponivel' };
+            try {
+            const response = await fetch(urlAcao, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                action: 'editar',
+                id: p.id,
+                account_id: globalAccountId.toString(),
+                nome: p.nome,
+                descricao: p.descricao,
+                categoria: p.categoria,
+                preco_base: p.preco_base,
+                metadata: updated
+            }) });
+            const result = await response.json();
+            if (!response.ok || [result.status, result.resultado?.status].some(status => ['erro','error','pendencia'].includes(status))) throw Error(result.mensagem || result.resultado?.mensagem || 'Não foi possível alterar o estoque.');
+            await carregarLista();
+            CadastroUI.notify('Estoque atualizado.');
+            } catch (error) { control.value = previous; CadastroUI.notify(error.message, true); }
+            finally { control.dataset.stock = control.value; control.disabled = false; }
+        }
+
+        function editarProduto(id) {
+            const prodObj = listaAtual.find(i => (i.json || i).id == id);
+            if (!prodObj) return;
+            const p = prodObj.json || prodObj;
+
+            if (window.pizzasCadastro.isPizza(p)) return window.pizzasCadastro.open(p.id);
+            document.getElementById('produto_id').value = p.id;
+            document.getElementById('nome').value = p.nome || '';
+            document.getElementById('descricao').value = p.descricao || '';
+            document.getElementById('categoria').value = p.categoria || '';
+
+            const container = document.getElementById('lista-de-variacoes');
+            container.innerHTML = '';
+
+            let meta = p.metadata;
+            if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (e) { meta = {}; } }
+
+            const listaOpcoes = meta?.variacoes || meta?.tamanhos;
+
+            if (meta && (meta.tipo === 'com_variacoes' || meta.tipo === 'com_tamanhos') && Array.isArray(listaOpcoes)) {
+                document.getElementById('tipo_venda').value = 'variacoes';
+                listaOpcoes.forEach(v => adicionarVariacao(v.nome, v.preco, v.id || v.variacao_id || ''));
+            } else {
+                document.getElementById('tipo_venda').value = 'simples';
+                document.getElementById('preco_base').value = p.preco_base || '';
+                adicionarVariacao();
+            }
+            alternarCamposPreco();
+
+            statusAtualEdicao = p.ativo !== false && p.ativo !== "false";
+            document.getElementById('ativo_produto').checked = statusAtualEdicao;
+
+            document.getElementById('btnExcluir').classList.remove('hidden');
+            document.getElementById('titulo-form').innerText = "Editando Produto";
+            document.getElementById('btnSalvar').innerText = "Atualizar Produto";
+
+            const formWrapper = document.getElementById('form-produto-wrapper');
+            if (formWrapper.classList.contains('hidden')) {
+                toggleSection('form-produto-wrapper', document.getElementById('btnToggleFormProduto'));
+            }
+            switchCommonTab('new');
+            const header = document.getElementById('titulo-form');
+            header.closest('#pc-common').classList.remove('edit-focus');
+            void header.closest('#pc-common').offsetWidth;
+            header.closest('#pc-common').classList.add('edit-focus');
+            header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            document.getElementById('nome').focus({ preventScroll: true });
+            commonDirty = false;
+        }
+
+        function limparFormulario() {
+            document.getElementById('formProduto').reset();
+            document.getElementById('produto_id').value = '';
+            document.getElementById('titulo-form').innerText = "Adicionar Novo Produto";
+            document.getElementById('btnSalvar').innerText = "Salvar Produto";
+            document.getElementById('btnExcluir').classList.add('hidden');
+            document.getElementById('ativo_produto').checked = true;
+
+            document.getElementById('tipo_venda').value = 'simples';
+            document.getElementById('lista-de-variacoes').innerHTML = '';
+            adicionarVariacao();
+            alternarCamposPreco();
+
+            const formWrapper = document.getElementById('form-produto-wrapper');
+            formWrapper.classList.remove('hidden');
+            commonDirty = false;
+        }
+
+        async function enviarAcao(payload, btnElement, txtSucesso) {
+            const original=btnElement.innerText, view=CadastroUI.capture();
+            btnElement.disabled=true;btnElement.innerText='Salvando…';
+            try {
+                const response=await fetch(urlAcao,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+                const result=await response.json();
+                if(!response.ok||[result.status,result.resultado?.status].some(status=>['erro','error','pendencia'].includes(status)))throw Error(result.mensagem||result.resultado?.mensagem||'Não foi possível salvar.');
+                await carregarLista();
+                if(payload.action==='criar') {
+                    const created=result.id||result.resultado?.id;
+                    if(created)document.getElementById('produto_id').value=created;
+                    else {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                }
+                if(payload.action==='deletar') {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                commonDirty = false;
+                CadastroUI.notify(txtSucesso||'Alteração salva.');
+            } catch(e){CadastroUI.notify(e.message,true);}
+            finally {btnElement.innerText=original;btnElement.disabled=false;CadastroUI.restore(view);}
+        }
+
+        function excluirProduto() {
+            const id = document.getElementById('produto_id').value;
+            if (!id) return;
+            if (confirm("Deseja apagar este produto do cardápio?")) {
+                enviarAcao({ action: 'deletar', account_id: globalAccountId.toString(), id: id }, document.getElementById('btnExcluir'), 'Produto excluído.');
+            }
+        }
+
+        function salvarProduto() {
+            const id = document.getElementById('produto_id').value;
+            const nome = document.getElementById('nome').value.trim();
+            const descricao = document.getElementById('descricao').value.trim();
+            const categoria = document.getElementById('categoria').value.trim();
+            const tipo = document.getElementById('tipo_venda').value;
+
+            if (!nome || !categoria) return CadastroUI.notify("Nome e Categoria são obrigatórios!", true);
+
+            let precoBase = 0.00;
+            let metadata = {};
+
+            if (id) {
+                const prodObj = listaAtual.find(i => (i.json || i).id == id);
+                if (prodObj) {
+                    const p = prodObj.json || prodObj;
+                    let metaAntigo = p.metadata;
+                    if (typeof metaAntigo === 'string') { try { metaAntigo = JSON.parse(metaAntigo); } catch(e) { metaAntigo = {}; } }
+                    metadata = metaAntigo && typeof metaAntigo === 'object' ? structuredClone(metaAntigo) : {};
+                    metadata.status_estoque = metaAntigo?.status_estoque || 'disponivel';
+                    metadata.esgotado = metaAntigo?.esgotado || false;
+                }
+            } else {
+                metadata.status_estoque = 'disponivel';
+                metadata.esgotado = false;
+            }
+
+            if (tipo === 'simples') {
+                precoBase = parseFloat(document.getElementById('preco_base').value) || 0.00;
+                metadata.tipo = 'simples';
+                delete metadata.variacoes;
+                delete metadata.tamanhos;
+            } else {
+                const nomes = document.querySelectorAll('.input-variacao-nome');
+                const precos = document.querySelectorAll('.input-variacao-preco');
+                let arrayVariacoes = [];
+                for (let i = 0; i < nomes.length; i++) {
+                    if (nomes[i].value.trim()) {
+                        const idVariacao = nomes[i].parentElement.dataset.variacaoId;
+                        arrayVariacoes.push({ 
+                            ...(idVariacao ? { id: idVariacao } : {}),
+                            nome: nomes[i].value.trim(), 
+                            preco: parseFloat(precos[i].value) || 0.00 
+                        });
+                    }
+                }
+                if (arrayVariacoes.length === 0) return CadastroUI.notify("Adicione pelo menos uma opção de variação de preço!", true);
+
+                metadata.tipo = 'com_variacoes';
+                metadata.variacoes = arrayVariacoes;
+                metadata.tamanhos = arrayVariacoes;
+            }
+
+            if (categoria.trim().toLowerCase() === 'pizzas') { CadastroUI.notify('Use o card Pizza para cadastrar sabores e tamanhos na categoria padrão Pizzas.', true); return; }
+            enviarAcao({
+                action: id ? 'editar' : 'criar',
+                id: id,
+                account_id: globalAccountId.toString(),
+                nome: nome,
+                descricao: descricao,
+                categoria: categoria,
+                preco_base: precoBase,
+                ativo: document.getElementById('ativo_produto').checked,
+                metadata: metadata
+            }, document.getElementById('btnSalvar'), id ? 'Produto atualizado.' : 'Produto cadastrado.');
+        }
+        if (globalAccountId) iniciarApp();
+    </script>
+</body>
+</html>

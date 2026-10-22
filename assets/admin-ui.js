@@ -12,7 +12,7 @@ window.AdminUI = (() => {
 
   function destination(path) {
     const context = window.AdminSession.navigation;
-    const url = new URL(path, root);
+    const url = window.OrbbotiaRoutes ? OrbbotiaRoutes.url(path,root) : new URL(path, root);
     url.searchParams.set('account_id', context.accountId);
     const segment = document.getElementById('seletor-segmento')?.value || new URLSearchParams(location.search).get('segmento') || context.segmento;
     if (segment) url.searchParams.set('segmento', segment);
@@ -26,7 +26,7 @@ window.AdminUI = (() => {
     // O hub permite trocar o perfil sem recarregar; usar o perfil vigente ao navegar.
     anchor.addEventListener('click', () => {anchor.href = destination(path);});
     if (location.pathname === new URL(anchor.href).pathname ||
-        (path.startsWith('produtos/') && location.pathname.startsWith(new URL('produtos/', root).pathname))) {
+        (path.startsWith('produtos/') && (location.pathname.startsWith(new URL('produtos/', root).pathname)||location.pathname.startsWith(new URL('catalogo/',root).pathname)))) {
       anchor.setAttribute('aria-current', 'page');
     }
     return anchor;
@@ -57,7 +57,7 @@ window.AdminUI = (() => {
       // O catálogo tinha uma linha exclusiva para voltar/atualizar; retirar o espaço vazio.
       const actions = document.getElementById('catalog-header-actions');
       if (actions && actions.parentElement === oldRow) oldRow.hidden = true;
-    } else if (location.pathname !== new URL('index.html', root).pathname) {
+    } else if (location.pathname !== new URL('index.html', root).pathname && window.OrbbotiaRoutes?.source !== 'index.html') {
       backSlot.append(link('← Voltar', 'index.html'));
     }
     const brand = document.createElement('span');

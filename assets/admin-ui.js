@@ -13,9 +13,11 @@ window.AdminUI = (() => {
   function destination(path) {
     const context = window.AdminSession.navigation;
     const url = window.OrbbotiaRoutes ? OrbbotiaRoutes.url(path,root) : new URL(path, root);
-    url.searchParams.set('account_id', context.accountId);
+    if(context.empresa){url.searchParams.delete('account_id');url.searchParams.set('empresa',context.empresa);}
+    else url.searchParams.set('account_id', context.accountId);
     const segment = document.getElementById('seletor-segmento')?.value || new URLSearchParams(location.search).get('segmento') || context.segmento;
-    if (segment) url.searchParams.set('segmento', segment);
+    if (segment&&!context.empresa) url.searchParams.set('segmento', segment);
+    if(context.empresa)url.searchParams.delete('segmento');
     return url.href;
   }
 

@@ -4,7 +4,8 @@ window.ContextoConta = (() => {
   const origens=new Set([location.origin,'https://chat.orbbotia.com']);
   const valido=value=>/^[1-9]\d{0,14}$/.test(String(value??''));
   const params=new URLSearchParams(location.search);
-  let conta=null,resolver,rejeitar;
+  const referenciaValida=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value||''));
+  let conta=null,segmento='',resolver,rejeitar,selecao={tipo:'escolher'};
   const pronta=new Promise((resolve,reject)=>{resolver=resolve;rejeitar=reject;});
   pronta.catch(()=>{});
   if(!loginPage){
@@ -16,7 +17,7 @@ window.ContextoConta = (() => {
   document.documentElement.classList.add('orbbotia-admin');
   if(params.get('embedded')==='1'&&window.parent!==window)document.documentElement.classList.add('admin-embedded');
   if(loginPage)document.documentElement.classList.add('orbbotia-login');
-  function definir(account){if(!valido(account))return false;conta=String(account);if(!loginPage)document.documentElement.classList.add('admin-preparando');resolver(conta);return true;}
+  function definir(account,segment){if(!valido(account))return false;conta=String(account);if(typeof segment==='string')segmento=segment;if(!loginPage)document.documentElement.classList.add('admin-preparando');resolver(conta);return true;}
   function mensagemDoPainel(event){
     if(window.parent===window||event.source!==window.parent||!origens.has(event.origin))return null;
     let value;try{value=typeof event.data==='string'?JSON.parse(event.data):event.data;}catch{return null;}
@@ -28,13 +29,16 @@ window.ContextoConta = (() => {
   function solicitar(){if(window.parent===window)return;for(const origin of origens)window.parent.postMessage('chatwoot-dashboard-app:fetch-info',origin);}
   function bloquear(){document.documentElement.classList.remove('admin-preparando');if(!loginPage)document.documentElement.classList.add('conta-pendente');}
   function aprovar(account){if(String(account)!==conta||!valido(account))throw Error('conta_divergente');document.documentElement.classList.remove('admin-preparando');document.documentElement.classList.remove('conta-pendente');}
-  function navegar(account,segmento){if(!valido(account)){bloquear();return;}bloquear();const url=new URL(location.href);url.searchParams.set('account_id',String(account));if(segmento)url.searchParams.set('segmento',segmento);location.replace(url.href);}
-  if(loginPage)resolver(null);
-  else if(params.has('account_id')){if(params.getAll('account_id').length!==1||!definir(params.get('account_id')))rejeitar(Error('conta_invalida'));}
-  else if(window.parent===window)rejeitar(Error('conta_obrigatoria'));
-  else{window.addEventListener('message',event=>{const contexto=mensagemDoPainel(event);if(contexto)definir(contexto.account);});solicitar();}
+  function navegar(account,segmento){if(!valido(account)){bloquear();return;}bloquear();const url=new URL(location.href);url.searchParams.set('account_id',String(account));if(segmento)url.searchParams.set('segmento',segmento);location.replace(window.OrbbotiaRoutes?OrbbotiaRoutes.url(url.href).href:url.href);}
+  if(loginPage){selecao={tipo:'login'};resolver(null);}
+  else if(params.has('empresa')){
+    if(params.getAll('empresa').length!==1||params.has('account_id')||!referenciaValida(params.get('empresa'))){selecao={tipo:'invalida'};rejeitar(Error('conta_invalida'));}
+    else selecao={tipo:'referencia',empresa:params.get('empresa').toLowerCase()};
+  }
+  else if(params.has('account_id')){selecao={tipo:'legado'};if(params.getAll('account_id').length!==1||!definir(params.get('account_id'))){selecao={tipo:'invalida'};rejeitar(Error('conta_invalida'));}}
+  else if(window.parent!==window){selecao={tipo:'chatwoot'};window.addEventListener('message',event=>{const contexto=mensagemDoPainel(event);if(contexto)definir(contexto.account);});solicitar();}
   // pageswap só ocorre quando a navegação segue: não interfere em beforeunload/edições.
   window.addEventListener('pageswap',()=>{if(!loginPage&&!params.has('embedded'))document.documentElement.classList.add('admin-navegando');});
   window.addEventListener('pageshow',()=>document.documentElement.classList.remove('admin-navegando'));
-  return {valido,pronta,mensagemDoPainel,solicitar,navegar,bloquear,aprovar,get conta(){return conta;}};
+  return {valido,referenciaValida,pronta,definir,mensagemDoPainel,solicitar,navegar,bloquear,aprovar,selecao:Object.freeze(selecao),get conta(){return conta;},get segmento(){return segmento;}};
 })();

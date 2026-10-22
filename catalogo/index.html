@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 
 <head>
-<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="produtos/novo.html"></script>
+<script src="../assets/rotas.js?v=20261022-painel1" data-orbbotia-routes data-source="produtos/novo.html"></script>
 <meta charset="UTF-8">
-<script src="../assets/contexto-conta.js?v=20261021-publico1"></script>
-<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261021-publico1"></script>
+<script src="../assets/contexto-conta.js?v=20261022-painel1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261022-painel1"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo e Entregas · Orbbotia</title>
@@ -55,7 +55,7 @@
     </style>
 <link rel="stylesheet" href="pizzas-produtos.css?v=20261014-modelo1">
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
-<script src="../assets/admin-ui.js?v=20261021-publico1" defer></script>
+<script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 <script src="../assets/catalogo-contexto.js?v=20261014-modelo1"></script>
 </head>
 
@@ -465,7 +465,7 @@
     </div>
 
     <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
-<script src="pizzas-produtos.js?v=20261020-espacos1"></script>
+<script src="pizzas-produtos.js?v=20261022-painel1"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS
@@ -502,10 +502,10 @@
 
         window.addEventListener('message', function (event) {
             const context = ContextoConta.mensagemDoPainel(event);
-            if (!context) return;
+            if (!context) return;if(window.AdminSession?.ready&&!window.AdminSession.navigation)return;
             clearInterval(handshakeInterval);
-            const segment = typeof context.segmento === 'string' ? context.segmento : (urlParams.get('segmento') || 'restaurante');
-            if (String(globalAccountId || '') === context.account && segment === (urlParams.get('segmento') || 'restaurante')) return;
+            const segment = typeof context.segmento === 'string' ? context.segmento : (window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante');
+            if (String(globalAccountId || '') === context.account && segment === (window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante')) return;
             if (globalAccountId && !confirm('Trocar de estabelecimento descarta alterações não salvas nesta tela. Continuar?')) return;
             ContextoConta.navegar(context.account, segment);
         });
@@ -514,7 +514,7 @@
         }, 500);
 
         setTimeout(() => {
-            if (!globalAccountId) document.getElementById('alerta-chatwoot').textContent = 'Abra pelo painel do estabelecimento ou informe account_id no endereço.';
+            if (!globalAccountId && document.getElementById('alerta-chatwoot')) document.getElementById('alerta-chatwoot').textContent = 'Entre no painel e escolha seu estabelecimento.';
         }, 1500);
 
         function iniciarApp() {
@@ -522,7 +522,7 @@
             document.getElementById('app-container').classList.remove('hidden');
 
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
-            window.pizzasCadastro.init(globalAccountId, urlParams.get('segmento') || 'restaurante');
+            window.pizzasCadastro.init(globalAccountId, window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante');
             document.querySelectorAll('[data-common-tab]').forEach(button => button.addEventListener('click', () => switchCommonTab(button.dataset.commonTab)));
             document.querySelectorAll('[data-addon-tab]').forEach(button => button.addEventListener('click', () => switchAddonTab(button.dataset.addonTab)));
             document.querySelectorAll('[data-advanced-tab]').forEach(button => button.addEventListener('click', () => switchAdvancedTab(button.dataset.advancedTab)));
@@ -571,7 +571,7 @@
 
         function carregarRegrasCompletas() {
             const frame = document.getElementById('pc-rules-frame');
-            if (!frame.getAttribute('src')) frame.src = `./personalizacoes.html?embedded=1&account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(urlParams.get('segmento') || 'restaurante')}`;
+            if (!frame.getAttribute('src')) frame.src =(window.OrbbotiaRoutes?OrbbotiaRoutes.url( `./personalizacoes.html?embedded=1&account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante')}`,document.baseURI).href: `./personalizacoes.html?embedded=1&account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante')}`);
         }
 
         function switchDeliveryTab(tab) {
@@ -1336,7 +1336,7 @@
                 metadata: metadata
             }, document.getElementById('btnSalvar'), id ? 'Produto atualizado.' : 'Produto cadastrado.');
         }
-        if (globalAccountId) iniciarApp();
+        if(window.AdminSession?.ready)window.AdminSession.ready.then(()=>{globalAccountId=window.AdminSession.navigation.accountId;clearInterval(handshakeInterval);iniciarApp();}).catch(()=>{});else if (globalAccountId) iniciarApp();
     </script>
 </body>
 </html>

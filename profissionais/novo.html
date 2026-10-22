@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="profissionais/novo.html"></script>
+<script src="../assets/rotas.js?v=20261022-painel1" data-orbbotia-routes data-source="profissionais/novo.html"></script>
 <meta charset="UTF-8">
-<script src="../assets/contexto-conta.js?v=20261021-publico1"></script>
-<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261021-publico1"></script>
+<script src="../assets/contexto-conta.js?v=20261022-painel1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261022-painel1"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Profissionais</title>
@@ -19,7 +19,7 @@
         .input-field:focus { border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
     </style>
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
-<script src="../assets/admin-ui.js?v=20261021-publico1" defer></script>
+<script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 </head>
 <body class="p-4 md:p-6 space-y-6">
 
@@ -154,7 +154,7 @@
            COMUNICAÇÃO
            ========================================= */
         window.addEventListener('message', function (event) {
-            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;if(window.AdminSession?.ready&&!window.AdminSession.navigation)return;
             if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -173,7 +173,7 @@
 
 
 
-        if (globalAccountId) {
+        if(window.AdminSession?.ready)window.AdminSession.ready.then(()=>{globalAccountId=window.AdminSession.navigation.accountId;clearInterval(handshakeInterval);iniciarApp();}).catch(()=>{});else if (globalAccountId) {
             clearInterval(handshakeInterval);
             iniciarApp();
         }

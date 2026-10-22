@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 
 <head>
-<script src="../assets/rotas.js?v=20261021-publico1" data-orbbotia-routes data-source="produtos/menu_studio_pro_mobile_first.html"></script>
+<script src="../assets/rotas.js?v=20261022-painel1" data-orbbotia-routes data-source="produtos/menu_studio_pro_mobile_first.html"></script>
 <meta charset="UTF-8">
-<script src="../assets/contexto-conta.js?v=20261021-publico1"></script>
-<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261021-publico1"></script>
+<script src="../assets/contexto-conta.js?v=20261022-painel1"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261022-painel1"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Menu Studio Pro — Gerador de Cardápio</title>
@@ -56,7 +56,7 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
-<script src="../assets/admin-ui.js?v=20261021-publico1" defer></script>
+<script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 </head>
 
 <body class="flex flex-col md:flex-row h-screen text-slate-800 relative">
@@ -529,7 +529,7 @@
         }
 
         window.addEventListener('message', function (event) {
-            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;
+            const contexto=ContextoConta.mensagemDoPainel(event);if(!contexto)return;if(window.AdminSession?.ready&&!window.AdminSession.navigation)return;
             if(String(globalAccountId||'')!==contexto.account){ContextoConta.navegar(contexto.account,contexto.segmento||new URLSearchParams(location.search).get('segmento')||'restaurante');return;}
             let eventData = {};
             try { eventData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; } catch (e) { return; }
@@ -551,17 +551,17 @@
 
 
 
-        if (urlParams.get('account_id')) {
+        if(window.AdminSession?.ready)window.AdminSession.ready.then(()=>{globalAccountId=window.AdminSession.navigation.accountId;clearInterval(handshakeInterval);iniciarPagina();}).catch(()=>{});else if (urlParams.get('account_id')) {
             clearInterval(handshakeInterval);
             iniciarPagina();
         }
 
         function iniciarPagina() {
             document.getElementById('badge-account').innerText = `ID: ${globalAccountId}`;
-            const urlMenuPrincipal = new URL('../index.html', window.location.href).href;
+            const urlMenuPrincipal = new URL('../index.html', document.baseURI||window.location.href).href;
             const btnMenu = document.getElementById('btn-voltar-menu');
             if (btnMenu) btnMenu.href = `${urlMenuPrincipal}?account_id=${globalAccountId}`;
-            const urlProdutosNav = new URL('./novo.html', window.location.href).href;
+            const urlProdutosNav = new URL('./novo.html', document.baseURI||window.location.href).href;
             const btnGestao = document.getElementById('btn-voltar-gestao');
             if (btnGestao) btnGestao.href = `${urlProdutosNav}?account_id=${globalAccountId}`;
 

@@ -753,20 +753,26 @@
       let storage; try { storage = localStorage; } catch { storage = null; }
       const cacheEndereco = window.criarCacheEndereco(storage);
       const params = new URLSearchParams(location.search);
-      const ACCOUNT_ID = params.get("account_id");
-      const CLIENTE_TEL = params.get("tel") || "";
-      const CLIENTE_NOME = params.get("nome") || "Cliente Web";
-      const CONVERSATION_ID = params.get("conv") || "";
-      const MODO_SOLICITADO = params.get('modo') || 'selecionar';
-      // Link vindo do WhatsApp pode pedir "acompanhar" sem conhecer o pedido_id.
-      // Nesse caso usamos o contexto operacional atual e abrimos a tela de acompanhamento.
-      const MODO = MODO_SOLICITADO === 'acompanhar' && !params.get('pedido_id')
-        ? 'andamento'
-        : MODO_SOLICITADO;
       const ACESSO = params.get('acesso') || '';
+      let ACCOUNT_ID = '', CLIENTE_TEL = '', CLIENTE_NOME = 'Cliente';
+      // Estado de navegação pertence a esta entrada e chave; não vai no link compartilhado.
+      const anterior = history.state?.webapp;
+      if (anterior?.acesso === ACESSO) {
+        for (const key of ['modo','pedido_id','repetir']) {
+          params.delete(key);
+          if (anterior[key]) params.set(key, anterior[key]);
+        }
+      }
+      let MODO = params.get('modo') || '';
+      if (MODO === 'acompanhar' && !params.get('pedido_id')) MODO = 'andamento';
+      if (ACESSO) {
+        const limpa = new URL(location.href);
+        limpa.search = new URLSearchParams({acesso:ACESSO}).toString(); limpa.hash = '';
+        history.replaceState({webapp:{acesso:ACESSO,modo:MODO,pedido_id:params.get('pedido_id')||'',repetir:params.get('repetir')||''}},'',limpa.href);
+      }
       const TERMINAIS = ['cancelado','cancelado_cliente','cancelado_atendente','entregue','retirado','concluido','finalizado','resolvido'];
       const EDITAVEIS = ['em_aberto','rascunho','aguardando_pix','pagamento_na_entrega','pagamento_entrega','retirada_balcao'];
-      const IS_DEMO = !ACCOUNT_ID || params.get("demo") === "1";
+      const IS_DEMO = !ACESSO && params.get("demo") === "1";
       const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
       const DEMO_PRODUTOS = [
@@ -1883,10 +1889,6 @@
           pedido_id: state.pedido?.id || null,
           versao: state.pedido?.versao || null,
           requisicao_id: state.requisicaoId || (state.requisicaoId = crypto.randomUUID()),
-          account_id: ACCOUNT_ID,
-          cliente_telefone: valid.phoneDigits,
-          cliente_nome: CLIENTE_NOME,
-          conversation_id: CONVERSATION_ID,
           itens,
           valor_total: cartSubtotal() + fee,
           endereco: delivery ? `${rua}, ${numero} - ${bairro}` : "Retirada no Local",
@@ -1987,11 +1989,9 @@
 
       function navegar(modo, id = '', repetir = '') {
         const url = new URL(location.href);
-        url.searchParams.set('modo', modo);
-        url.searchParams.delete('pedido_id'); url.searchParams.delete('repetir');
-        if (id) url.searchParams.set('pedido_id', id);
-        if (repetir) url.searchParams.set('repetir', repetir);
-        location.replace(url.href);
+        url.search = new URLSearchParams(IS_DEMO ? {demo:'1'} : {acesso:ACESSO}).toString();
+        history.replaceState({webapp:{acesso:ACESSO,modo,pedido_id:id,repetir}},'',url.href);
+        location.reload();
       }
       function acaoBotao(text, action) {
         const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = text; b.addEventListener('click', action); return b;
@@ -2011,11 +2011,21 @@
             state.produtos = DEMO_PRODUTOS;
             state.taxas = DEMO_TAXAS;
           } else {
-            const query = new URLSearchParams({ account_id: ACCOUNT_ID, tel: CLIENTE_TEL, conv: CONVERSATION_ID, pedido_id: params.get("pedido_id") || "", acesso: ACESSO, modo: MODO });
-            const response = await fetch(`${URL_WEBHOOK_DADOS}?${query}`, { signal: AbortSignal.timeout(20000) });
+            if (!ACESSO) throw new Error('Abra o link de acesso enviado pelo atendimento.');
+            const query = new URLSearchParams({ pedido_id: params.get("pedido_id") || "", acesso: ACESSO });
+            const response = await fetch(`${URL_WEBHOOK_DADOS}?${query}`, { cache:'no-store', referrerPolicy:'no-referrer', signal: AbortSignal.timeout(20000) });
             if (!response.ok) throw new Error(`Cardápio indisponível: ${response.status}`);
             const data = await response.json();
             if (data.acesso_valido !== true) throw new Error('Este link expirou ou não é válido. Peça um novo link no WhatsApp.');
+            const contexto = data.contexto_acesso;
+            if (!contexto?.account_id || !contexto.cliente_telefone) throw new Error('Não foi possível conferir o acesso. Reabra o link do atendimento.');
+            ACCOUNT_ID = contexto.account_id; CLIENTE_TEL = contexto.cliente_telefone;
+            CLIENTE_NOME = contexto.cliente_nome || 'Cliente';
+            $('#input-telefone').value = CLIENTE_TEL;
+            $('#input-telefone').readOnly = true;
+            $('#input-telefone').title = 'WhatsApp vinculado ao link deste atendimento';
+            if (!MODO) MODO = contexto.modo_inicial || 'selecionar';
+            if (MODO === 'acompanhar' && !params.get('pedido_id')) MODO = 'andamento';
             state.pedidos = Array.isArray(data.pedidos) ? data.pedidos : [];
             state.contextoPedido = data.contexto_pedido || null;
             state.pedidoAndamento = data.pedido_andamento || state.contextoPedido?.pedido || null;

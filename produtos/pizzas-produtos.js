@@ -10,7 +10,10 @@ window.pizzasCadastro = (() => {
    contextLoaded=!!context;modelo=context?.modelo||null;regras=context?.regras||null;
    const pizza=!!context&&permitido('pizza'),addons=!!context&&permitido('addons');
    $('pc-type-pizza').hidden=!pizza;$('pc-type-addons').hidden=!addons;
-   $('pc-type-cards').hidden=!(pizza||addons);
+   $('pc-card-pizza').hidden=!pizza;$('pc-card-addons').hidden=!addons;
+   $('pc-type-cards').hidden=false;
+   $('pc-type-cards').classList.toggle('pc-with-pizza',pizza);
+   $('pc-type-cards').classList.toggle('pc-with-addons',addons);
    $('pc-type-cards').style.setProperty('--pc-type-columns',pizza&&addons?'3':'2');
    for(const tab of document.querySelectorAll('[data-pc-section]'))tab.hidden=!sectionAllowed(tab.dataset.pcSection);
    choose(context&&permitido(currentType)?currentType:'common');
@@ -264,14 +267,16 @@ window.pizzasCadastro = (() => {
  function choose(type){
    if(!permitido(type))type='common';
    if(!discard())return;if(currentType==='addons'&&addonDirty&&type!=='addons'){if(!confirm('Há alterações não salvas nos adicionais. Deseja descartá-las?'))return;$('pc-addons-frame').contentWindow.location.reload();addonDirty=false;}dirty=false;currentType=type;
-   $('pc-editor').hidden=type!=='pizza';$('pc-common-tabs').hidden=type!=='common';
+   $('pc-editor').hidden=type!=='pizza';$('pc-common-tabs').hidden=false;
    if(type==='common')switchCommonTab(document.querySelector('[data-common-tab][aria-selected="true"]')?.dataset.commonTab||'new');
    else {$('pc-common').hidden=true;$('pc-common-list').hidden=true;}
    $('pc-addons').hidden=type!=='addons';
    if(type==='pizza')setSection(activeSection);
    for(const name of ['common','pizza','addons'])$('pc-type-'+name).setAttribute('aria-pressed',String(name===type));
+   for(const name of ['common','pizza','addons'])$('pc-card-'+name).classList.toggle('pc-current',name===type);
    if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261014-adicionais-modelo1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261014-adicionais-modelo1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
    if(type==='addons')window.switchAddonTab?.(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab||'new');
+   return true;
  }
  function open(id){choose('pizza');if($('pc-editor').hidden)return;setSection('flavors');pendingProduct=id||null;if(!data){notice('Carregue o cadastro para continuar.');$('pc-load').focus();return;}if(id){const p=flavors().find(p=>p.id===id);if(p)editorFlavor(p);else notice('Recarregue: este sabor não está disponível.',true);}else editorFlavor();}
  function init(a,s='restaurante'){
@@ -315,5 +320,5 @@ window.pizzasCadastro = (() => {
    try{$('pc-rules-frame').contentWindow?.CadastroAdicionais?.descartarParaAtualizar();}catch{}
    return true;
  }
- return {init,open,isPizza,renderList,canReload};
+ return {init,open,isPizza,renderList,canReload,choose};
 })();

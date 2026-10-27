@@ -64,9 +64,11 @@ window.CatalogoRegrasUI=(()=>{
     const whole=cap.pizza?input(locations,'Permitir na pizza inteira',g.inteira,'checkbox'):null;
     const part=cap.pizza?input(locations,key==='bordas'?'Permitir borda por parte da pizza':'Permitir adicional por parte da pizza',g.por_parte,'checkbox'):null;
     const limits=el('div');limits.className='ob-field-grid';fields.append(limits);
-    const required=input(limits,'Novas opções obrigatórias por padrão',g.obrigatoria_padrao,'checkbox');if(!options.avancado)required.parentElement.hidden=true;const max=input(limits,'Limite individual inicial para cada nova opção',g.max_por_opcao,'number');
-    fields.append(el('p','Limite 1: não permite repetir a mesma opção. Acima de 1: permite repetir até o limite informado.'));
-    fields.append(el('p',options.avancado?'Cada opção terá seu próprio limite e obrigatoriedade no cadastro. Não há limite total de escolhas.':'Cada opção terá seu próprio limite no cadastro. Não há limite total de escolhas.'));
+    const required=input(limits,'Novas opções obrigatórias por padrão',g.obrigatoria_padrao,'checkbox');if(!options.avancado)required.parentElement.hidden=true;const max=input(limits,key==='bordas'?'Limite máximo de cada borda (padrão para novas opções)':'Limite máximo de cada adicional (padrão para novas opções)',g.max_por_opcao,'number');
+    const exemplos=key==='bordas'?['borda de cheddar','borda de catupiry']:modelo==='acaiteria'&&!cap.pizza?['granola','banana']:['bacon','catupiry'];
+    const unidade=cap.pizza?'na pizza inteira ou em cada parte, conforme as opções permitidas acima':modelo==='hamburgueria'?'em cada hambúrguer':modelo==='acaiteria'?'em cada açaí':'em cada item';
+    fields.append(el('p',`Este limite define a quantidade máxima da mesma opção ${unidade}. Exemplo: limite 1 permite até 1 porção de ${exemplos[0]}; limite 2 permite até 2 porções.`));
+    fields.append(el('p',`Cada opção terá seu próprio limite no catálogo. Por exemplo: até 2 porções de ${exemplos[0]} e até 1 de ${exemplos[1]}. Este campo sugere o limite inicial das novas opções; você pode ajustar cada uma no cadastro.${options.avancado?' A obrigatoriedade também é definida por opção.':''} Não há limite total de escolhas entre opções diferentes.`));
     const charges=el('div');charges.className='ob-field-grid';fields.append(charges);
     const charge=cap.pizza?select(charges,'Cobrança na inteira quando existem exceções de preço',[['maior','Maior preço dos sabores'],['media','Média dos preços'],['proporcional','Proporcional às partes']],g.cobranca_inteira):null;
     const partial=cap.pizza?select(charges,'Cobrança por parte',[['integral','Valor integral em cada parte'],['proporcional','Proporcional ao tamanho da parte']],g.cobranca_parte):null;

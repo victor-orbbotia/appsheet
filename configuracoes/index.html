@@ -49,7 +49,7 @@
                 <div class="space-y-1">
                     <div class="flex items-center gap-2">
                         <span class="text-xl">🤖</span>
-                        <h2 class="text-lg font-bold text-slate-800">Status do Agente IA</h2>
+                        <h2 class="text-lg font-bold text-slate-800">Status do seu atendente virtual</h2>
                     </div>
                     <p class="text-sm text-slate-500 max-w-md">
                         Quando desativado, o robô interromperá o atendimento automático em todos os canais do Chatwoot para esta conta.
@@ -137,12 +137,12 @@
             if (agenteAtivoState) {
                 btn.className = "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-emerald-500 transition-colors duration-200 ease-in-out focus:outline-none";
                 circle.className = "pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-6";
-                label.innerText = "Agente Ativo";
+                label.innerText = "Atendente virtual ativo";
                 label.className = "text-xs font-bold text-emerald-600 uppercase tracking-wide";
             } else {
                 btn.className = "relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-rose-500 transition-colors duration-200 ease-in-out focus:outline-none";
                 circle.className = "pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0";
-                label.innerText = "Agente Desligado";
+                label.innerText = "Atendente virtual desligado";
                 label.className = "text-xs font-bold text-rose-600 uppercase tracking-wide";
             }
         }

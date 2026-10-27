@@ -8,7 +8,7 @@ AdminSession.ready.then(async()=>{
  if(data.onboarding.novo&&data.onboarding.estado==='pendente'&&data.pode_editar&&new URLSearchParams(location.search).get('configuracao')!=='pausada'){location.replace(url.href);return;}
  const box=document.createElement('section');box.className='home-intro';
  const title=document.createElement('h2');title.textContent=data.onboarding.estado==='pendente'?'Continue a configuração inicial':'Configuração do estabelecimento';
- const p=document.createElement('p');p.textContent='Revise o modelo, a identidade e os cadastros do seu estabelecimento.';
- const a=document.createElement('a');a.href=url.href;a.textContent=data.onboarding.estado==='pendente'?'Continuar configuração':'Revisar configuração inicial';
+ const p=document.createElement('p');p.textContent='Volte às etapas para alterar o tipo de negócio, os dados do estabelecimento e as regras de personalização.';
+ const a=document.createElement('a');a.href=url.href;a.textContent=data.onboarding.estado==='pendente'?'Continuar configuração':'Alterar configuração inicial';
  box.append(title,p,a);const area=document.querySelector('.home-preview');if(area)area.prepend(box);
 }).catch(error=>{if(error.acessoTratado)return;AdminSession.ready.then(()=>AdminSession.avisoAcesso('indisponivel')).catch(()=>{});});

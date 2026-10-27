@@ -49,11 +49,6 @@ window.CatalogoRegrasUI=(()=>{
   const editor=el('section');parent.append(editor);let readCurrent;
   function build(value){
    editor.replaceChildren();const r=defaults(modelo,value),cap=capabilities(modelo,r),readers={};
-   const starter=el('div'),starterFields=el('div');starter.className='ob-preset';starterFields.className='ob-field-grid';starter.append(starterFields);editor.append(starter);
-   const choices=presets(modelo,r.recursos),preset=select(starterFields,'Começar com este conjunto',[['personalizado','Personalizado'],...choices.map(x=>[x.preset_id,x.nome])],choices.some(x=>x.preset_id===r.preset_id)?r.preset_id:'personalizado');
-   if(choices.length===1)preset.parentElement.hidden=true;
-   const name=el('h3');name.className='ob-rule-title';name.setAttribute('aria-live','polite');starterFields.append(name);
-   starter.append(el('p',choices.length===1?'Ajuste as regras abaixo para o seu negócio.':'Escolha um ponto de partida e ajuste as regras abaixo para o seu negócio.'));
    let resourcePizza,resourceExtras;
    if(options.avancado&&options.permitirRecursos!==false){const resources=el('fieldset');resources.append(el('legend','Recursos disponíveis no catálogo'));editor.append(resources);resourcePizza=input(resources,'Usar o cadastro especializado de pizzas',cap.pizza,'checkbox');resourceExtras=input(resources,'Usar personalizações e adicionais',cap.personalizacao,'checkbox');resources.append(el('p','Estes recursos podem mudar independentemente do modelo inicial. Os dados existentes não são apagados.'));}
    let split=null;if(cap.pizza){const splitPanel=el('div');splitPanel.className='ob-split';editor.append(splitPanel);split=input(splitPanel,'Oferecer pizza combinada (meio a meio e demais divisões dos tamanhos)',r.pizza_combinada,'checkbox');const pricingHelp=el('p','O preço dos sabores da pizza combinada é configurado em Pizza → Tamanhos. Cada tamanho pode usar maior preço, média ou proporcional; agrupamentos podem ter regras próprias. Bordas e adicionais são calculados separadamente.');splitPanel.append(pricingHelp);const updateSplit=()=>{pricingHelp.hidden=!split.checked;};split.onchange=updateSplit;updateSplit();}
@@ -76,9 +71,7 @@ window.CatalogoRegrasUI=(()=>{
     const toggle=()=>{fields.hidden=!active.checked;max.required=active.checked;if(charge)charge.closest('label').hidden=!options.avancado||!whole.checked;if(partial)partial.closest('label').hidden=!part.checked;help.replaceChildren();for(const text of explainExtra({ativo:active.checked,inteira:whole?.checked||!cap.pizza,por_parte:part?.checked||false,cobranca_parte:partial?.value||g.cobranca_parte,cobranca_inteira:charge?.value||g.cobranca_inteira},key,options.avancado,cap.pizza?'pizzaria':modelo))help.append(el('p',text));};active.onchange=toggle;if(part)part.onchange=toggle;if(whole)whole.onchange=toggle;if(partial)partial.onchange=toggle;if(charge)charge.onchange=toggle;toggle();
     readers[key]=()=>({ativo:active.checked,inteira:whole?whole.checked:true,por_parte:part?part.checked:false,obrigatoria_padrao:required.checked,max_por_opcao:Number(max.value),cobranca_inteira:charge?.value||'maior',cobranca_parte:partial?.value||'integral'});
    }
-   readCurrent=()=>{const current={...r,preset_id:preset.value,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))};current.nome=ruleName(current);return current;};
-   const updateName=()=>{name.textContent=readCurrent().nome;};editor.oninput=updateName;editor.onchange=updateName;updateName();
-   preset.onchange=()=>{const selected=choices.find(x=>x.preset_id===preset.value);if(selected)build({...selected,recursos_personalizados:r.recursos_personalizados});};
+   readCurrent=()=>{const current={...r,preset_id:r.preset_id,recursos_personalizados:options.avancado||r.recursos_personalizados,pizza_combinada:split?.checked||false,...Object.fromEntries(Object.entries(readers).map(([k,read])=>[k,read()]))};current.nome=ruleName(current);return current;};
    if(resourcePizza&&resourceExtras){const resourcesChanged=()=>{const current=readCurrent();current.recursos={pizza:resourcePizza.checked,personalizacao:resourceExtras.checked};current.preset_id='personalizado';current.recursos_personalizados=true;build(current);};resourcePizza.onchange=resourcesChanged;resourceExtras.onchange=resourcesChanged;}
   }
   build(stored);return()=>readCurrent();

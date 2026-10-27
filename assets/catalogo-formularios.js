@@ -4,7 +4,7 @@
   for(const label of document.querySelectorAll('body.catalogo-formularios label:has(.field-hint)')){
    const control=label.control || label.querySelector('input,select,textarea');
    if(!control || control.type==='checkbox' || label.closest('.pdf-page,#preview-canvas'))continue;
-   const hints=[...label.querySelectorAll('.field-hint')];
+   const hints=[...label.querySelectorAll('.field-hint')].filter(hint=>!label.contains(control) || !(control.compareDocumentPosition(hint)&Node.DOCUMENT_POSITION_FOLLOWING));
    let anchor=control;
    for(const hint of hints){
     anchor.after(hint);anchor=hint;

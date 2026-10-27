@@ -56,7 +56,7 @@
 <link rel="stylesheet" href="pizzas-produtos.css?v=20261027-cards2">
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
-<script src="../assets/catalogo-contexto.js?v=20261014-modelo1"></script>
+<script src="../assets/catalogo-contexto.js?v=20261027-disponibilidade1"></script>
 </head>
 
 <body class="p-4 md:p-6 space-y-6">
@@ -105,6 +105,7 @@
 <article class="pc-type-card" id="pc-card-pizza" hidden><button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button><nav id="pc-pizza-tabs" class="catalog-tabs pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="items">Lista de itens</button><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav></article>
 <article class="pc-type-card" id="pc-card-addons" hidden><button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span><span class="pc-choice-copy"><strong>Adicionais</strong><small>Opções, preços e disponibilidade.</small></span></button><nav id="pc-addon-tabs" class="catalog-tabs" aria-label="Etapas dos adicionais"><button type="button" data-addon-tab="list" aria-selected="true">Lista de itens</button><button type="button" data-addon-tab="new" aria-selected="false">Adicionar novo</button><button type="button" data-addon-tab="where" aria-selected="false">Onde oferecer</button><button type="button" data-addon-tab="advanced" aria-selected="false">Configurações avançadas</button></nav></article>
 </section>
+<p id="catalogo-configuracao-aviso" class="pc-notice" role="status" hidden>Durante a configuração inicial, os produtos são salvos como indisponíveis. Os itens desativados estão incluídos na lista. Após concluir, revise e ative os produtos que deseja vender.</p>
 <section id="pc-addons" hidden>
 
 <p><a id="pc-regras-negocio" href="../onboarding.html?avancado=1">⚙ Configurações avançadas · conjuntos de regras do catálogo</a></p>
@@ -151,7 +152,7 @@
                 <div id="form-produto-wrapper">
                     <form id="formProduto" class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <input type="hidden" id="produto_id" value="">
-                        <div class="md:col-span-2"><label class="availability-control"><input type="checkbox" id="ativo_produto" checked><span>Disponível para venda</span></label><p class="text-xs text-slate-500">Desative para tirar do cardápio sem excluir o cadastro.</p></div>
+                        <div class="md:col-span-2"><label class="availability-control"><input type="checkbox" id="ativo_produto" disabled aria-describedby="disponibilidade-ajuda"><span>Disponível para venda</span></label><p id="disponibilidade-ajuda" class="text-xs text-slate-500">Consultando a disponibilidade do estabelecimento…</p></div>
 
                         <div class="md:col-span-2">
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">Nome do Produto <span class="text-rose-500">*</span></label>
@@ -464,8 +465,8 @@
 
     </div>
 
-    <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
-<script src="pizzas-produtos.js?v=20261027-cards2"></script>
+    <script src="../assets/cadastro-ui.js?v=20261027-ajudas1"></script>
+<script src="pizzas-produtos.js?v=20261027-ajudas1"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS
@@ -489,6 +490,23 @@
         // ESTADOS (PRODUTOS)
         let listaAtual = [];
         let statusAtualEdicao = true;
+        let disponibilidadeBloqueada = null;
+        function atualizarDisponibilidadeProduto(valor) {
+            const controle = document.getElementById('ativo_produto');
+            controle.disabled = disponibilidadeBloqueada !== false;
+            controle.checked = disponibilidadeBloqueada === false && valor;
+            document.getElementById('disponibilidade-ajuda').textContent = disponibilidadeBloqueada === true
+                ? 'Você poderá disponibilizar este produto após concluir a configuração inicial. Ele será salvo como indisponível; depois, revise e ative no catálogo.'
+                : disponibilidadeBloqueada === false ? 'Desative para tirar do cardápio sem excluir o cadastro.'
+                : 'Não foi possível confirmar a disponibilidade. Atualize a página antes de ativar produtos.';
+        }
+        if (window.CatalogoContexto) CatalogoContexto.ready.then(contexto => {
+            disponibilidadeBloqueada = contexto.disponibilidadeBloqueada === true;
+            atualizarDisponibilidadeProduto(document.getElementById('produto_id').value ? statusAtualEdicao : true);
+            if (disponibilidadeBloqueada) document.getElementById('check-mostrar-desativados').checked = true;
+            document.getElementById('catalogo-configuracao-aviso').hidden = !disponibilidadeBloqueada;
+            renderizarTabela();
+        }).catch(() => atualizarDisponibilidadeProduto(false));
         let categoriaSelecionadaFiltro = 'Todas';
         let commonDirty = false;
 
@@ -1204,7 +1222,7 @@
             alternarCamposPreco();
 
             statusAtualEdicao = p.ativo !== false && p.ativo !== "false";
-            document.getElementById('ativo_produto').checked = statusAtualEdicao;
+            atualizarDisponibilidadeProduto(statusAtualEdicao);
 
             document.getElementById('btnExcluir').classList.remove('hidden');
             document.getElementById('titulo-form').innerText = "Editando Produto";
@@ -1230,7 +1248,7 @@
             document.getElementById('titulo-form').innerText = "Adicionar Novo Produto";
             document.getElementById('btnSalvar').innerText = "Salvar Produto";
             document.getElementById('btnExcluir').classList.add('hidden');
-            document.getElementById('ativo_produto').checked = true;
+            atualizarDisponibilidadeProduto(true);
 
             document.getElementById('tipo_venda').value = 'simples';
             document.getElementById('lista-de-variacoes').innerHTML = '';
@@ -1332,7 +1350,7 @@
                 descricao: descricao,
                 categoria: categoria,
                 preco_base: precoBase,
-                ativo: document.getElementById('ativo_produto').checked,
+                ativo: disponibilidadeBloqueada === false && document.getElementById('ativo_produto').checked,
                 metadata: metadata
             }, document.getElementById('btnSalvar'), id ? 'Produto atualizado.' : 'Produto cadastrado.');
         }

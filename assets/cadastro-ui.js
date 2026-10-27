@@ -57,5 +57,9 @@ window.CadastroUI = (() => {
   dialog.onclose=()=>acionador?.focus?.({preventScroll:true});
   dialog.showModal();dialog.querySelector('.cadastro-help-close').focus();
  }
- return {notify,capture,restore,abrirAjuda};
+ function vincularRepeticao(repetir,quantidade){
+  const atualizar=()=>{quantidade.disabled=!repetir.checked;quantidade.required=repetir.checked;quantidade.min='1';quantidade.step='1';if(!repetir.checked)quantidade.value='1';};
+  repetir.addEventListener('change',atualizar);atualizar();return atualizar;
+ }
+ return {notify,capture,restore,abrirAjuda,vincularRepeticao};
 })();

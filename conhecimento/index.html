@@ -68,11 +68,8 @@
                 <div>
                     <label for="tempo_espera" class="block text-sm font-medium text-slate-700 mb-1 flex items-center">
                         Tempo de Espera
-                        <span class="ml-2 cursor-help text-blue-500" title="Estimativa padrão informada pela IA. Não representa tempo restante nem horário garantido.">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                        </span>
                     </label>
-                    <p class="text-xs text-slate-500 mb-2">Estimativa geral em minutos, editável por empresa. Deixe vazio se não houver previsão padrão.</p>
+                    <p class="text-xs text-slate-500 mb-2">Estimativa geral em minutos, editável por empresa. Não é tempo restante nem horário garantido. Deixe vazio se não houver previsão padrão.</p>
 
                     <div class="flex items-center space-x-2">
                         <!-- Type number para aceitar apenas números -->
@@ -88,7 +85,7 @@
 
     </div>
 
-    <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
+    <script src="../assets/cadastro-ui.js?v=20261027-ajudas1"></script>
     <script>
         const urlDados = 'https://n8n.orbbotia.com/webhook/conhecimento-dados';
         const urlAcao  = 'https://n8n.orbbotia.com/webhook/conhecimento-acao';

@@ -3,11 +3,13 @@
 window.pizzasCadastro = (() => {
  const endpoint='https://n8n.orbbotia.com/webhook/meia-pizza-admin';
  let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='items', pizzaSource=[], pizzaGroupFilter='Todas';
- let modelo=null,regras=null,contextLoaded=false;
+ let modelo=null,regras=null,contextLoaded=false,disponibilidadeBloqueada=true;
  const regra=kind=>regras?.[kind==='borda'?'bordas':'adicionais'];
  function permitido(type){if(!contextLoaded)return type==='common';if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}
  function applyCatalogContext(context){
    contextLoaded=!!context;modelo=context?.modelo||null;regras=context?.regras||null;
+   disponibilidadeBloqueada=!context||context.disponibilidadeBloqueada===true;
+   if(context?.disponibilidadeBloqueada===true){$('pc-show-inactive').checked=true;renderList();}
    const pizza=!!context&&permitido('pizza'),addons=!!context&&permitido('addons');
    $('pc-type-pizza').hidden=!pizza;$('pc-type-addons').hidden=!addons;
    $('pc-card-pizza').hidden=!pizza;$('pc-card-addons').hidden=!addons;
@@ -88,7 +90,7 @@ window.pizzasCadastro = (() => {
    if(!discard())return;dirty=false;editor=()=>editorFlavor(p);const f=formSlot('pc-flavor-form');f.append(node('h3',p.id?'Editar sabor':'Novo sabor'));
    const name=field(f,'Nome do sabor',p.nome||''),desc=field(f,'Descrição',p.descricao||''),image=field(f,'Endereço da imagem (opcional)',meta(p).imagem||'','url');
    const line=lines().length?select(f,'Agrupamento de pizzas',lines().filter(l=>l.ativo||l.id===p.pizza_linha_id).map(l=>[l.id,l.nome]),p.pizza_linha_id||lines().find(l=>l.padrao)?.id):null;
-   const active=checkbox(f,'Disponível para venda',p.ativo!==false);active.closest('label').classList.add('pc-availability');const grid=node('div',undefined,'pc-grid');f.append(grid);
+   const active=checkbox(f,'Disponível para venda',!disponibilidadeBloqueada&&p.ativo!==false);active.disabled=disponibilidadeBloqueada;active.closest('label').classList.add('pc-availability');if(disponibilidadeBloqueada)f.append(node('p',contextLoaded?'Você poderá disponibilizar este produto após concluir a configuração inicial. Depois, revise e ative no catálogo.':'Atualize a página para confirmar a disponibilidade do estabelecimento.'));const grid=node('div',undefined,'pc-grid');f.append(grid);
    const allowed=sizes().filter(t=>t.categoria_id===(p.categoria_id||data.categoria_padrao));
    const entries=allowed.map(t=>{
      const box=node('div',undefined,'pc-card');grid.append(box);const v=variations(p).find(v=>v.pizza_tamanho_id===t.id);
@@ -102,7 +104,7 @@ window.pizzasCadastro = (() => {
      if(!name.value.trim())return notice('Informe o nome do sabor.',true);
      if(!entries.some(e=>e.available.checked))return notice('Selecione ao menos um tamanho e informe o preço.',true);
      if(entries.some(e=>e.available.checked&&!/^\d+(\.\d{1,2})?$/.test(e.price.value)))return notice('Preencha o preço de cada tamanho disponível com até duas casas decimais.',true);
-     save('salvar_sabor',{id:p.id,linha_id:line?.value,nome:name.value.trim(),descricao:desc.value.trim(),imagem:image.value.trim(),ativo:active.checked,precos:entries.map(e=>({tamanho_id:e.t.id,indisponivel:!e.available.checked,preco:e.price.value}))});
+     save('salvar_sabor',{id:p.id,linha_id:line?.value,nome:name.value.trim(),descricao:desc.value.trim(),imagem:image.value.trim(),ativo:!disponibilidadeBloqueada&&active.checked,precos:entries.map(e=>({tamanho_id:e.t.id,indisponivel:!e.available.checked,preco:e.price.value}))});
    },'primary'));
  }
  function editorLine(line={}){
@@ -208,6 +210,7 @@ window.pizzasCadastro = (() => {
    const name=field(f,'Nome',o.nome||''),price=field(f,'Acréscimo padrão (R$)',o.preco_padrao??0,'number');
    const limits=node('div',undefined,'option-limits');f.append(limits);
    const repeat=kind==='borda'?null:checkbox(limits,'Permitir repetir esta opção',o.id?o.permite_quantidade:(regra(kind)?.max_por_opcao||1)>1),max=field(limits,kind==='borda'?'Máximo desta borda por pizza':'Quantidade máxima',o.max_quantidade||regra(kind)?.max_por_opcao||1,'number');max.step='1';max.min='1';
+   if(repeat)CadastroUI.vincularRepeticao(repeat,max);
    const required=checkbox(limits,'Esta opção é obrigatória',o.id?o.obrigatoria:regra(kind)?.obrigatoria_padrao||false);
    const active=checkbox(f,'Opção disponível',o.ativo!==false);active.closest('label').classList.add('pc-availability');f.append(node('p','Preço vazio usa o padrão; zero é gratuito.'));
    const grid=node('div',undefined,'pc-grid');f.append(grid);
@@ -274,7 +277,7 @@ window.pizzasCadastro = (() => {
    if(type==='pizza')setSection(activeSection);
    for(const name of ['common','pizza','addons'])$('pc-type-'+name).setAttribute('aria-pressed',String(name===type));
    for(const name of ['common','pizza','addons'])$('pc-card-'+name).classList.toggle('pc-current',name===type);
-   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261014-adicionais-modelo1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261014-adicionais-modelo1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
+   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261027-ajudas1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261027-ajudas1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
    if(type==='addons')window.switchAddonTab?.(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab||'new');
    return true;
  }

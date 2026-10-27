@@ -57,9 +57,10 @@
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 <script src="../assets/catalogo-contexto.js?v=20261027-disponibilidade1"></script>
+<link rel="stylesheet" href="../assets/catalogo-formularios.css?v=20261027-alinhamento1">
 </head>
 
-<body class="p-4 md:p-6 space-y-6">
+<body class="catalogo-formularios p-4 md:p-6 space-y-6">
 
     <!-- Alerta Chatwoot -->
     <div id="alerta-chatwoot" class="max-w-5xl mx-auto bg-amber-50 text-amber-700 text-xs p-3 rounded-lg border border-amber-200 shadow-sm transition-all">
@@ -466,7 +467,8 @@
     </div>
 
     <script src="../assets/cadastro-ui.js?v=20261027-ajudas1"></script>
-<script src="pizzas-produtos.js?v=20261027-destinos1"></script>
+<script src="../assets/catalogo-navegacao.js?v=20261027-abas1"></script>
+<script src="pizzas-produtos.js?v=20261027-abas1"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS
@@ -536,6 +538,7 @@
         }, 1500);
 
         function iniciarApp() {
+            const abas = window.CatalogoNavegacao?.ler(globalAccountId, window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante') || {};
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
 
@@ -547,17 +550,23 @@
             document.querySelectorAll('[data-delivery-tab]').forEach(button => button.addEventListener('click', () => switchDeliveryTab(button.dataset.deliveryTab)));
             document.getElementById('pc-addons-frame').addEventListener('load', () => switchAddonTab(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab || 'new'));
             document.getElementById('formProduto').addEventListener('input', () => { commonDirty = true; });
-            switchCommonTab('list');
-            switchAddonTab('list');
-            switchAdvancedTab('prices');
-            switchDeliveryTab('new');
+            switchCommonTab(abas.common || 'list');
+            switchAdvancedTab(abas.advanced || 'prices');
+            switchAddonTab(abas.addon || 'list');
+            switchDeliveryTab(abas.delivery || 'new');
+            if (abas.module) switchTab(abas.module);
 
             carregarLista();
             carregarTaxasEntrega();
             if (document.getElementById('lista-de-variacoes').children.length === 0) adicionarVariacao();
         }
 
+        function memorizarAbas(patch) {
+            window.CatalogoNavegacao?.gravar(globalAccountId, window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante', patch);
+        }
         function switchCommonTab(tab) {
+            if (!['new', 'list'].includes(tab)) return;
+            memorizarAbas({common:tab});
             document.getElementById('pc-common').hidden = tab !== 'new';
             document.getElementById('pc-common-list').hidden = tab !== 'list';
             document.querySelectorAll('[data-common-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.commonTab === tab)));
@@ -567,6 +576,7 @@
         function switchAddonTab(tab) {
             const tabs = ['new', 'list', 'where', 'advanced'];
             if (!tabs.includes(tab)) return;
+            memorizarAbas({addon:tab});
             document.querySelectorAll('[data-addon-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.addonTab === tab)));
             document.getElementById('pc-advanced').hidden = tab !== 'advanced';
             const frame = document.getElementById('pc-addons-frame');
@@ -579,6 +589,7 @@
 
         function switchAdvancedTab(tab) {
             if (!['prices', 'rules'].includes(tab)) return;
+            memorizarAbas({advanced:tab});
             document.querySelectorAll('[data-advanced-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.advancedTab === tab)));
             document.getElementById('pc-advanced-rules').hidden = tab !== 'rules';
             const rules = tab === 'rules' && !document.getElementById('pc-advanced').hidden;
@@ -594,6 +605,7 @@
 
         function switchDeliveryTab(tab) {
             if (!['new', 'list', 'other'].includes(tab)) return;
+            memorizarAbas({delivery:tab});
             document.querySelectorAll('[data-delivery-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.deliveryTab === tab)));
             document.querySelectorAll('[data-delivery-panel]').forEach(panel => panel.hidden = panel.dataset.deliveryPanel !== tab);
         }
@@ -630,6 +642,8 @@
         // GESTÃO DE ABAS (SPA)
         // ==========================================
         function switchTab(tabName) {
+            if (!['produtos', 'entregas', 'upsell'].includes(tabName)) return;
+            memorizarAbas({module:tabName});
             const btnProdutos = document.getElementById('tab-btn-produtos');
             const btnEntregas = document.getElementById('tab-btn-entregas');
             const btnUpsell = document.getElementById('tab-btn-upsell');

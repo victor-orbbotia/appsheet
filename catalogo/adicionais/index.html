@@ -19,8 +19,9 @@
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 <script src="../assets/catalogo-contexto.js?v=20261014-adicionais-modelo1"></script>
+<link rel="stylesheet" href="../assets/catalogo-formularios.css?v=20261027-alinhamento1">
 </head>
-<body>
+<body class="catalogo-formularios">
 <main>
   <header class="top"><div><div class="eyebrow">Catálogo</div><h1 style="margin:5px 0">Personalizações do cardápio</h1><div id="contexto" class="muted">Validando o contexto da conta…</div></div><a id="voltar" class="link secondary" href="novo.html">Voltar ao catálogo</a></header>
   <div class="intro"><strong>Configure o que o cliente pode escolher.</strong><p>Crie uma escolha como “Borda” ou “Adicionais”, cadastre as opções e indique em quais produtos ela aparece. O sistema organiza essas escolhas por trás; você pode começar só com nome, opções e limite.</p></div>
@@ -228,7 +229,7 @@ for(const id of ['preco-produto'])$(id).addEventListener('change',atualizarVaria
 $('btn-preco').addEventListener('click',()=>{const produto_id=$('preco-produto').value,variacao_id=$('preco-variacao').value,grupo_id=$('preco-grupo').value,opcao_id=$('preco-opcao').value,preco=$('preco-especifico').value;if(!produto_id||!variacao_id||!opcao_id||preco==='')return mostrar('Selecione produto, tamanho, grupo, opção e preço.',true);mutar('preco_variacao',{produto_id,variacao_id,grupo_id,opcao_id,preco:Number(preco)});});
 $('btn-fallback').addEventListener('click',()=>{const variacao_id=$('preco-variacao').value,opcao_id=$('preco-opcao').value;if(!variacao_id||!opcao_id)return mostrar('Selecione o tamanho e a opção.',true);mutar('preco_variacao',{variacao_id,opcao_id,remover:true});});
 
-let etapaAdicionais='new';
+let etapaAdicionais='list';
 let secoesAdicionais=null;
 function mostrarEtapaAdicionais(etapa){
  if(!modoAdicionais||!secoesAdicionais||!secoesAdicionais[etapa])return;

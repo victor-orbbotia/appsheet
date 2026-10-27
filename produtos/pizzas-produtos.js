@@ -5,7 +5,7 @@ window.pizzasCadastro = (() => {
  let data=null, account='', segment='restaurante', key='', busy=false, dirty=false, pendingProduct=null, currentType='common', addonDirty=false, editor=null, restoring=false, activeSection='items', pizzaSource=[], pizzaGroupFilter='Todas';
  let modelo=null,regras=null,contextLoaded=false,disponibilidadeBloqueada=true;
  const regra=kind=>regras?.[kind==='borda'?'bordas':'adicionais'];
- function permitido(type){if(!contextLoaded)return type==='common';if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}
+ function permitido(type){if(!['common','pizza','addons'].includes(type))return false;if(!contextLoaded)return type==='common';if(regras?.recursos)return type==='common'||type==='pizza'&&regras.recursos.pizza||type==='addons'&&regras.recursos.personalizacao&&regras.adicionais?.ativo!==false;return !modelo||type==='common'||type==='pizza'&&modelo==='pizzaria'||type==='addons'&&['pizzaria','hamburgueria','acaiteria'].includes(modelo);}
  function applyCatalogContext(context){
    contextLoaded=!!context;modelo=context?.modelo||null;regras=context?.regras||null;
    disponibilidadeBloqueada=!context||context.disponibilidadeBloqueada===true;
@@ -33,7 +33,7 @@ window.pizzasCadastro = (() => {
  function checkbox(parent,label,value=false){const l=node('label'),i=node('input');i.type='checkbox';i.checked=value;l.append(i,document.createTextNode(label));parent.append(l);return i;}
  function select(parent,label,choices,value){const l=node('label',label),s=node('select');for(const [v,t] of choices)s.add(new Option(t,v));if(value!==undefined)s.value=value;l.append(s);parent.append(l);return s;}
  function sectionAllowed(section){return section==='borders'?regras?.bordas?.ativo!==false:section==='extras'?regras?.adicionais?.ativo!==false:true;}
- function setSection(section){if(!sectionAllowed(section))section='sizes';activeSection=section;for(const b of document.querySelectorAll('[data-pc-section]'))b.setAttribute('aria-selected',String(b.dataset.pcSection===section));for(const id of ['sizes','lines','flavors','borders','extras','items'])$('pc-'+id).hidden=id!==section;}
+ function setSection(section){if(!sectionAllowed(section))section='sizes';activeSection=section;if(contextLoaded)window.CatalogoNavegacao?.gravar(account,segment,{pizza:section});for(const b of document.querySelectorAll('[data-pc-section]'))b.setAttribute('aria-selected',String(b.dataset.pcSection===section));for(const id of ['sizes','lines','flavors','borders','extras','items'])$('pc-'+id).hidden=id!==section;}
  function formSlot(id){const section={ 'pc-size-form':'sizes','pc-line-form':'lines','pc-flavor-form':'flavors','pc-borda-form':'borders','pc-adicional-form':'extras'}[id];setSection(section);const x=$(id);x.replaceChildren();x.hidden=false;x.className='pc-edit';x.oninput=()=>{dirty=true;};if(!restoring)requestAnimationFrame(()=>{x.scrollIntoView({behavior:'smooth',block:'start'});x.classList.remove('pc-edit-focus');void x.offsetWidth;x.classList.add('pc-edit-focus');x.querySelector('input:not([type=hidden]),select')?.focus({preventScroll:true});});return x;}
  const catalog=()=>data?.catalogo;
  const flavors=()=>catalog()?.produtos.filter(p=>isPizza(p)&&!p.deletado)||[];
@@ -277,8 +277,9 @@ window.pizzasCadastro = (() => {
    if(type==='pizza')setSection(activeSection);
    for(const name of ['common','pizza','addons'])$('pc-type-'+name).setAttribute('aria-pressed',String(name===type));
    for(const name of ['common','pizza','addons'])$('pc-card-'+name).classList.toggle('pc-current',name===type);
-   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261027-destinos1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261027-destinos1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
+   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261027-abas1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261027-abas1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
    if(type==='addons')window.switchAddonTab?.(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab||'new');
+   if(contextLoaded)window.CatalogoNavegacao?.gravar(account,segment,{type});
    return true;
  }
  function open(id){choose('pizza');if($('pc-editor').hidden)return;setSection('flavors');pendingProduct=id||null;if(!data){notice('Carregue o cadastro para continuar.');$('pc-load').focus();return;}if(id){const p=flavors().find(p=>p.id===id);if(p)editorFlavor(p);else notice('Recarregue: este sabor não está disponível.',true);}else editorFlavor();}
@@ -287,6 +288,9 @@ window.pizzasCadastro = (() => {
      $('pc-addons-frame').removeAttribute('src');$('pc-rules-frame').removeAttribute('src');addonDirty=false;dirty=false;editor=null;pendingProduct=null;
      for(const id of ['pc-size-form','pc-flavor-form','pc-borda-form','pc-adicional-form','pc-line-form']){$(id).replaceChildren();$(id).hidden=true;}data=null;key='';$('pc-key').value='';$('pc-load').hidden=false;if(!window.AdminSession?.enabled){$('pc-key').closest('label').hidden=false;$('pc-key-help').hidden=false;}$('pc-content').disabled=true;renderList([]);}
    account=String(a);segment=s;
+   const navigation=window.CatalogoNavegacao?.ler(account,segment)||{};
+   const initialType=new URLSearchParams(location.search).get('tipo')==='pizza'?'pizza':navigation.type||'common';
+   activeSection=navigation.pizza||'items';
    if($('pc-regras-negocio'))$('pc-regras-negocio').href='../onboarding.html?avancado=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment);
    $('pc-type-addons').onclick=()=>choose('addons');$('pc-type-common').onclick=()=>choose('common');$('pc-type-pizza').onclick=()=>choose('pizza');
    $('pc-load').onclick=()=>{if(!discard())return;run(async()=>{key=$('pc-key').value.trim();if(!key&&!window.AdminSession?.enabled)throw Error('Informe a chave administrativa de pizzas.');data=await request('consultar');dirty=false;render();$('pc-load').hidden=true;$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-status').textContent='Cadastro carregado.';if(pendingProduct){const id=pendingProduct;pendingProduct=null;open(id);}});};
@@ -297,7 +301,7 @@ window.pizzasCadastro = (() => {
    for(const b of document.querySelectorAll('[data-pc-section]'))b.onclick=()=>{if(choose('pizza'))setSection(b.dataset.pcSection);};
    $('pc-help-toggle').onclick=()=>CadastroUI.abrirAjuda('pc-help','Cadastro de pizzas',$('pc-help-toggle'));
    if(window.AdminSession?.enabled){$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-load').textContent='Carregar cadastro';AdminSession.ready.then(()=>{if(!data&&!busy)$('pc-load').click();}).catch(()=>{});}
-   if(window.CatalogoContexto)CatalogoContexto.ready.then(context=>{applyCatalogContext(context);if(new URLSearchParams(location.search).get('tipo')==='pizza'&&permitido('pizza'))choose('pizza');}).catch(()=>applyCatalogContext(null));
+   if(window.CatalogoContexto)CatalogoContexto.ready.then(context=>{applyCatalogContext(context);choose(permitido(initialType)?initialType:'common');}).catch(()=>applyCatalogContext(null));
    choose(new URLSearchParams(location.search).get('tipo')==='pizza'?'pizza':'common');
  }
  window.addEventListener('message',async e=>{

@@ -1,0 +1,6 @@
+/* Alinha o fim dos campos de cada linha, independentemente da altura da ajuda. */
+body.catalogo-formularios :is(.grid,.pc-grid):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){align-items:end}
+body.catalogo-formularios :is(.grid,.pc-grid)>label:has(>input,>select,>textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)),
+body.catalogo-formularios :is(.grid,.pc-grid)>div:has(>label):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){align-self:end;min-width:0}
+body.catalogo-formularios :is(.grid,.pc-grid)>label:has(>input,>select,>textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){margin-bottom:0}
+body.catalogo-formularios :is(.grid,.pc-grid) :is(input,select,textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){box-sizing:border-box}

@@ -343,7 +343,9 @@
     .modifier-group { margin:.8rem 0; padding:.8rem; border:1px solid var(--border); border-radius:.8rem; background:rgba(255,255,255,.02); }
     .modifier-group h4 { margin:0 0 .25rem; color:#fff; font-size:.92rem; }
     .modifier-hint { margin:0 0 .55rem; color:var(--text-muted); font-size:.78rem; }
-    .modifier-option { min-height:46px; display:flex; align-items:center; gap:.65rem; border-top:1px solid var(--border); color:var(--text-soft); }
+    .modifier-option { min-height:58px; display:flex; align-items:center; gap:.65rem; border-top:1px solid var(--border); color:var(--text-soft); }
+    .modifier-option>span { flex:1; min-width:0; overflow-wrap:anywhere; }
+    .modifier-option>.stepper { flex:none; margin-left:auto; }
     .modifier-option input { width:68px; min-height:38px; margin-left:auto; padding:.35rem .45rem; border:1px solid var(--border); border-radius:.55rem; background:#0d110e; color:#fff; text-align:center; }
     .pizza-part { margin:.8rem 0; padding:.85rem; border:1px solid var(--border); border-radius:.9rem; background:rgba(255,255,255,.025); }
     .pizza-part-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.65rem; }
@@ -354,14 +356,20 @@
     .pizza-stage-copy { min-width:0; }
     .pizza-stage-copy h2 { margin:.2rem 0; }
     .pizza-stage-label { font-size:.72rem; color:#8be9a4; font-weight:700; }
-    .pizza-diagram { width:86px; height:86px; flex:0 0 86px; }
-    .pizza-diagram svg { width:100%; height:100%; }
+    .pizza-diagram { width:86px; height:86px; margin:0 auto 1rem; display:grid; place-items:center; }
+    .pizza-diagram svg { display:block; width:100%; height:100%; }
     .pizza-flavor-field { margin:.8rem 0; padding:.8rem; border:1px solid var(--border); border-radius:.8rem; }
     .pizza-flavor-field h3 { margin:0 0 .55rem; color:#fff; font-size:.92rem; }
     .pizza-flavor-field:focus-within,.modifier-group:focus-within { border-color:#8be9a4; }
-    .pizza-journey-total { flex:1; text-align:right; color:#8be9a4; font-size:.88rem; font-weight:700; }
+    .pizza-journey-total { width:100%; text-align:center; color:var(--text-muted); font-size:.88rem; font-weight:400; }
+    #pizza-journey .modal-footer { flex-direction:column; gap:.65rem; }
+    #pizza-journey-next { width:100%; }
+    .pizza-first-choice { padding:.85rem; border:1px solid var(--border-strong); border-radius:.8rem; background:rgba(139,233,164,.045); color:var(--text-soft); }
+    .pizza-first-choice strong { display:block; margin-bottom:.3rem; color:var(--text); }
+    .pizza-back-navigation { padding:.6rem 1rem; border-bottom:1px solid var(--border); background:var(--surface); }
+    .pizza-back-navigation:has(button[hidden]) { display:none; }
+    .pizza-back-navigation .btn { min-height:44px; padding:.6rem .8rem; }
     #pizza-modal .modal-footer { display:grid; grid-template-columns:auto minmax(0,1fr); }
-    #pizza-back-flavors { grid-column:1/-1; justify-self:start; padding:.55rem .75rem; }
     #pizza-add-cart { min-width:0; line-height:1.25; }
     .stepper { display: flex; align-items: center; overflow: hidden; border: 1px solid var(--border-strong); border-radius: .78rem; background: #0d110e; }
     .stepper button { width: 44px; height: 48px; border: 0; background: transparent; color: #fff; font-size: 1.3rem; cursor: pointer; }
@@ -564,12 +572,12 @@
   <section id="item-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-item-title" aria-hidden="true">
     <div class="modal-panel">
       <header class="modal-header">
-        <div class="pizza-stage-header"><div class="pizza-stage-copy"><span id="item-pizza-stage" class="pizza-stage-label" hidden>Etapa 2 de 2 · Bordas e adicionais</span><h2 id="modal-item-title">Item</h2></div><div id="pizza-diagram-whole" class="pizza-diagram" aria-hidden="true" hidden></div></div>
+        <div class="pizza-stage-header"><div class="pizza-stage-copy"><span id="item-pizza-stage" class="pizza-stage-label" hidden>Etapa 2 de 2 · Bordas e adicionais</span><h2 id="modal-item-title">Item</h2></div></div>
         <button class="icon-btn" type="button" data-close-modal aria-label="Fechar detalhes do item">×</button>
-      </header>
-      <div class="modal-content">
+      </header><nav class="pizza-back-navigation" aria-label="Etapas da pizza"><button id="item-back-flavors" type="button" class="btn btn-secondary" hidden>← Voltar aos sabores</button></nav>
+      <div class="modal-content"><div id="pizza-diagram-whole" class="pizza-diagram" aria-hidden="true" hidden></div>
         <p id="modal-item-desc" class="modal-description"></p>
-        <button id="item-back-flavors" type="button" class="btn btn-secondary" hidden>Voltar aos sabores</button>
+
         <div id="variation-field" class="field hide"><label class="field-label" for="item-variation">Escolha a opção</label><select id="item-variation"><option value="">Selecione...</option></select></div>
         <div id="item-personalizacoes" class="options-group hide"></div>
         <div class="options-group">
@@ -589,8 +597,8 @@
   </section>
 
   <section id="pizza-journey" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-journey-title" aria-hidden="true">
-    <div class="modal-panel"><header class="modal-header"><div class="pizza-stage-header"><div class="pizza-stage-copy"><span class="pizza-stage-label">Etapa 1 de 2 · Sabores</span><h2 id="pizza-journey-title">Escolha sua pizza</h2></div><div id="pizza-diagram-flavors" class="pizza-diagram" aria-hidden="true"></div></div><button class="icon-btn" type="button" data-close-modal aria-label="Fechar escolha da pizza">×</button></header>
-    <div class="modal-content"><p>Escolha o tamanho e os sabores. Depois você poderá adicionar bordas e acompanhamentos.</p>
+    <div class="modal-panel"><header class="modal-header"><div class="pizza-stage-header"><div class="pizza-stage-copy"><span class="pizza-stage-label">Etapa 1 de 2 · Sabores</span><h2 id="pizza-journey-title">Escolha sua pizza</h2></div></div><button class="icon-btn" type="button" data-close-modal aria-label="Fechar escolha da pizza">×</button></header>
+    <div class="modal-content"><div id="pizza-diagram-flavors" class="pizza-diagram" aria-hidden="true"></div><p>Escolha o tamanho e os sabores. Depois você poderá adicionar bordas e acompanhamentos.</p>
     <div class="options-group"><label class="field-label" for="pizza-size-choice">Tamanho</label><select id="pizza-size-choice"></select></div>
     <div class="options-group"><label class="field-label" for="pizza-flavor-count">Quantos sabores?</label><select id="pizza-flavor-count"></select></div>
     <div id="pizza-journey-flavors"></div></div>
@@ -599,10 +607,10 @@
   <section id="pizza-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pizza-modal-title" aria-hidden="true">
     <div class="modal-panel">
       <header class="modal-header">
-        <div class="pizza-stage-header"><div class="pizza-stage-copy"><span class="pizza-stage-label">Etapa 2 de 2 · Bordas e adicionais</span><h2 id="pizza-modal-title">Monte sua pizza</h2></div><div id="pizza-diagram-modifiers" class="pizza-diagram" aria-hidden="true"></div></div>
+        <div class="pizza-stage-header"><div class="pizza-stage-copy"><span class="pizza-stage-label">Etapa 2 de 2 · Bordas e adicionais</span><h2 id="pizza-modal-title">Monte sua pizza</h2></div></div>
         <button class="icon-btn" type="button" data-close-modal aria-label="Fechar montagem da pizza">×</button>
-      </header>
-      <div class="modal-content">
+      </header><nav class="pizza-back-navigation" aria-label="Etapas da pizza"><button id="pizza-back-flavors" class="btn btn-secondary" type="button">← Voltar aos sabores</button></nav>
+      <div class="modal-content"><div id="pizza-diagram-modifiers" class="pizza-diagram" aria-hidden="true"></div>
         <p id="pizza-modal-desc" class="modal-description"></p>
         <div id="pizza-partes"></div>
         <div id="pizza-globais" class="options-group"></div>
@@ -612,7 +620,7 @@
         </div>
       </div>
       <footer class="modal-footer">
-        <button id="pizza-back-flavors" class="btn btn-secondary" type="button">Voltar aos sabores</button>
+
         <div class="stepper" aria-label="Quantidade de pizzas">
           <button id="pizza-qty-minus" type="button" aria-label="Diminuir quantidade">−</button>
           <output id="pizza-qty">1</output>
@@ -1218,6 +1226,7 @@
         select.replaceChildren(new Option("Selecione o bairro...", ""));
         (Array.isArray(state.taxas) ? state.taxas : [])
           .filter(taxa => !isTaxaOutros(taxa))
+          .sort((a,b) => String(a.bairro).localeCompare(String(b.bairro),'pt-BR',{sensitivity:'base',numeric:true}))
           .forEach(taxa => select.add(new Option(taxa.bairro, taxa.bairro)));
         const outros = getTaxaOutros();
         if (outros) select.add(new Option("Outro / Meu bairro não está na lista", TAXA_OUTROS_KEY));
@@ -1337,7 +1346,7 @@
           const counter=element('p','modifier-hint',group.sem_limite_total?'0 escolhidos':'0 de '+group.max_selecoes+' escolhidos');box.append(counter);
           for (const option of group.opcoes) {
             const row = element('label', 'modifier-option');
-            const copy = element('span', '', `${option.nome}${option.obrigatoria?" · Obrigatória":""} · ${money(option.preco_centavos / 100)} cada`);
+            const copy = element('span', '', `${option.nome}${option.obrigatoria?" · Obrigatória":""} · ${money(option.preco_centavos / 100)}`);
             const input = document.createElement('input');
             input.type = 'number'; input.min = '0'; input.max = String(option.max_quantidade); input.step = '1';
             input.value = String(selected.get(`${group.id}/${option.id}`) || 0);
@@ -1453,7 +1462,8 @@
           const entry = entries.find(e=>e.value===sizes.value);
           counts.replaceChildren(new Option('1 sabor — pizza inteira', '1'));
           const c = entry?.config, options = c ? pizzaOpcoesSabor(c) : [];
-          if (c && c.permite_dividir !== false) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n+' sabores',String(n)));
+          if (c && c.permite_dividir !== false) for (let n=c.minimo; n<=Math.min(c.maximo, options.length); n++) counts.add(new Option(n===2?(c.divisao==='personalizada'?'2 sabores — partes ajustáveis':'2 sabores — meio a meio'):n+' sabores — em '+n+' partes',String(n)));
+          counts.closest('.options-group').hidden=counts.options.length<=1;
           escolhas = Array.from({length:Number(counts.value)||1},(_,i)=>escolhas[i]||'');
           fracoes=[];
           escolhas[0]=product?.id||'';
@@ -1470,7 +1480,12 @@
           if(!entry){$('#pizza-journey-total').textContent='Escolha o tamanho';$('#pizza-journey-next').disabled=true;desenharEtapaPizza('pizza-diagram-flavors',[1]);return;}
           const options=config?pizzaOpcoesSabor(config):[];
           if(amount>1) escolhas.forEach((id,index)=>{
-            if(index===0&&config?.divisao!=='personalizada')return;
+            if(index===0){
+              const reminder=element('aside','pizza-first-choice');
+              reminder.append(element('strong','','Sabor 1 · '+product.nome),element('span','','Este é o primeiro sabor da sua pizza. Escolha os demais abaixo.'));
+              mount.append(reminder);
+              if(config?.divisao!=='personalizada')return;
+            }
             const box=element('section','pizza-flavor-field');
             box.append(element('h3','',index===0?`Parte de ${product.nome}`:`Sabor ${index+1}`));
             if(index>0){
@@ -1611,7 +1626,7 @@
             const label = element('label', 'modifier-option');
             const prices=groups.map(g=>g.opcoes.find(o=>o.id===option.id).preco_centavos);
             const surcharge=rule.cobranca==='maior'?Math.max(...prices):rule.cobranca==='media'?prices.reduce((n,v)=>n+v,0)/prices.length:prices.reduce((n,v,i)=>n+v*(config.divisao==='iguais'?1/prices.length:Number(selectedParts[i].percentual)/100),0);
-            label.append(element('span', '', `${option.nome}${groups.some(g=>g.opcoes.some(o=>o.id===option.id&&o.obrigatoria))?" · Obrigatória":""} · + ${money(Math.round(surcharge)/100)} cada`));
+            label.append(element('span', '', `${option.nome}${groups.some(g=>g.opcoes.some(o=>o.id===option.id&&o.obrigatoria))?" · Obrigatória":""} · + ${money(Math.round(surcharge)/100)}`));
             const input = document.createElement('input'); input.type='number'; input.min='0'; input.max=String(Math.min(...groups.map(g=>g.opcoes.find(o=>o.id===option.id).max_quantidade))); input.step='1';
             input.value=String((current.globais||[]).find(m=>m.grupo_id===rule.grupo_id&&m.opcao_id===option.id)?.quantidade||0);
             input.dataset.pizzaGlobal='1'; input.dataset.grupo=rule.grupo_id; input.dataset.opcao=option.id;

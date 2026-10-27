@@ -277,7 +277,7 @@ window.pizzasCadastro = (() => {
    if(type==='pizza')setSection(activeSection);
    for(const name of ['common','pizza','addons'])$('pc-type-'+name).setAttribute('aria-pressed',String(name===type));
    for(const name of ['common','pizza','addons'])$('pc-card-'+name).classList.toggle('pc-current',name===type);
-   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261027-abas1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261027-abas1&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
+   if(type==='addons'&&!$('pc-addons-frame').getAttribute('src'))$('pc-addons-frame').src=(window.OrbbotiaRoutes?OrbbotiaRoutes.url('./personalizacoes.html?v=20261027-formularios2&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment),document.baseURI).href:'./personalizacoes.html?v=20261027-formularios2&modo=adicionais&embedded=1&account_id='+encodeURIComponent(account)+'&segmento='+encodeURIComponent(segment));
    if(type==='addons')window.switchAddonTab?.(document.querySelector('[data-addon-tab][aria-selected="true"]')?.dataset.addonTab||'new');
    if(contextLoaded)window.CatalogoNavegacao?.gravar(account,segment,{type});
    return true;

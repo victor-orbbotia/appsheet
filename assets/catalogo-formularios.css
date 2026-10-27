@@ -1,6 +1,20 @@
-/* Alinha o fim dos campos de cada linha, independentemente da altura da ajuda. */
-body.catalogo-formularios :is(.grid,.pc-grid):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){align-items:end}
+/* Rótulos e controles no topo; ajuda abaixo de cada campo. */
+body.catalogo-formularios :is(.grid,.pc-grid):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){align-items:start}
 body.catalogo-formularios :is(.grid,.pc-grid)>label:has(>input,>select,>textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)),
-body.catalogo-formularios :is(.grid,.pc-grid)>div:has(>label):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){align-self:end;min-width:0}
+body.catalogo-formularios :is(.grid,.pc-grid)>div:has(>label):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){align-self:start;min-width:0}
 body.catalogo-formularios :is(.grid,.pc-grid)>label:has(>input,>select,>textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){margin-bottom:0}
 body.catalogo-formularios :is(.grid,.pc-grid) :is(input,select,textarea):where(:not(.pdf-page,.pdf-page *,#preview-canvas,#preview-canvas *)){box-sizing:border-box}
+
+body.catalogo-formularios .field-hint{display:block;margin:6px 0 0;font-size:13px;font-weight:400;line-height:1.45;color:var(--admin-muted,#64748b)}
+body.catalogo-formularios .option-form{grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px}
+body.catalogo-formularios .option-form .option-group{grid-column:1/-1}
+body.catalogo-formularios .option-form label{margin-top:0}
+body.catalogo-formularios .option-limits{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:24px;padding:18px 0;border-top:1px solid var(--admin-border,#cbd5e1);margin-top:4px}
+body.catalogo-formularios .option-repeat{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+body.catalogo-formularios .option-repeat>div{width:180px;max-width:100%}
+body.catalogo-formularios .option-limits label:has(input[type=checkbox]){display:flex;align-items:center;gap:10px;min-height:44px;margin:0}
+body.catalogo-formularios .option-required{align-self:center}
+body.catalogo-formularios .option-form .form-actions{grid-column:1/-1;margin-top:0;padding-top:16px}
+@media(max-width:600px){body.catalogo-formularios .option-form,body.catalogo-formularios .option-limits{grid-template-columns:minmax(0,1fr);gap:16px}body.catalogo-formularios .option-repeat{justify-content:space-between;gap:12px}body.catalogo-formularios .option-repeat>div{width:140px}}
+body.catalogo-formularios .option-repeat>label{width:auto;flex:0 0 auto}
+html.orbbotia-admin body.catalogo-formularios .option-limits>.option-repeat{display:flex!important}

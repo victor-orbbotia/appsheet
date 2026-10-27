@@ -70,3 +70,4 @@
 .pizza-ui.pc-type-cards .catalog-tabs button{min-width:0;min-height:44px;padding:10px 8px;white-space:normal;overflow-wrap:anywhere;line-height:1.35;text-align:center;font-size:13px}
 .pizza-ui.pc-type-cards [data-addon-tab="where"],.pizza-ui.pc-type-cards [data-addon-tab="advanced"]{font-weight:500;background:transparent!important}
 @media(min-width:900px){.pizza-ui.pc-type-cards.pc-with-addons{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}.pizza-ui.pc-type-cards.pc-with-pizza{grid-template-columns:repeat(var(--pc-type-columns,2),minmax(0,1fr))}}
+@media(min-width:900px){.pizza-ui.pc-type-cards.pc-with-pizza{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)}.pizza-ui.pc-type-cards.pc-with-pizza.pc-with-addons{grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1.3fr)}}

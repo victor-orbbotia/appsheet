@@ -53,7 +53,7 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-<link rel="stylesheet" href="pizzas-produtos.css?v=20261027-cards1">
+<link rel="stylesheet" href="pizzas-produtos.css?v=20261027-cards2">
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 <script src="../assets/catalogo-contexto.js?v=20261014-modelo1"></script>
@@ -102,7 +102,7 @@
 
 <section id="pc-type-cards" class="pizza-ui pc-type-cards" aria-label="Tipo de cadastro" hidden>
 <article class="pc-type-card" id="pc-card-common"><button id="pc-type-common" type="button" class="pc-choice" aria-pressed="true"><span class="pc-icon" aria-hidden="true">🛍️</span><span class="pc-choice-copy"><strong>Produto comum</strong><small>Nome, preço e variações.</small></span></button><nav id="pc-common-tabs" class="catalog-tabs" aria-label="Etapas dos produtos comuns"><button type="button" data-common-tab="list" aria-selected="true">Lista de itens</button><button type="button" data-common-tab="new" aria-selected="false">Adicionar novo</button></nav></article>
-<article class="pc-type-card" id="pc-card-pizza" hidden><button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button></article>
+<article class="pc-type-card" id="pc-card-pizza" hidden><button id="pc-type-pizza" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🍕</span><span class="pc-choice-copy"><strong>Pizza</strong><small>Sabores, tamanhos e combinações.</small></span></button><nav id="pc-pizza-tabs" class="catalog-tabs pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="items">Lista de itens</button><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav></article>
 <article class="pc-type-card" id="pc-card-addons" hidden><button id="pc-type-addons" type="button" class="pc-choice" aria-pressed="false"><span class="pc-icon" aria-hidden="true">🧀</span><span class="pc-choice-copy"><strong>Adicionais</strong><small>Opções, preços e disponibilidade.</small></span></button><nav id="pc-addon-tabs" class="catalog-tabs" aria-label="Etapas dos adicionais"><button type="button" data-addon-tab="list" aria-selected="true">Lista de itens</button><button type="button" data-addon-tab="new" aria-selected="false">Adicionar novo</button><button type="button" data-addon-tab="where" aria-selected="false">Onde oferecer</button><button type="button" data-addon-tab="advanced" aria-selected="false">Configurações avançadas</button></nav></article>
 </section>
 <section id="pc-addons" hidden>
@@ -117,7 +117,7 @@
 <label>Chave administrativa de pizzas <input type="password" id="pc-key" autocomplete="off"></label><button id="pc-load" type="button">Carregar cadastro</button>
 <p id="pc-key-help">Use a chave do cadastro de pizzas.</p><div id="pc-status" hidden></div></div>
 <fieldset id="pc-content" disabled>
-<nav class="pc-row pc-tab-nav" aria-label="Etapas do cadastro de pizzas"><button type="button" data-pc-section="items">Lista de itens</button><button type="button" data-pc-section="sizes">Tamanhos</button><button type="button" data-pc-section="lines">Agrupamentos</button><button type="button" data-pc-section="flavors">Sabores e preços</button><button type="button" data-pc-section="borders">Bordas</button><button type="button" data-pc-section="extras">Adicionais</button></nav>
+
 <section id="pc-sizes" class="pc-card pc-section"><h2>Tamanhos</h2><p>Medidas e regras de combinação.</p><button id="pc-new-size" type="button">Novo tamanho</button><div id="pc-size-form" hidden></div><div id="pc-size-list"></div></section>
 <section id="pc-lines" class="pc-card pc-section" hidden><h2>Agrupamentos de pizzas</h2><p>Separe sabores que podem combinar entre si.</p><button id="pc-new-line" type="button">Novo agrupamento</button><div id="pc-line-form" hidden></div><div id="pc-line-list"></div></section>
 <section id="pc-flavors" class="pc-card pc-section" hidden><h2>Sabores e preços</h2><p>Informe o preço da pizza inteira por tamanho.</p><button id="pc-new-flavor" type="button">Novo sabor</button><div id="pc-flavor-form" hidden></div></section>
@@ -465,7 +465,7 @@
     </div>
 
     <script src="../assets/cadastro-ui.js?v=20261013-formularios1"></script>
-<script src="pizzas-produtos.js?v=20261027-cards1"></script>
+<script src="pizzas-produtos.js?v=20261027-cards2"></script>
 <script src="sugestoes-regras.js?v=20261009-4"></script>
     <script>
         // ROTAS GERAIS

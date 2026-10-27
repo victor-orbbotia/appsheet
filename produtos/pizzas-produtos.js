@@ -291,7 +291,7 @@ window.pizzasCadastro = (() => {
    $('pc-new-size').onclick=()=>editorSize();$('pc-new-flavor').onclick=()=>editorFlavor();
    for(const kind of ['borda','adicional']){ $('pc-new-'+kind).onclick=()=>newOption(kind);$('pc-new-group-'+kind).onclick=()=>editorGroup(kind);}
    $('pc-show-inactive').onchange=()=>renderList();
-   for(const b of document.querySelectorAll('[data-pc-section]'))b.onclick=()=>setSection(b.dataset.pcSection);
+   for(const b of document.querySelectorAll('[data-pc-section]'))b.onclick=()=>{if(choose('pizza'))setSection(b.dataset.pcSection);};
    $('pc-help-toggle').onclick=()=>CadastroUI.abrirAjuda('pc-help','Cadastro de pizzas',$('pc-help-toggle'));
    if(window.AdminSession?.enabled){$('pc-key').closest('label').hidden=true;$('pc-key-help').hidden=true;$('pc-load').textContent='Carregar cadastro';AdminSession.ready.then(()=>{if(!data&&!busy)$('pc-load').click();}).catch(()=>{});}
    if(window.CatalogoContexto)CatalogoContexto.ready.then(context=>{applyCatalogContext(context);if(new URLSearchParams(location.search).get('tipo')==='pizza'&&permitido('pizza'))choose('pizza');}).catch(()=>applyCatalogContext(null));

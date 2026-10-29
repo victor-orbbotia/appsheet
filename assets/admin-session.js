@@ -11,7 +11,7 @@ window.AdminSession = (() => {
  let client=null,session=null,redirecting=false,navigation=null,identity=null,sessionChanged=false,trocarUsuarioNaSaida=false;
  const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
  function goLogin(){if(redirecting)return;redirecting=true;loginUrl.searchParams.set('retorno',trocarUsuarioNaSaida?safeReturn(location.pathname+location.search,{trocarUsuario:true}):location.pathname+location.search);location.replace(loginUrl.href);}
- function safeReturn(value,{trocarUsuario=false}={}){try{const u=route(value||'index.html');if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname){if(trocarUsuario){const start=route('index.html');start.searchParams.set('retomar_configuracao','1');return start.href;}return u.href;}}catch{}return route('index.html').href;}
+ function safeReturn(value,{trocarUsuario=false}={}){try{const u=route(value||'index.html');if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname){if(trocarUsuario){const start=route('index.html');for(const key of ['empresa','account_id','segmento'])start.searchParams.delete(key);start.searchParams.set('retomar_configuracao','1');return start.href;}return u.href;}}catch{}return route('index.html').href;}
  function userIdentity(value){return value?.user?.id||value?.user?.email||null;}
  function invalidarIdentidade(){
   if(loginPage||sessionChanged||redirecting)return;

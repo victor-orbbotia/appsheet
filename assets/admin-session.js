@@ -11,13 +11,12 @@ window.AdminSession = (() => {
  let client=null,session=null,redirecting=false,navigation=null,identity=null,sessionChanged=false,trocarUsuarioNaSaida=false;
  const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
  function goLogin(){if(redirecting)return;redirecting=true;loginUrl.searchParams.set('retorno',trocarUsuarioNaSaida?safeReturn(location.pathname+location.search,{trocarUsuario:true}):location.pathname+location.search);location.replace(loginUrl.href);}
- function safeReturn(value,{trocarUsuario=false}={}){try{const u=route(value||'index.html');if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname){if(trocarUsuario)for(const key of ['empresa','account_id','segmento'])u.searchParams.delete(key);return u.href;}}catch{}return route('index.html').href;}
+ function safeReturn(value,{trocarUsuario=false}={}){try{const u=route(value||'index.html');if(u.origin===root.origin&&u.pathname.startsWith(root.pathname)&&u.pathname!==loginUrl.pathname){if(trocarUsuario){const start=route('index.html');start.searchParams.set('retomar_configuracao','1');return start.href;}return u.href;}}catch{}return route('index.html').href;}
  function userIdentity(value){return value?.user?.id||value?.user?.email||null;}
  function invalidarIdentidade(){
   if(loginPage||sessionChanged||redirecting)return;
   sessionChanged=true;redirecting=true;navigation=null;window.ContextoConta.bloquear();document.documentElement.classList.add('admin-pending');
-  const next=new URL(location.href);
-  if(window.parent===window)for(const key of ['empresa','account_id','segmento'])next.searchParams.delete(key);
+  const next=window.parent===window?new URL(safeReturn(null,{trocarUsuario:true})):new URL(location.href);
   location.replace(next.href);
  }
  function conferirIdentidade(current=session){
@@ -54,7 +53,7 @@ window.AdminSession = (() => {
   await domReady;
   const box=document.createElement('main');box.id='admin-company-picker';box.style.cssText='max-width:640px;margin:40px auto;padding:24px;font:16px system-ui';
   const h=document.createElement('h1');h.textContent='Escolha o estabelecimento';const p=document.createElement('p');p.textContent='Seu usuário tem acesso aos estabelecimentos abaixo.';box.append(h,p);
-  for(const empresa of contas){const a=document.createElement('a');const u=route(location.href);u.searchParams.delete('account_id');u.searchParams.delete('segmento');u.searchParams.set('empresa',empresa.empresa);a.href=u.href;a.textContent=empresa.nome||'Estabelecimento';a.style.cssText='display:block;margin:12px 0;padding:16px;border:1px solid #7898bb;border-radius:10px;background:#203346;color:#eef3fc;text-decoration:none';box.append(a);}
+  for(const empresa of contas){const a=document.createElement('a');const u=route('index.html');u.searchParams.set('retomar_configuracao','1');u.searchParams.set('empresa',empresa.empresa);a.href=u.href;a.textContent=empresa.nome||'Estabelecimento';a.style.cssText='display:block;margin:12px 0;padding:16px;border:1px solid #7898bb;border-radius:10px;background:#203346;color:#eef3fc;text-decoration:none';box.append(a);}
   const logout=document.createElement('button');logout.type='button';logout.textContent='Entrar com outro usuário';logout.onclick=async()=>{trocarUsuarioNaSaida=true;await client.auth.signOut({scope:'local'});goLogin();};box.append(logout);const style=document.createElement('style');style.textContent='body.admin-escolhendo > :not(#admin-company-picker){display:none!important}';document.head.append(style);document.body.append(box);document.body.classList.add('admin-escolhendo');document.documentElement.classList.remove('admin-pending');document.documentElement.classList.remove('conta-pendente');
   // A escolha navega e inicia uma página completa; módulos não iniciam enquanto ela está pendente.
   return new Promise(()=>{});
@@ -77,8 +76,16 @@ window.AdminSession = (() => {
   if(!empresa||String(empresa.account_id)!==account)throw Error('conta_inexistente');
   let modulos=empresa.modulos;
   if(typeof modulos==='string'){try{modulos=JSON.parse(modulos);}catch{modulos={};}}
-  navigation=Object.freeze({accountId:account,empresa:String(escolhida.empresa).toLowerCase(),nome:String(escolhida.nome||empresa.nome_empresa||'Estabelecimento'),segmento:String(empresa.segmento||''),modulos:Object.freeze(Object.fromEntries(['pedidos','produtos','conhecimento','profissionais','configuracoes'].map(key=>[key,modulos?.[key]===true])))});
+  navigation=Object.freeze({userId:identity,accountId:account,empresa:String(escolhida.empresa).toLowerCase(),nome:String(escolhida.nome||empresa.nome_empresa||'Estabelecimento'),segmento:String(empresa.segmento||''),modulos:Object.freeze(Object.fromEntries(['pedidos','produtos','conhecimento','profissionais','configuracoes'].map(key=>[key,modulos?.[key]===true])))});
   window.ContextoConta.definir(account,navigation.segmento);
+  if(window.parent===window){
+   let anterior=null;try{anterior=JSON.parse(sessionStorage.getItem('orbbotia:ultimo-acesso')||'null');sessionStorage.setItem('orbbotia:ultimo-acesso',JSON.stringify({userId:identity,accountId:account}));}catch{}
+   if(anterior&&(anterior.userId!==identity||anterior.accountId!==account)){
+    const start=route('index.html');start.searchParams.set('empresa',navigation.empresa);start.searchParams.set('retomar_configuracao','1');
+    if(location.pathname!==start.pathname){redirecting=true;window.ContextoConta.bloquear();location.replace(start.href);const error=Error('Abrindo o início do novo acesso.');error.acessoTratado=true;throw error;}
+    const current=new URL(location.href);current.searchParams.delete('configuracao');current.searchParams.set('retomar_configuracao','1');history.replaceState(history.state,'',current.href);
+   }
+  }
   const clean=route(location.href);clean.searchParams.delete('account_id');clean.searchParams.delete('segmento');clean.searchParams.set('empresa',navigation.empresa);
   history.replaceState(history.state,'',clean.href);
   window.dispatchEvent(new Event('admin-contexto-resolvido'));

@@ -1257,6 +1257,7 @@
             document.getElementById('titulo-form').innerText = "Adicionar Novo Produto";
             document.getElementById('btnSalvar').innerText = "Salvar Produto";
             document.getElementById('btnExcluir').classList.add('hidden');
+            statusAtualEdicao = true;
             atualizarDisponibilidadeProduto(true);
 
             document.getElementById('tipo_venda').value = 'simples';
@@ -1277,12 +1278,7 @@
                 const result=await response.json();
                 if(!response.ok||[result.status,result.resultado?.status].some(status=>['erro','error','pendencia'].includes(status)))throw Error(result.mensagem||result.resultado?.mensagem||'Não foi possível salvar.');
                 await carregarLista();
-                if(payload.action==='criar') {
-                    const created=result.id||result.resultado?.id;
-                    if(created)document.getElementById('produto_id').value=created;
-                    else {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
-                }
-                if(payload.action==='deletar') {document.getElementById('formProduto').reset();document.getElementById('produto_id').value='';}
+                if(['criar','deletar'].includes(payload.action))limparFormulario();
                 commonDirty = false;
                 CadastroUI.notify(txtSucesso||'Alteração salva.');
             } catch(e){CadastroUI.notify(e.message,true);}

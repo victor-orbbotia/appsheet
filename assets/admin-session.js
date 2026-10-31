@@ -6,7 +6,7 @@ window.AdminSession = (() => {
  const route=(value,base=root)=>window.OrbbotiaRoutes?OrbbotiaRoutes.url(value,base):new URL(value,base);
  const loginUrl=route('acesso.html'),loginPage=location.pathname===loginUrl.pathname||window.OrbbotiaRoutes?.source==='acesso.html';
  const embeddedPage=new URLSearchParams(location.search).get('embedded')==='1'&&window.parent!==window;
- const routes=new Set(['dashboard-dados','admin-onboarding','admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot','webapp-publico-admin']);
+ const routes=new Set(['dashboard-dados','admin-onboarding','admin-contas','empresa-config','empresa-config-salvar','conhecimento-dados','conhecimento-acao','profissionais-dados','profissionais-acao','pedidos-dados','pedidos-acao','produtos-dados','produtos-acao','cardapio-obter','cardapio-salvar','gerador-pdf-impresso','meia-pizza-admin','simulador-chatwoot','webapp-publico-admin','admin-whatsapp']);
  const originalFetch=window.fetch.bind(window);
  let client=null,session=null,redirecting=false,navigation=null,identity=null,sessionChanged=false,trocarUsuarioNaSaida=false;
  const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();

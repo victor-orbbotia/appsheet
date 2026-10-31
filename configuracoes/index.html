@@ -5,7 +5,7 @@
 <script src="../assets/rotas.js?v=20261022-painel1" data-orbbotia-routes data-source="configuracoes/index.html"></script>
 <meta charset="UTF-8">
 <script src="../assets/contexto-conta.js?v=20261022-painel1"></script>
-<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261029-saida3"></script>
+<script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261031-whatsapp1"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configurações · Orbbotia</title>
@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
 <script src="../assets/cardapio-publico-admin.js?v=20261022-painel1" defer></script>
+<link rel="stylesheet" href="../assets/whatsapp-config.css?v=20261031"><script src="../assets/whatsapp-config.js?v=20261031" defer></script>
 </head>
 
 <body class="p-4 md:p-6 space-y-6">
@@ -47,6 +48,7 @@
             <button class="settings-tab" type="button" data-settings-tab="geral" aria-selected="true">Geral</button>
             <button class="settings-tab" type="button" data-settings-tab="entregas" aria-selected="false">Entregas</button>
             <button class="settings-tab" type="button" data-settings-tab="sugestoes" aria-selected="false">Sugestões</button>
+            <button class="settings-tab" type="button" data-settings-tab="whatsapp" aria-selected="false">WhatsApp</button>
         </nav>
 
         <section data-settings-view="geral" class="space-y-6">
@@ -75,6 +77,7 @@
         </div>
         </section>
 
+        <section data-settings-view="whatsapp" hidden></section>
         <section data-settings-view="entregas" hidden>
             <iframe class="settings-frame" title="Configurações de entregas" data-settings-frame="entregas" loading="lazy"></iframe>
         </section>
@@ -128,11 +131,13 @@
             const identity = window.AdminSession?.navigation;
             const tabKey = `orbbotia:configuracoes:aba:v1:${identity?.userId || 'local'}:${identity?.accountId || globalAccountId}`;
             function abrirAbaConfiguracao(aba) {
-                if (!['geral', 'entregas', 'sugestoes'].includes(aba)) aba = 'geral';
+                if (!['geral', 'entregas', 'sugestoes', 'whatsapp'].includes(aba)) aba = 'geral';
                 document.querySelectorAll('[data-settings-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.settingsTab === aba)));
                 document.querySelectorAll('[data-settings-view]').forEach(view => { view.hidden = view.dataset.settingsView !== aba; });
                 try { sessionStorage.setItem(tabKey, aba); } catch {}
-                if (aba !== 'geral') {
+                if (aba === 'whatsapp') window.WhatsAppConfig?.abrir(globalAccountId);
+                else window.WhatsAppConfig?.fechar();
+                if (['entregas','sugestoes'].includes(aba)) {
                     const frame = document.querySelector(`[data-settings-frame="${aba}"]`);
                     if (frame && !frame.hasAttribute('src')) {
                         const url = new URL('../produtos/novo.html', location.href);

@@ -2,7 +2,7 @@
 // Gestão por usuário autenticado. Código da loja é público; chaves de pedidos não aparecem aqui.
 AdminSession.ready.then(async()=>{
  const a=AdminSession.navigation.accountId;
- const mount=document.querySelector('main')||document.getElementById('app-container');if(!mount)return;
+ const mount=document.querySelector('[data-settings-view="geral"]');if(!mount||mount.querySelector('.public-store-card'))return;
  const box=document.createElement('section');box.className='public-store-card';
  box.innerHTML='<h2>Cardápio público</h2><p>Compartilhe o cardápio no Instagram, site ou QR Code. Cada cliente pode comprar sem conversar com seu atendente virtual. O link da loja não abre histórico de pedidos.</p><label><input type="checkbox" id="loja-ativa"> Disponibilizar cardápio público</label><label for="loja-whatsapp">WhatsApp para o cliente iniciar uma conversa (opcional)</label><input id="loja-whatsapp" type="tel" inputmode="tel" placeholder="Ex.: 5585999999999" maxlength="20"><p>Informe país e DDD. Este cadastro não envia mensagens automaticamente.</p><label for="loja-link">Link permanente da loja</label><input id="loja-link" readonly><div class="public-store-actions"><button type="button" id="loja-copiar">Copiar link</button><a id="loja-abrir" target="_blank" rel="noopener noreferrer">Abrir cardápio</a></div><div class="public-store-actions"><button type="button" id="loja-salvar">Salvar cardápio público</button></div><p id="loja-status" role="status" aria-live="polite"></p>';
  mount.append(box);const $=id=>box.querySelector('#'+id),status=$('loja-status'),save=$('loja-salvar');let loaded=false;

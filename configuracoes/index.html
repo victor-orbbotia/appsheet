@@ -8,13 +8,14 @@
 <script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261029-saida3"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações do Sistema</title>
+    <title>Configurações · Orbbotia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            background-color: #f8fafc;
-            font-family: system-ui, sans-serif;
-        }
+        body { background-color: #f8fafc; font-family: system-ui, sans-serif; }
+        .settings-tabs { display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid #cbd5e1; padding-bottom:14px; }
+        .settings-tab { min-height:42px; padding:9px 15px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; color:#334155; font-weight:650; cursor:pointer; }
+        .settings-tab[aria-selected="true"] { background:#344d7a; color:#eef3ff; border-color:#a6bdff; }
+        .settings-frame { width:100%; min-height:460px; border:0; display:block; }
     </style>
 <link rel="stylesheet" href="../assets/admin-ui.css?v=20261020-espacos1">
 <script src="../assets/admin-ui.js?v=20261022-painel1" defer></script>
@@ -28,7 +29,7 @@
         ⏳ Autenticando com o painel Chatwoot...
     </div>
 
-    <div id="app-container" class="max-w-3xl mx-auto hidden transition-all space-y-6">
+    <div id="app-container" class="max-w-5xl mx-auto hidden transition-all space-y-6">
 
         <!-- Header -->
         <div>
@@ -38,10 +39,17 @@
                 </svg>
                 Voltar ao Menu Principal
             </a>
-            <h1 class="text-2xl font-bold text-slate-800">Configurações Gerais</h1>
-            <p class="text-sm text-slate-500">Gerencie a operação dos robôs de IA para a sua conta.</p>
+            <h1 class="text-2xl font-bold text-slate-800">Configurações</h1>
+            <p class="text-sm text-slate-500">Gerencie entregas, sugestões e o funcionamento do seu atendente virtual.</p>
         </div>
 
+        <nav id="settings-tabs" class="settings-tabs" aria-label="Seções de configurações">
+            <button class="settings-tab" type="button" data-settings-tab="geral" aria-selected="true">Geral</button>
+            <button class="settings-tab" type="button" data-settings-tab="entregas" aria-selected="false">Entregas</button>
+            <button class="settings-tab" type="button" data-settings-tab="sugestoes" aria-selected="false">Sugestões</button>
+        </nav>
+
+        <section data-settings-view="geral" class="space-y-6">
         <section class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm"><h2 class="text-lg font-bold">Configurações avançadas do catálogo</h2><p>Reveja os conjuntos de regras e os recursos escolhidos na configuração inicial. Os cadastros existentes só mudam após sua revisão.</p><a id="link-regras-catalogo" href="../onboarding.html?avancado=1">Configurar regras do negócio</a></section>
         <!-- Card de Status do Agente -->
         <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
@@ -65,6 +73,14 @@
                 </div>
             </div>
         </div>
+        </section>
+
+        <section data-settings-view="entregas" hidden>
+            <iframe class="settings-frame" title="Configurações de entregas" data-settings-frame="entregas" loading="lazy"></iframe>
+        </section>
+        <section data-settings-view="sugestoes" hidden>
+            <iframe class="settings-frame" title="Configurações de sugestões" data-settings-frame="sugestoes" loading="lazy"></iframe>
+        </section>
 
     </div>
 
@@ -108,6 +124,34 @@
             document.getElementById('alerta-chatwoot').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
+
+            const identity = window.AdminSession?.navigation;
+            const tabKey = `orbbotia:configuracoes:aba:v1:${identity?.userId || 'local'}:${identity?.accountId || globalAccountId}`;
+            function abrirAbaConfiguracao(aba) {
+                if (!['geral', 'entregas', 'sugestoes'].includes(aba)) aba = 'geral';
+                document.querySelectorAll('[data-settings-tab]').forEach(button => button.setAttribute('aria-selected', String(button.dataset.settingsTab === aba)));
+                document.querySelectorAll('[data-settings-view]').forEach(view => { view.hidden = view.dataset.settingsView !== aba; });
+                try { sessionStorage.setItem(tabKey, aba); } catch {}
+                if (aba !== 'geral') {
+                    const frame = document.querySelector(`[data-settings-frame="${aba}"]`);
+                    if (frame && !frame.hasAttribute('src')) {
+                        const url = new URL('../produtos/novo.html', location.href);
+                        url.searchParams.set('empresa', identity?.empresa || '');
+                        url.searchParams.set('config-area', aba);
+                        url.searchParams.set('embedded', '1');
+                        frame.src = url.href;
+                    }
+                }
+            }
+            document.querySelectorAll('[data-settings-tab]').forEach(button => button.addEventListener('click', () => abrirAbaConfiguracao(button.dataset.settingsTab)));
+            window.addEventListener('message', event => {
+                if (event.origin !== location.origin || !event.data || event.data.type !== 'config-area-height') return;
+                const frame = [...document.querySelectorAll('[data-settings-frame]')].find(item => item.contentWindow === event.source);
+                if (frame) frame.style.height = `${Math.max(460, Math.min(12000, Number(event.data.height) || 460))}px`;
+            });
+            let abaSalva = 'geral';
+            try { abaSalva = sessionStorage.getItem(tabKey) || 'geral'; } catch {}
+            abrirAbaConfiguracao(abaSalva);
 
             carregarConfiguracoes();
         }

@@ -4,11 +4,12 @@
 <head>
 <script src="../assets/rotas.js?v=20261022-painel1" data-orbbotia-routes data-source="produtos/novo.html"></script>
 <meta charset="UTF-8">
+<script>if(new URLSearchParams(location.search).has('config-area'))document.documentElement.classList.add('config-area-embed')</script>
 <script src="../assets/contexto-conta.js?v=20261022-painel1"></script>
 <script src="../assets/admin-config.js"></script><script src="../assets/supabase-2.57.4.js"></script><script src="../assets/admin-session.js?v=20261029-saida3"></script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo e Entregas · Orbbotia</title>
+    <title>Catálogo · Orbbotia</title>
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -18,6 +19,7 @@
         .catalog-tabs button { border: 1px solid #c7d2fe; background: white; color: #475569; border-radius: 9px; padding: 10px 14px; font-weight: 600; }
         .catalog-tabs button[aria-selected="true"] { background: #eef2ff; color: #3730a3; border-color: #6366f1; }
         .module-tabs { margin: 0 0 22px; padding: 0 0 12px; border-bottom: 1px solid #e2e8f0; }
+        .module-tabs { display:none!important; }
         .module-tabs button { white-space: nowrap; }
         .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .help-control { display: inline-flex; align-items: center; gap: 4px; flex: none; min-height: 32px; padding: 6px 10px; border: 1px solid #c7d2fe; border-radius: 999px; background: #eef2ff; color: #3730a3; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor: pointer; }
@@ -33,6 +35,13 @@
             background-color: #f8fafc;
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
         }
+        html.config-area-embed body { padding:0!important; display:block; }
+        html.config-area-embed body.admin-shell-active { padding-top:0!important; }
+        html.config-area-embed #admin-shell, html.config-area-embed #admin-session-bar,
+        html.config-area-embed #alerta-chatwoot, html.config-area-embed #catalog-module-header,
+        html.config-area-embed #view-produtos { display:none!important; }
+        html.config-area-embed #app-container { max-width:none!important; margin:0!important; padding:0!important; }
+        html.config-area-embed #view-entregas, html.config-area-embed #view-upsell { margin:0!important; }
         button, input, select, textarea { font-family: inherit; }
 
         .input-field {
@@ -71,7 +80,7 @@
     <div id="app-container" class="max-w-5xl mx-auto hidden transition-all">
 
         <!-- Header e Navegação das Abas -->
-        <div class="mb-6">
+        <div id="catalog-module-header" class="mb-6">
             <div class="flex items-center justify-between gap-3 mb-4">
             <a id="link-voltar-menu" href="../index.html" class="inline-flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,6 +498,9 @@
 
         let globalAccountId = null;
         let handshakeInterval;
+        const urlParams = new URLSearchParams(window.location.search);
+        const configArea = ['entregas', 'sugestoes'].includes(urlParams.get('config-area')) ? urlParams.get('config-area') : null;
+        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
         // ESTADOS (PRODUTOS)
         let listaAtual = [];
@@ -503,7 +515,7 @@
                 : disponibilidadeBloqueada === false ? 'Desative para tirar do cardápio sem excluir o cadastro.'
                 : 'Não foi possível confirmar a disponibilidade. Atualize a página antes de ativar produtos.';
         }
-        if (window.CatalogoContexto) CatalogoContexto.ready.then(contexto => {
+        if (!configArea && window.CatalogoContexto) CatalogoContexto.ready.then(contexto => {
             disponibilidadeBloqueada = contexto.disponibilidadeBloqueada === true;
             atualizarDisponibilidadeProduto(document.getElementById('produto_id').value ? statusAtualEdicao : true);
             if (disponibilidadeBloqueada) document.getElementById('check-mostrar-desativados').checked = true;
@@ -517,9 +529,6 @@
         let listaTaxas = [];
         let configEmpresaCache = {};
         const TAXA_OUTROS_KEY = '__outros__';
-
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('account_id')) globalAccountId = urlParams.get('account_id');
 
         window.addEventListener('message', function (event) {
             const context = ContextoConta.mensagemDoPainel(event);
@@ -544,6 +553,16 @@
             document.getElementById('app-container').classList.remove('hidden');
 
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
+            if (configArea) {
+                document.querySelectorAll('[data-delivery-tab]').forEach(button => button.addEventListener('click', () => switchDeliveryTab(button.dataset.deliveryTab)));
+                document.getElementById(configArea === 'entregas' ? 'view-entregas' : 'view-upsell').classList.remove('hidden');
+                if (configArea === 'entregas') switchDeliveryTab(abas.delivery || 'new');
+                carregarTaxasEntrega().then(() => configArea === 'sugestoes' ? carregarCatalogoParaSugestoes() : null);
+                notificarAlturaConfiguracao();
+                if (typeof ResizeObserver !== 'undefined') new ResizeObserver(notificarAlturaConfiguracao).observe(document.body);
+                window.addEventListener('resize', notificarAlturaConfiguracao);
+                return;
+            }
             window.pizzasCadastro.init(globalAccountId, window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante');
             document.querySelectorAll('[data-common-tab]').forEach(button => button.addEventListener('click', () => { if (window.pizzasCadastro.choose('common')) switchCommonTab(button.dataset.commonTab); }));
             document.querySelectorAll('[data-addon-tab]').forEach(button => button.addEventListener('click', () => { if (window.pizzasCadastro.choose('addons')) switchAddonTab(button.dataset.addonTab); }));
@@ -555,11 +574,28 @@
             switchAdvancedTab(abas.advanced || 'prices');
             switchAddonTab(abas.addon || 'list');
             switchDeliveryTab(abas.delivery || 'new');
-            if (abas.module) switchTab(abas.module);
-
             carregarLista();
             carregarTaxasEntrega();
             if (document.getElementById('lista-de-variacoes').children.length === 0) adicionarVariacao();
+        }
+
+        function notificarAlturaConfiguracao() {
+            if (!configArea || window.parent === window) return;
+            requestAnimationFrame(() => window.parent.postMessage({type:'config-area-height', height:document.documentElement.scrollHeight}, location.origin));
+        }
+
+        async function carregarCatalogoParaSugestoes() {
+            try {
+                const response = await fetch(`${urlDados}?account_id=${encodeURIComponent(globalAccountId)}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                listaAtual = Array.isArray(data) ? data : (data.data || []);
+                window.SugestoesRegras.updateCatalog(listaAtual);
+                preencherDropdownsUpsell(configEmpresaCache);
+                notificarAlturaConfiguracao();
+            } catch (error) {
+                window.SugestoesRegras?.reportLoadError('Não foi possível carregar as categorias para as sugestões. Atualize a página e tente novamente.');
+            }
         }
 
         function memorizarAbas(patch) {

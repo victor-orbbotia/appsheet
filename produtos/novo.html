@@ -18,9 +18,6 @@
         .catalog-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
         .catalog-tabs button { border: 1px solid #c7d2fe; background: white; color: #475569; border-radius: 9px; padding: 10px 14px; font-weight: 600; }
         .catalog-tabs button[aria-selected="true"] { background: #eef2ff; color: #3730a3; border-color: #6366f1; }
-        .module-tabs { margin: 0 0 22px; padding: 0 0 12px; border-bottom: 1px solid #e2e8f0; }
-        .module-tabs { display:none!important; }
-        .module-tabs button { white-space: nowrap; }
         .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .help-control { display: inline-flex; align-items: center; gap: 4px; flex: none; min-height: 32px; padding: 6px 10px; border: 1px solid #c7d2fe; border-radius: 999px; background: #eef2ff; color: #3730a3; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor: pointer; }
         .help-control:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
@@ -91,18 +88,6 @@
             <div id="catalog-header-actions"><button id="refresh-catalog" type="button" onclick="atualizarPagina()" title="Atualizar dados da página" aria-label="Atualizar dados da página" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg px-3 py-2 hover:bg-indigo-50"><span aria-hidden="true">⟳</span><span>Atualizar</span></button></div>
             </div>
 
-            <!-- Barra de Submenu (Abas) -->
-            <nav class="catalog-tabs module-tabs" aria-label="Áreas do módulo">
-                <button id="tab-btn-produtos" type="button" onclick="switchTab('produtos')" aria-selected="true">
-                    🛍️ Catálogo
-                </button>
-                <button id="tab-btn-entregas" type="button" onclick="switchTab('entregas')" aria-selected="false">
-                    🛵 Entregas
-                </button>
-                <button id="tab-btn-upsell" type="button" onclick="switchTab('upsell')" aria-selected="false">
-                    🤖 Sugestões
-                </button>
-            </nav>
         </div>
 
         <!-- ==========================================
@@ -673,33 +658,6 @@
 
         function toggleAjudaEntrega() {
             CadastroUI.abrirAjuda('delivery-help','Taxas de entrega',document.getElementById('delivery-help-toggle'));
-        }
-
-        // ==========================================
-        // GESTÃO DE ABAS (SPA)
-        // ==========================================
-        function switchTab(tabName) {
-            if (!['produtos', 'entregas', 'upsell'].includes(tabName)) return;
-            memorizarAbas({module:tabName});
-            const btnProdutos = document.getElementById('tab-btn-produtos');
-            const btnEntregas = document.getElementById('tab-btn-entregas');
-            const btnUpsell = document.getElementById('tab-btn-upsell');
-
-            const viewProdutos = document.getElementById('view-produtos');
-            const viewEntregas = document.getElementById('view-entregas');
-            const viewUpsell = document.getElementById('view-upsell');
-
-            [btnProdutos, btnEntregas, btnUpsell].forEach(btn => btn.setAttribute('aria-selected', String(btn.id === 'tab-btn-' + tabName)));
-            [viewProdutos, viewEntregas, viewUpsell].forEach(view => view.classList.add('hidden'));
-
-            if (tabName === 'produtos') {
-                viewProdutos.classList.remove('hidden');
-            } else if (tabName === 'entregas') {
-                viewEntregas.classList.remove('hidden');
-            } else if (tabName === 'upsell') {
-                viewUpsell.classList.remove('hidden');
-                preencherDropdownsUpsell(configEmpresaCache); 
-            }
         }
 
         function toggleInstrucoesUpsell() {

@@ -3,6 +3,7 @@ window.AdminUI = (() => {
   const root = new URL('../', document.currentScript.src);
   const modules = [
     ['pedidos', 'Pedidos', 'pedidos/index.html'],
+    ['pedidos', 'Caixa', 'caixa/index.html'],
     ['produtos', 'Catálogo', 'produtos/novo.html'],
     ['conhecimento', 'Conhecimento', 'conhecimento/novo.html'],
     ['profissionais', 'Equipe', 'profissionais/novo.html'],

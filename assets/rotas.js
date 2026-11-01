@@ -4,7 +4,7 @@ window.OrbbotiaRoutes=(()=>{
  const script=document.currentScript,root=new URL('../',script.src);
  const routes={
   'index.html':'painel/','app/index.html':'','acesso.html':'entrar/','onboarding.html':'configuracao-inicial/',
-  'pedidos/index.html':'pedidos/','produtos/novo.html':'catalogo/','conhecimento/novo.html':'conhecimento/',
+  'caixa/index.html':'caixa/','pedidos/index.html':'pedidos/','produtos/novo.html':'catalogo/','conhecimento/novo.html':'conhecimento/',
   'profissionais/novo.html':'equipe/','configuracoes/index.html':'configuracoes/',
   'produtos/meia-pizza.html':'catalogo/pizzas/','produtos/personalizacoes.html':'catalogo/adicionais/',
   'produtos/menu_studio_pro_mobile_first.html':'catalogo/editor/'

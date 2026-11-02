@@ -11,3 +11,7 @@
 [data-settings-view="impressao"] .imp-transfer label{display:grid;gap:8px;max-width:480px;margin:12px 0}
 [data-settings-view="impressao"] #imp-fila p{padding:12px 0;border-bottom:1px solid var(--admin-line)}
 @media(max-width:600px){[data-settings-view="impressao"] .imp-device{padding:14px}[data-settings-view="impressao"] .imp-actions{flex-direction:column}[data-settings-view="impressao"] .imp-actions button{width:100%}}
+[data-settings-view="impressao"] .imp-eventos{border:1px solid var(--admin-line);border-radius:10px;padding:16px;margin:20px 0}
+[data-settings-view="impressao"] .imp-eventos legend{font-weight:700;padding:0 6px}
+[data-settings-view="impressao"] .imp-eventos label{display:flex;align-items:start;gap:10px;margin:14px 0;cursor:pointer}
+[data-settings-view="impressao"] .imp-eventos input{margin-top:4px;flex:none}

@@ -10,7 +10,7 @@
 <div id="fila-periodos" class="fila-periodos"><div role="group" aria-label="Período dos pedidos ativos"><button type="button" class="btn" id="fila-hoje" aria-pressed="true" onclick="setPeriodoFila('hoje')">Hoje</button><button type="button" class="btn" id="fila-anteriores" aria-pressed="false" onclick="setPeriodoFila('anteriores')">Dias anteriores</button></div><p id="fila-pendencias" role="status"></p></div><details id="filtros-pedidos" class="fila-filters" open><summary>Filtros de pedidos</summary><div class="toolbar"><label class="search">Buscar pedido<input id="searchInput" type="search" placeholder="Cliente, telefone, pedido ou conversa" oninput="renderizarKanban()"></label><label>Etapa<select id="filtroEtapa" onchange="renderizarKanban()"><option value="">Todas as etapas</option value="em_aberto">Em montagem</option><option value="aguardando_pix">Aguardando Pix</option><option value="comprovante_enviado">Conferir comprovante</option><option value="pagamento_na_entrega">Aprovação · entrega</option><option value="retirada_balcao">Aprovação · retirada</option><option value="pedido_aprovado">Aprovado</option><option value="em_preparo">Em preparo</option><option value="pronto_para_entrega">Pronto para entrega</option><option value="pronto_para_retirada">Pronto para retirada</option><option value="saiu_para_entrega">Saiu para entrega</option><option value="entregue">Entregue</option><option value="retirado">Retirado</option><option value="cancelado_cliente">Cancelado pelo cliente</option><option value="cancelado_atendente">Cancelado pelo atendente</option></select></label><label>Modalidade<select id="filtroModalidade" onchange="renderizarKanban()"><option value="">Todas</option><option value="entrega">Entrega</option><option value="retirada">Retirada</option><option value="conferir">A conferir</option></select></label><label>Pagamento<select id="filtroPagamento" onchange="renderizarKanban()"><option value="">Todas as situações</option><option value="conferencia">Em conferência</option><option value="pendente">A receber</option><option value="conferir">Recebimento a conferir</option></select></label><div id="periodoHistorico" class="period hidden"><label>De<input type="date" id="filtroData"></label><label>Até<input type="date" id="filtroDataFim"></label><button class="btn" type="button" onclick="carregarPedidos()">Buscar</button><button class="btn" type="button" onclick="setPeriodoHistorico('hoje')">Hoje</button><button class="btn" type="button" onclick="setPeriodoHistorico('semana')">Últimos 7 dias</button><button class="btn" type="button" onclick="setPeriodoHistorico('mes')">Este mês</button></div></div>
 </details><div class="list-caption"><span id="resultadoBusca" aria-live="polite">Carregando pedidos…</span><span id="escopoFila">Ativos incluem dias anteriores · mais antigos primeiro</span></div><div id="area-loading" class="loading" role="status">Consultando pedidos…</div><div id="kanban-board" class="orders" aria-label="Pedidos da fila"></div></section><dialog id="detalhes" class="panel" aria-labelledby="tituloDetalhes"><header class="panel-head"><div><div id="numeroDetalhes" class="eyebrow">Pedido</div><h2 id="tituloDetalhes">Detalhes do pedido</h2><p class="small">Informações e ações deste pedido</p></div><button class="btn quiet" onclick="fecharDetalhes()" aria-label="Fechar detalhes">✕</button></header><div class="panel-body" id="conteudoDetalhes"></div></dialog></div>
 <div class="list-caption footer-note"><span id="ultimaAtualizacao">Atualize para conferir o andamento mais recente.</span></div><p class="small footer-note">O tempo exibido conta desde a criação do pedido. Confira o recebimento do pagamento na conta; aprovação ou entrega não confirma quitação.</p></div></main>
-<div id="toast" class="toast hidden" role="status" aria-live="polite"></div><script src="fila.js?v=20261021-hoje1"></script><script>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div><script src="fila.js?v=20261021-hoje1"></script><script src="../assets/pedidos-realtime.js?v=20261102-1"></script><script>
 const urlDados = 'https://n8n.orbbotia.com/webhook/pedidos-dados';
 const urlAcao = 'https://n8n.orbbotia.com/webhook/pedidos-acao';
 let globalAccountId=null,segmentoAtual='restaurante',handshakeInterval,listaPedidos=[];
@@ -239,16 +239,18 @@ function renderizarKanban(){
  }).join(''):`<div class="empty"><strong>Nenhum pedido neste recorte</strong>Confira os filtros${recorteAtual==='historico'?' ou escolha outra data':''}.<br><button class="btn quiet" onclick="limparFiltros()">Limpar filtros</button></div>`;
  if(pedidoSelecionado&&document.getElementById('detalhes').open)atualizarDetalhes();
 }
-async function carregarPedidos(){
- const aviso=document.getElementById('area-loading'),botao=document.getElementById('btnAtualizar');aviso.classList.remove('hidden');aviso.textContent='Atualizando pedidos…';botao.disabled=true;
+let pedidosConsultaSequencia=0;
+async function carregarPedidos(silencioso=false){
+ const sequencia=++pedidosConsultaSequencia,contaConsulta=globalAccountId;
+ const aviso=document.getElementById('area-loading'),botao=document.getElementById('btnAtualizar');if(!silencioso){aviso.classList.remove('hidden');aviso.textContent='Atualizando pedidos…';}botao.disabled=true;
  try{
   if(!globalAccountId)throw Error('Selecione um estabelecimento para consultar os pedidos.');
   const inicio=document.getElementById('filtroData').value,fim=document.getElementById('filtroDataFim').value;if(!inicio||!fim||inicio>fim)throw Error('Informe um período válido: a data inicial deve ser anterior ou igual à final.');
   const endpoint=`${urlDados}?account_id=${encodeURIComponent(globalAccountId)}&segmento=${encodeURIComponent(segmentoAtual)}&data_inicio=${encodeURIComponent(inicio)}&data_fim=${encodeURIComponent(fim)}&data_filtro=${encodeURIComponent(inicio)}`;
   const res=await fetch(endpoint);if(!res.ok)throw Error('Não foi possível consultar os pedidos. Tente atualizar novamente.');
   const dados=await res.json();const lista=Array.isArray(dados)?dados:dados.data;if(!Array.isArray(lista))throw Error('Não foi possível ler os pedidos. Atualize novamente.');
-  listaPedidos=lista;renderizarKanban();document.getElementById('ultimaAtualizacao').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});aviso.classList.add('hidden');
- }catch(error){aviso.textContent=error.message;mostrarToast(error.message,'error');}finally{botao.disabled=false;}
+  if(sequencia!==pedidosConsultaSequencia||contaConsulta!==globalAccountId)return;listaPedidos=lista;renderizarKanban();document.getElementById('ultimaAtualizacao').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});aviso.classList.add('hidden');
+ }catch(error){if(sequencia!==pedidosConsultaSequencia)return;if(!silencioso){aviso.textContent=error.message;mostrarToast(error.message,'error');}}finally{if(sequencia===pedidosConsultaSequencia)botao.disabled=false;}
 }
 function abrirDetalhes(id,secao){
  const mudou=pedidoSelecionado!==id;pedidoSelecionado=id;atualizarDetalhes();if(mudou)document.getElementById('detalhes').scrollTop=0;const dialog=document.getElementById('detalhes');const lateral=window.matchMedia?.('(min-width: 1100px)').matches===true;document.getElementById('fila-layout').classList.toggle('com-detalhes',lateral);if(!dialog.open){if(lateral)dialog.show();else dialog.showModal();}
@@ -306,6 +308,11 @@ window.addEventListener('message', function (event) {
             document.getElementById('link-voltar').href = `../index.html?account_id=${globalAccountId}&segmento=${segmentoAtual}`;
             document.getElementById('badge-segmento').innerText = `Segmento: ${segmentoAtual}`;
             carregarPedidos();
+            if(window.AdminSession?.client){
+                let indicador=document.getElementById('pedidos-realtime-status');
+                if(!indicador){indicador=document.createElement('p');indicador.id='pedidos-realtime-status';indicador.className='small';indicador.setAttribute('role','status');document.getElementById('ultimaAtualizacao').after(indicador);}
+                PedidosRealtime.iniciar({client:AdminSession.client,conta:String(globalAccountId),atualizar:()=>carregarPedidos(true),status:texto=>indicador.textContent=texto});
+            }
         }
 
         const CHATWOOT_BASE_URL = 'https://chat.orbbotia.com';
@@ -340,3 +347,4 @@ window.addEventListener('message', function (event) {
 
 
 </script></body></html>
+

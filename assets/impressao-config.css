@@ -1,0 +1,13 @@
+[data-settings-view="impressao"] .imp-device{margin:20px 0;padding:20px;border:1px solid var(--admin-line);border-radius:12px}
+[data-settings-view="impressao"] .imp-guidance{padding:16px 18px;margin:16px 0;border:1px solid var(--admin-line);border-left-width:5px;border-radius:10px}
+[data-settings-view="impressao"] .imp-paused{background:#b8860b18;border-color:#c99e47}
+[data-settings-view="impressao"] .imp-active{background:#228b2218;border-color:#539766}
+[data-settings-view="impressao"] .imp-guidance strong{display:block;font-size:1.1rem}
+[data-settings-view="impressao"] .imp-guidance p{margin-bottom:0}
+[data-settings-view="impressao"] .imp-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+[data-settings-view="impressao"] button.imp-primary{background:var(--admin-primary);font-weight:700}
+[data-settings-view="impressao"] .imp-transfer{margin-top:24px;padding-top:16px;border-top:1px solid var(--admin-line)}
+[data-settings-view="impressao"] .imp-transfer summary{cursor:pointer;min-height:44px}
+[data-settings-view="impressao"] .imp-transfer label{display:grid;gap:8px;max-width:480px;margin:12px 0}
+[data-settings-view="impressao"] #imp-fila p{padding:12px 0;border-bottom:1px solid var(--admin-line)}
+@media(max-width:600px){[data-settings-view="impressao"] .imp-device{padding:14px}[data-settings-view="impressao"] .imp-actions{flex-direction:column}[data-settings-view="impressao"] .imp-actions button{width:100%}}

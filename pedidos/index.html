@@ -43,7 +43,7 @@ const STATUS_CONFIG = {
                 btnAnteriorLabel: '← Reenviar PIX',
                 btnAnteriorCor: 'bg-amber-500 hover:bg-amber-600',
                 proximo: 'pedido_aprovado',
-                btnProximoLabel: 'Aprovar Pagamento ✅',
+                btnProximoLabel: 'Aprovar Pix',
                 btnProximoCor: 'bg-emerald-600 hover:bg-emerald-700',
                 podeCancel: true,
                 tab: 1
@@ -105,6 +105,7 @@ async function moverStatus(id, novoStatus, btn) {
             const item = listaPedidos.find(i => (i.json ? i.json.id : i.id) === id);
             const p = item ? (item.json ? item.json : item) : {};
             const conversaId = p.conversa_id || p.conversaId || null;
+            if(FilaPedidos.projetar(p).status==='comprovante_enviado' && novoStatus==='pedido_aprovado' && !confirm('Você conferiu o comprovante na conversa e confirmou o crédito do Pix na conta? Ao aprovar, o pedido poderá seguir para produção.'))return;
 
             const payload = {
                 action: 'status',
@@ -212,8 +213,8 @@ function configuracaoAcao(m){
  if(proximo)Object.assign(config,{proximo,btnProximoLabel:proximo==='pronto_para_retirada'?'Marcar pronto para retirada':'Marcar pronto para entrega'});
  return config;
 }
-function botaoAcao(m,dentro=false){const c=configuracaoAcao(m);
- if(m.status==='comprovante_enviado'&&!dentro)return `<button class="btn primary" data-acao="detalhes" data-id="${esc(m.p.id)}" data-secao="pagamento">Conferir pagamento</button>`;
+function botaoAcao(m){const c=configuracaoAcao(m);
+
  return c.proximo?`<button class="btn primary" data-acao="status" data-id="${esc(m.p.id)}" data-status="${esc(c.proximo)}">${esc(c.btnProximoLabel)}</button>`:'';
 }
 function botaoConversaConferencia(m){
@@ -266,9 +267,9 @@ function atualizarDetalhes(){
  const chat=`<button class="btn" data-acao="chat" data-id="${esc(p.id)}">Abrir conversa</button>`;
  box.innerHTML=`<span class="status${m.atencao?' warn':''}">${esc(m.etapa)}</span><dl><dt>Cliente</dt><dd>${esc(p.cliente_nome||'Não informado')}</dd><dt>Contato</dt><dd>${esc(p.cliente_telefone||'Não informado')}</dd><dt>Criado em</dt><dd>${esc(dataPedido(p.created_at))}</dd></dl>${m.alertas.map(a=>'<div class="alert">'+esc(a)+'</div>').join('')}
  <details id="secao-itens" open><summary>Itens, bordas e adicionais</summary><div class="section-body">${FilaPedidos.itens(p).map(i=>`<div class="item"><strong>${esc(i.titulo)}</strong>${i.linhas.length?'<ul>'+i.linhas.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>':''}</div>`).join('')||'Itens não informados.'}<div class="total"><span>Total do pedido</span><span>${esc(dinheiro(p.valor_total))}</span></div></div></details>
- <details id="secao-pagamento"><summary>Pagamento e comprovante</summary><div class="section-body"><strong>${esc(m.pagamentoTexto)}</strong><p class="small">A forma de pagamento selecionada não comprova recebimento.${m.status==='comprovante_enviado'?' O arquivo foi recebido e precisa de conferência da equipe. Confira o comprovante na conversa e o crédito na conta antes de aprovar.':''}</p>${chat}${m.status==='comprovante_enviado'?botaoAcao(m,true):''}</div></details>
+ <details id="secao-pagamento"><summary>Pagamento e comprovante</summary><div class="section-body"><strong>${esc(m.pagamentoTexto)}</strong><p class="small">A forma de pagamento selecionada não comprova recebimento.${m.status==='comprovante_enviado'?' O arquivo foi recebido e precisa de conferência da equipe. Confira o comprovante na conversa e o crédito na conta antes de aprovar.':''}</p></div></details>
  <details id="secao-destino"><summary>${esc(m.modalidadeTexto)}</summary><div class="section-body">${esc(p.endereco_entrega||'Destino não informado. Confira com o cliente pela conversa.')}</div></details>
- <details id="secao-acoes"><summary>Outras ações</summary><div class="section-body">${chat}${m.status!=='comprovante_enviado'?botaoAcao(m,true):''}${c.anterior?`<button class="btn" data-acao="status" data-id="${esc(p.id)}" data-status="${esc(c.anterior)}">${esc(c.btnAnteriorLabel)}</button>`:''}${c.podeCancel?`<p class="small">Cancelar altera o estado do pedido e aciona as notificações existentes. A confirmação será solicitada.</p><button class="btn danger" data-acao="cancelar" data-id="${esc(p.id)}" data-status="cancelado_cliente">Cancelamento solicitado pelo cliente</button><button class="btn danger" data-acao="cancelar" data-id="${esc(p.id)}" data-status="cancelado_atendente">Cancelar pelo atendimento</button>`:''}</div></details>
+ <details id="secao-acoes"><summary>Outras ações</summary><div class="section-body">${botaoConversaConferencia(m)?'':chat}${c.anterior?`<button class="btn" data-acao="status" data-id="${esc(p.id)}" data-status="${esc(c.anterior)}">${esc(c.btnAnteriorLabel)}</button>`:''}${c.podeCancel?`<p class="small">Cancelar altera o estado do pedido e aciona as notificações existentes. A confirmação será solicitada.</p><button class="btn danger" data-acao="cancelar" data-id="${esc(p.id)}" data-status="cancelado_cliente">Cancelamento solicitado pelo cliente</button><button class="btn danger" data-acao="cancelar" data-id="${esc(p.id)}" data-status="cancelado_atendente">Cancelar pelo atendimento</button>`:''}</div></details>
  <p class="small panel-note">Para mensagens e comprovantes, consulte a conversa. Este painel não recebe o histórico completo de alterações.</p>`;
  for(const [id,open]of estadoSeccoes){const el=document.getElementById(id);if(el)el.open=open;}
  document.getElementById('detalhes').scrollTop=scroll;

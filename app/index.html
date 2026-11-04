@@ -314,7 +314,7 @@
     .options-group h3 { margin: 0 0 .65rem; color: #fff; font-size: 1rem; }
     .section-note { margin: -.25rem 0 .75rem; color: var(--text-muted); font-size: .82rem; line-height: 1.45; }
     .field-label { display: block; margin-bottom: .42rem; color: var(--text-soft); font-size: .86rem; font-weight: 650; }
-    input[type="text"], input[type="tel"], select {
+    input[type="text"], input[type="tel"], textarea, select {
       width: 100%;
       min-height: 50px;
       margin: 0;
@@ -328,7 +328,9 @@
       transition: border-color .16s ease, box-shadow .16s ease;
     }
     input::placeholder { color: #667169; }
-    input:focus, select:focus { border-color: #62b9ff; box-shadow: 0 0 0 3px rgba(80,163,232,.15); }
+    input:focus, textarea:focus, select:focus { border-color: #62b9ff; box-shadow: 0 0 0 3px rgba(80,163,232,.15); }
+    .observation-field { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border, rgba(255,255,255,.12)); }
+    .observation-field textarea { min-height: 5.5rem; resize: vertical; font: inherit; line-height: 1.5; }
     input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(240,100,90,.12); }
     .field + .field { margin-top: 1rem; }
     .field-error { min-height: 1.15rem; margin: .35rem 0 0; color: #ff8b84; font-size: .78rem; line-height: 1.35; }
@@ -584,9 +586,9 @@
 
         <div id="variation-field" class="field hide"><label class="field-label" for="item-variation">Escolha a opção</label><select id="item-variation"><option value="">Selecione...</option></select></div>
         <div id="item-personalizacoes" class="options-group hide"></div>
-        <div class="options-group">
-          <label class="field-label" for="item-obs">Alguma observação?</label>
-          <input type="text" id="item-obs" placeholder="Ex.: sem cebola, carne bem passada..." maxlength="180">
+        <div class="options-group observation-field">
+          <label class="field-label" for="item-obs">Observações (opcional)</label>
+          <textarea id="item-obs" rows="2" autocomplete="off" placeholder="Ex.: sem cebola, carne bem passada..." maxlength="180"></textarea>
         </div>
       </div>
       <footer class="modal-footer">
@@ -618,9 +620,9 @@
         <p id="pizza-modal-desc" class="modal-description"></p>
         <div id="pizza-partes"></div>
         <div id="pizza-globais" class="options-group"></div>
-        <div class="options-group">
-          <label class="field-label" for="pizza-obs">Observação</label>
-          <input id="pizza-obs" type="text" maxlength="180" placeholder="Alguma orientação para a cozinha?">
+        <div class="options-group observation-field">
+          <label class="field-label" for="pizza-obs">Observações (opcional)</label>
+          <textarea id="pizza-obs" rows="2" autocomplete="off" maxlength="180" placeholder="Alguma orientação para a cozinha?"></textarea>
         </div>
       </div>
       <footer class="modal-footer">
@@ -1275,7 +1277,7 @@
 
       function trapModalFocus(event) {
         if (event.key !== "Tab" || !state.activeModal) return;
-        const focusable = $$("button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])", state.activeModal).filter(node => node.offsetParent !== null);
+        const focusable = $$("button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex='-1'])", state.activeModal).filter(node => node.offsetParent !== null);
         if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable.at(-1);
@@ -1701,7 +1703,7 @@
           versao_composicao:current.config.versao,nome:current.config.nome,variacao:current.config.tamanho,
           quantidade:current.quantidade,preco:quote.preco_unitario_centavos/100,observacao:$('#pizza-obs').value.trim(),
           partes:current.partes.map(p=>({...p})),globais:current.globais,meia_pizza:quote});
-        syncBadges();updateCartBar();closeModal($('#pizza-modal'));showToast(`${current.config.nome} adicionada ao pedido.`);state.pizzaCurrent=null;
+        syncBadges();updateCartBar();closeModal($('#pizza-modal'));state.pizzaCurrent=null;
       }
 
       function openItemModal(product, trigger) {
@@ -1754,7 +1756,6 @@
         syncBadges();
         updateCartBar();
         closeModal($("#item-modal"));
-        showToast(`${state.current.nome} adicionado ao pedido.`);
       }
 
       function syncBadges() {

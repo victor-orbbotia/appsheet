@@ -1,5 +1,5 @@
 'use strict';
-// Cadastro das regras de sugestões. A integração com o atendimento virá depois.
+// Cadastro e ativação das sugestões automáticas por empresa.
 window.SugestoesRegras = (() => {
   const endpoint = 'https://n8n.orbbotia.com/webhook/empresa-config-salvar';
   const readEndpoint = 'https://n8n.orbbotia.com/webhook/empresa-config';
@@ -14,6 +14,11 @@ window.SugestoesRegras = (() => {
   let loadError = '';
   let busy = false;
   let editingId = null;
+  let enabled = false;
+  const activation = document.createElement('section');
+  activation.className = 'rounded-xl border border-slate-300 bg-white p-4 space-y-3';
+  activation.innerHTML = '<label class="inline-flex items-center gap-3 font-bold"><input id="upsell-global-enabled" type="checkbox" disabled>Ativar sugestões automáticas</label><p id="upsell-global-status" role="status" class="text-sm"></p><button id="upsell-global-save" type="button" class="rounded-lg bg-indigo-600 px-4 py-2 font-bold text-white" disabled>Salvar ativação</button>';
+  $('upsell-rules').prepend(activation);
 
   function categoryName(id) {
     return categories.find(category => category.id === id)?.name || 'Categoria indisponível';
@@ -39,6 +44,7 @@ window.SugestoesRegras = (() => {
     const nextAccountId = String(currentAccountId || '');
     const preserveForm = nextAccountId === accountId && !$('upsell-rule-form').classList.contains('hidden');
     accountId = nextAccountId;
+    enabled = config?.upsell_ativo === true;
     const hasRules = config && Object.hasOwn(config, 'upsell_regras');
     const hasVersion = config && Object.hasOwn(config, 'upsell_regras_versao');
     const savedRules = config?.upsell_regras == null ? [] : config.upsell_regras;
@@ -101,6 +107,10 @@ window.SugestoesRegras = (() => {
   }
 
   function render() {
+    $('upsell-global-enabled').checked = enabled;
+    $('upsell-global-enabled').disabled = busy || !ready;
+    $('upsell-global-save').disabled = busy || !ready;
+    $('upsell-global-status').textContent = !configLoaded ? 'Carregando ativação…' : enabled ? 'Sugestões ativadas. As regras ativas serão avaliadas conforme o pedido e o catálogo disponível.' : 'Sugestões pausadas. As regras ficam salvas, mas o atendente virtual só fará as ofertas depois que você ativar e salvar.';
     const list = $('upsell-rules-list');
     list.replaceChildren();
     if (loadError) {
@@ -158,16 +168,18 @@ window.SugestoesRegras = (() => {
     });
   }
 
-  async function persist(candidate, successMessage) {
+  async function persist(candidate, successMessage, activationValue) {
     if (!ready || busy) return false;
     busy = true;
+    $('upsell-global-enabled').disabled = true;
+    $('upsell-global-save').disabled = true;
     $('upsell-rule-save').disabled = true;
     $('upsell-rule-new').disabled = true;
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account_id: accountId, upsell_regras: candidate, upsell_regras_versao: version })
+        body: JSON.stringify({ account_id: accountId, upsell_regras: candidate, upsell_regras_versao: version, ...(activationValue === undefined ? {} : {upsell_ativo: activationValue}) })
       });
       const raw = await response.json().catch(() => null);
       const result = (Array.isArray(raw) ? raw[0] : raw)?.resultado || (Array.isArray(raw) ? raw[0] : raw);
@@ -185,10 +197,11 @@ window.SugestoesRegras = (() => {
           return rule.id === expected.id && rule.nome === expected.nome && rule.gatilho_categoria_id === expected.gatilho_categoria_id &&
             rule.ativo === expected.ativo && JSON.stringify(rule.ofertas_categoria_ids) === JSON.stringify(expected.ofertas_categoria_ids);
         });
-        if (!matches || !Number.isSafeInteger(savedVersion) || savedVersion <= version) {
+        if ((activationValue !== undefined && current?.upsell_ativo !== activationValue) || !matches || !Number.isSafeInteger(savedVersion) || savedVersion <= version) {
           throw new Error('Não foi possível confirmar o salvamento. Atualize a página para conferir.');
         }
       }
+      if (activationValue !== undefined) enabled = activationValue;
       rules = structuredClone(candidate);
       version = savedVersion;
       CadastroUI.notify(successMessage);
@@ -233,8 +246,10 @@ window.SugestoesRegras = (() => {
     if (await persist(candidate, 'Regra excluída.')) closeForm();
   }
 
+  $('upsell-global-save').addEventListener('click', () => persist(rules, 'Ativação das sugestões salva.', $('upsell-global-enabled').checked));
   $('upsell-rule-new').addEventListener('click', () => showForm());
   $('upsell-rule-cancel').addEventListener('click', closeForm);
   $('upsell-rule-form').addEventListener('submit', saveForm);
   return { updateCatalog, loadConfig, reportLoadError(message) { loadError = message; render(); } };
 })();
+

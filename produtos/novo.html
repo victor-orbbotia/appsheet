@@ -18,6 +18,8 @@
         .catalog-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
         .catalog-tabs button { border: 1px solid #c7d2fe; background: white; color: #475569; border-radius: 9px; padding: 10px 14px; font-weight: 600; }
         .catalog-tabs button[aria-selected="true"] { background: #eef2ff; color: #3730a3; border-color: #6366f1; }
+        .module-tabs { margin: 0 0 22px; padding: 0 0 12px; border-bottom: 1px solid #e2e8f0; }
+        .module-tabs button { white-space: nowrap; }
         .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .help-control { display: inline-flex; align-items: center; gap: 4px; flex: none; min-height: 32px; padding: 6px 10px; border: 1px solid #c7d2fe; border-radius: 999px; background: #eef2ff; color: #3730a3; font: 600 12px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; cursor: pointer; }
         .help-control:focus-visible { outline: 3px solid #818cf8; outline-offset: 2px; }
@@ -461,10 +463,10 @@
 
     </div>
 
-    <script src="../assets/cadastro-ui.js?v=20261027-ajudas1"></script>
+    <script src="../assets/cadastro-ui.js?v=20261031-alertas1"></script>
 <script src="../assets/catalogo-navegacao.js?v=20261029-navegacao2"></script>
-<script src="pizzas-produtos.js?v=20261027-formularios2"></script>
-<script src="sugestoes-regras.js?v=20261009-4"></script>
+<script src="pizzas-produtos.js?v=20261031-precos2"></script>
+<script src="sugestoes-regras.js?v=20261104-ativacao1"></script>
     <script>
         // ROTAS GERAIS
         const urlDados = 'https://n8n.orbbotia.com/webhook/produtos-dados';
@@ -538,6 +540,7 @@
             document.getElementById('app-container').classList.remove('hidden');
 
             document.getElementById('link-voltar-menu').href = `../index.html?account_id=${globalAccountId}`;
+
             if (configArea) {
                 document.querySelectorAll('[data-delivery-tab]').forEach(button => button.addEventListener('click', () => switchDeliveryTab(button.dataset.deliveryTab)));
                 document.getElementById(configArea === 'entregas' ? 'view-entregas' : 'view-upsell').classList.remove('hidden');
@@ -548,6 +551,7 @@
                 window.addEventListener('resize', notificarAlturaConfiguracao);
                 return;
             }
+
             window.pizzasCadastro.init(globalAccountId, window.AdminSession?.navigation?.segmento || urlParams.get('segmento') || 'restaurante');
             document.querySelectorAll('[data-common-tab]').forEach(button => button.addEventListener('click', () => { if (window.pizzasCadastro.choose('common')) switchCommonTab(button.dataset.commonTab); }));
             document.querySelectorAll('[data-addon-tab]').forEach(button => button.addEventListener('click', () => { if (window.pizzasCadastro.choose('addons')) switchAddonTab(button.dataset.addonTab); }));
@@ -1275,13 +1279,12 @@
             btnElement.disabled=true;btnElement.innerText='Salvando…';
             try {
                 const response=await fetch(urlAcao,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-                const result=await response.json();
-                if(!response.ok||[result.status,result.resultado?.status].some(status=>['erro','error','pendencia'].includes(status)))throw Error(result.mensagem||result.resultado?.mensagem||'Não foi possível salvar.');
+                const result=await CadastroUI.resultadoGravacao(response);
                 await carregarLista();
                 if(['criar','deletar'].includes(payload.action))limparFormulario();
                 commonDirty = false;
                 CadastroUI.notify(txtSucesso||'Alteração salva.');
-            } catch(e){CadastroUI.notify(e.message,true);}
+            } catch(e){if(!e.acessoTratado)CadastroUI.notify((e instanceof TypeError||e instanceof SyntaxError)?'Não foi possível confirmar o salvamento. Confira o cadastro antes de tentar novamente.':e.message,true);}
             finally {btnElement.innerText=original;btnElement.disabled=false;CadastroUI.restore(view);}
         }
 
@@ -1341,6 +1344,8 @@
                 }
                 if (arrayVariacoes.length === 0) return CadastroUI.notify("Adicione pelo menos uma opção de variação de preço!", true);
 
+                const nomesUsados=new Set();
+                for(const option of arrayVariacoes){if(nomesUsados.has(option.nome))return CadastroUI.notify('Há opções de preço com o mesmo nome. Use um nome diferente para cada uma.',true);nomesUsados.add(option.nome);}
                 metadata.tipo = 'com_variacoes';
                 metadata.variacoes = arrayVariacoes;
                 metadata.tamanhos = arrayVariacoes;

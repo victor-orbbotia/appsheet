@@ -19,7 +19,7 @@
   return {p,status,conhecido,terminal,etapa:etapas[status]||'Estado a conferir',modalidade,pagamento,
    modalidadeTexto:modalidade==='retirada'?'Retirada':modalidade==='entrega'?'Entrega':'Modalidade a conferir',
    pagamentoTexto:forma&&forma!=='retirada'?`${forma==='pix'?'Pix':forma==='cartao'?'Cartão':forma==='dinheiro'?'Dinheiro':texto(p.forma_pagamento)} · ${situacao}`:situacao,
-   atencao,tomStatus:cancelados.has(status)?' canceled':atencao?' warn':terminal?' good':'',
+   atencao,tomStatus:cancelados.has(status)?' canceled':terminal?' good':'',
    alertas:[p.observacoes?texto(p.observacoes):'',!conhecido?'Estado não reconhecido: confira na conversa':''].filter(Boolean)};
  }
  function dia(value){const date=new Date(value);return Number.isFinite(date.getTime())?date.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'}):null;}

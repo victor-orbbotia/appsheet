@@ -3,6 +3,7 @@
  const terminais=new Set(['cancelado','cancelado_cliente','cancelado_atendente','entregue','retirado','concluido','finalizado','resolvido']);
  const aliases={confirmado:'pedido_aprovado',pagamento_entrega:'pagamento_na_entrega',aberto:'em_aberto',carrinho:'em_aberto',rascunho:'em_aberto',balcao:'retirada_balcao',retirada:'retirada_balcao',preparando:'em_preparo',enviado:'saiu_para_entrega'};
  const etapas={em_aberto:'Em montagem',aguardando_pix:'Aguardando Pix',comprovante_enviado:'Conferir comprovante',pagamento_na_entrega:'Aguardando aprovação',retirada_balcao:'Aguardando aprovação',pedido_aprovado:'Aprovado',em_preparo:'Em preparo',pronto_para_entrega:'Pronto para entrega',pronto_para_retirada:'Pronto para retirada',saiu_para_entrega:'Saiu para entrega',entregue:'Entregue',retirado:'Retirado',concluido:'Concluído',finalizado:'Finalizado',resolvido:'Finalizado',cancelado:'Cancelado',cancelado_cliente:'Cancelado pelo cliente',cancelado_atendente:'Cancelado pelo atendente'};
+ const cancelados=new Set(['cancelado','cancelado_cliente','cancelado_atendente']);
  const texto=v=>String(v??'');
  const normalizar=v=>texto(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
  const escapar=v=>texto(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14,11 +15,12 @@
   const forma=normalizar(p.forma_pagamento);
   const pagamento=status==='comprovante_enviado'?'conferencia':status==='aguardando_pix'||['pagamento_na_entrega','retirada_balcao'].includes(status)?'pendente':'conferir';
   const situacao=pagamento==='conferencia'?'Comprovante em conferência':status==='aguardando_pix'?'Aguardando Pix':pagamento==='pendente'?'Pagamento a receber':'Recebimento a conferir';
+  const atencao=!terminal&&(!conhecido||p.editado===true||modalidade==='conferir'||['comprovante_enviado','pagamento_na_entrega','retirada_balcao'].includes(status));
   return {p,status,conhecido,terminal,etapa:etapas[status]||'Estado a conferir',modalidade,pagamento,
    modalidadeTexto:modalidade==='retirada'?'Retirada':modalidade==='entrega'?'Entrega':'Modalidade a conferir',
    pagamentoTexto:forma&&forma!=='retirada'?`${forma==='pix'?'Pix':forma==='cartao'?'Cartão':forma==='dinheiro'?'Dinheiro':texto(p.forma_pagamento)} · ${situacao}`:situacao,
-   atencao:!terminal&&(!conhecido||p.editado===true||modalidade==='conferir'||['comprovante_enviado','pagamento_na_entrega','retirada_balcao'].includes(status)),
-   alertas:[p.editado===true?'Pedido editado — confira os itens':'',p.observacoes?texto(p.observacoes):'',!conhecido?'Estado não reconhecido: confira na conversa':''].filter(Boolean)};
+   atencao,tomStatus:cancelados.has(status)?' canceled':atencao?' warn':terminal?' good':'',
+   alertas:[p.observacoes?texto(p.observacoes):'',!conhecido?'Estado não reconhecido: confira na conversa':''].filter(Boolean)};
  }
  function dia(value){const date=new Date(value);return Number.isFinite(date.getTime())?date.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'}):null;}
  function filtrar(pedidos,f){return pedidos.map(x=>x.json||x).filter(p=>p&&p.id&&!p.deletado).map(projetar).filter(m=>{

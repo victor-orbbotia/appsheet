@@ -7,6 +7,7 @@ window.AdminUI = (() => {
     ['produtos', 'Catálogo', 'produtos/novo.html'],
     ['conhecimento', 'Conhecimento', 'conhecimento/novo.html'],
     ['profissionais', 'Equipe', 'profissionais/novo.html'],
+    ['pedidos', 'Relatórios', 'relatorios/index.html'],
     ['configuracoes', 'Configurações', 'configuracoes/index.html']
   ];
   let refresh = null, observer = null, shell = null;
